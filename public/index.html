@@ -309,6 +309,11 @@ function renderDashboard(data){
   const totalCC    =ag.reduce((s,a)=>s+parseFloat(a.facturacion_cc||0),0);
   const totalDC    =ag.reduce((s,a)=>s+parseFloat(a.facturacion_dc||0),0);
   const margen     =totalFact>0?totalEBITDA/totalFact:0;
+  const totalEgresos      =ag.reduce((s,a)=>s+parseFloat(a.total_egresos||0),0);
+  const rendInversion     =totalEgresos>0?totalEBITDA/totalEgresos:0;
+  const totalInnovacion   =ag.reduce((s,a)=>s+parseFloat(a.aporte_innovacion||0),0);
+  const totalEbitdaDC     =ag.reduce((s,a)=>s+parseFloat(a.ebitda_dc||0),0);
+  const totalEbitdaCC     =ag.reduce((s,a)=>s+parseFloat(a.ebitda_cc||0),0);
 
   document.getElementById('dashboard').innerHTML = `
     <div class="section-title">Consolidado General</div>
@@ -334,14 +339,24 @@ function renderDashboard(data){
         <div class="kpi-sub">${Math.round(totalPers)} personas promedio</div>
       </div>
       <div class="kpi kpi-accent" style="--kpi-color:#e85d26">
-        <div class="kpi-label">Creación de Contenido</div>
+        <div class="kpi-label">Creación de Contenido (CC)</div>
         <div class="kpi-value">${fmt(totalCC)}</div>
         <div class="kpi-sub">${fmtPct(totalFact>0?totalCC/totalFact:0)} del total</div>
       </div>
       <div class="kpi kpi-accent" style="--kpi-color:#6c3fc5">
-        <div class="kpi-label">Distribución de Contenido</div>
+        <div class="kpi-label">Distribución de Contenido (DC)</div>
         <div class="kpi-value">${fmt(totalDC)}</div>
         <div class="kpi-sub">${fmtPct(totalFact>0?totalDC/totalFact:0)} del total</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:${rendInversion>=0?'#16a34a':'#d42b4f'}">
+        <div class="kpi-label">Rendimiento de Inversión</div>
+        <div class="kpi-value ${rendInversion>=0?'kpi-pos':'kpi-neg'}">${(rendInversion*100).toFixed(1)}%</div>
+        <div class="kpi-sub">EBITDA / Total Egresos</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:#16a34a">
+        <div class="kpi-label">Aporte de Innovación</div>
+        <div class="kpi-value">${fmt(totalInnovacion)}</div>
+        <div class="kpi-sub">${fmtPct(totalFact>0?totalInnovacion/totalFact:0)} de la facturación — Innov.+PR+SM</div>
       </div>
     </div>
 
@@ -355,6 +370,13 @@ function renderDashboard(data){
     <div class="charts-grid">
       <div class="chart-card"><div class="chart-title">EBITDA — Con vs Sin 3709</div><div class="chart-subtitle">Comparativo por agencia</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Margen EBITDA %</div><div class="chart-subtitle">EBITDA / Facturación</div><div class="chart-wrap"><canvas id="cMargen"></canvas></div></div>
+    </div>
+
+    <div class="section-title">Rentabilidad por Arena DC vs CC</div>
+    <div class="charts-grid triple">
+      <div class="chart-card"><div class="chart-title">EBITDA DC vs CC por Agencia</div><div class="chart-subtitle">Distribución del resultado operativo</div><div class="chart-wrap"><canvas id="cEbitdaDCCC"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Rendimiento de Inversión</div><div class="chart-subtitle">EBITDA / Total Egresos por agencia</div><div class="chart-wrap"><canvas id="cRendInv"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Aporte de Innovación</div><div class="chart-subtitle">Innov. + PR/Influencer + Social Media — facturación CC</div><div class="chart-wrap"><canvas id="cInnov"></canvas></div></div>
     </div>
 
     <div class="section-title">Mix de Arenas & Sub-Arenas</div>
@@ -379,18 +401,25 @@ function renderDashboard(data){
     <div class="table-wrap"><table>
       <thead><tr>
         <th>Agencia</th><th>Facturación</th><th>Revenue</th>
-        <th>EBITDA c/3709</th><th>EBITDA s/3709</th><th>Margen</th>
-        <th>% CC</th><th>% DC</th><th>Personas</th><th>Per Cápita</th>
+        <th>EBITDA c/3709</th><th>EBITDA s/3709</th><th>EBITDA DC</th><th>EBITDA CC</th>
+        <th>Rend. Inv.</th><th>Innovación</th><th>% CC</th><th>% DC</th>
+        <th>Personas</th><th>Per Cápita</th>
       </tr></thead>
       <tbody>${ag.map(a=>{
         const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);
         const m=f>0?e/f:0;
+        const eg=parseFloat(a.total_egresos||0);
+        const ri=eg>0?e/eg:0;
+        const edc=parseFloat(a.ebitda_dc||0), ecc=parseFloat(a.ebitda_cc||0);
         return `<tr>
           <td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span>${a.nombre}</td>
           <td>${fmt(a.facturacion_total)}</td><td>${fmt(a.revenue_total)}</td>
           <td class="${e>=0?'val-pos':'val-neg'}">${fmt(a.ebitda)}</td>
           <td class="${parseFloat(a.ebitda_sin3709||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_sin3709)}</td>
-          <td class="${m>=0?'val-pos':'val-neg'}">${fmtPct(m)}</td>
+          <td class="${edc>=0?'val-pos':'val-neg'}">${fmt(edc)}</td>
+          <td class="${ecc>=0?'val-pos':'val-neg'}">${fmt(ecc)}</td>
+          <td class="${ri>=0?'val-pos':'val-neg'}">${(ri*100).toFixed(1)}%</td>
+          <td>${fmt(a.aporte_innovacion)}</td>
           <td>${fmtPct(a.facturacion_pct_cc)}</td><td>${fmtPct(a.facturacion_pct_dc)}</td>
           <td>${parseFloat(a.cantidad_personas||0).toFixed(1)}</td>
           <td class="${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${fmt(a.percapita_ebitda)}</td>
@@ -414,6 +443,10 @@ function renderDashboard(data){
             <div class="agencia-row"><span class="agencia-row-label">Facturación</span><span class="agencia-row-val">${fmt(a.facturacion_total)}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">Revenue</span><span class="agencia-row-val">${fmt(a.revenue_total)}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">EBITDA sin 3709</span><span class="agencia-row-val ${parseFloat(a.ebitda_sin3709||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_sin3709)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">EBITDA DC</span><span class="agencia-row-val ${parseFloat(a.ebitda_dc||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_dc)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">EBITDA CC</span><span class="agencia-row-val ${parseFloat(a.ebitda_cc||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_cc)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Rend. Inversión</span><span class="agencia-row-val ${(parseFloat(a.total_egresos||0)>0?parseFloat(a.ebitda||0)/parseFloat(a.total_egresos||0):0)>=0?'val-pos':'val-neg'}">${parseFloat(a.total_egresos||0)>0?((parseFloat(a.ebitda||0)/parseFloat(a.total_egresos||0))*100).toFixed(1)+'%':'—'}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Aporte Innovación</span><span class="agencia-row-val">${fmt(a.aporte_innovacion)}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">Margen</span><span class="agencia-row-val ${m>=0?'val-pos':'val-neg'}">${fmtPct(m)}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">RRHH</span><span class="agencia-row-val">${fmt(a.gastos_rrhh)}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">Per Cápita</span><span class="agencia-row-val ${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${fmt(a.percapita_ebitda)}</span></div>
@@ -528,6 +561,35 @@ function renderDashboard(data){
     data:{labels:names,datasets:[{data:ag.map(a=>parseFloat(a.cantidad_personas||0)),
       backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{...o,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+' personas'}}}}
+  });
+
+  charts.ebitdaDCCC = new Chart(document.getElementById('cEbitdaDCCC'),{type:'bar',
+    data:{labels:names,datasets:[
+      {label:'EBITDA DC',data:ag.map(a=>parseFloat(a.ebitda_dc||0)),backgroundColor:'#6c3fc5',borderRadius:4},
+      {label:'EBITDA CC',data:ag.map(a=>parseFloat(a.ebitda_cc||0)),backgroundColor:'#e85d26',borderRadius:4},
+    ]},
+    options:{...o,plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:16,boxWidth:12,boxHeight:12}},
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+  });
+
+  const rendVals=ag.map(a=>{const e=parseFloat(a.ebitda||0),eg=parseFloat(a.total_egresos||0);return eg>0?e/eg*100:0;});
+  charts.rendInv = new Chart(document.getElementById('cRendInv'),{type:'bar',
+    data:{labels:names,datasets:[{data:rendVals,
+      backgroundColor:rendVals.map(v=>v>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...baseOpts(true),plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}}}
+  });
+
+  charts.innov = new Chart(document.getElementById('cInnov'),{type:'bar',
+    data:{labels:names,datasets:[
+      {label:'Otras Innov.',data:ag.map(a=>parseFloat(a.cc_otras_innovaciones||0)),backgroundColor:'#16a34a',borderRadius:3},
+      {label:'PR/Influencer',data:ag.map(a=>parseFloat(a.cc_pr_influencer||0)),backgroundColor:'#6c3fc5',borderRadius:3},
+      {label:'Social Media',data:ag.map(a=>parseFloat(a.cc_social_media||0)),backgroundColor:'#0ea5b0',borderRadius:3},
+    ]},
+    options:{...o,scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+      y:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
   });
 }
 

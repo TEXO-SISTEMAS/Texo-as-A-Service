@@ -84,6 +84,8 @@ function extractAgencia(ws, nombre) {
     percapita_ebitda:      num(percapRow, C.TOTAL),
     cantidad_personas:     num(persRow,  C.TOTAL),
     monto3709,
+    ebitda_dc:             num(ebitdaRow, C.DC_TOT),
+    ebitda_cc:             num(ebitdaRow, C.CC_TOT),
     cc_activacion_prod:    num(facRow, C.CC_ACTIV),
     cc_asesorias:          num(facRow, C.CC_ASES),
     cc_branding:           num(facRow, C.CC_BRAND),
@@ -95,6 +97,7 @@ function extractAgencia(ws, nombre) {
     dc_off:                num(facRow, C.DC_OFF),
     dc_on:                 num(facRow, C.DC_ON),
     dc_performance:        num(facRow, C.DC_PERF),
+    aporte_innovacion:     num(facRow, C.CC_OTRAS) + num(facRow, C.CC_PR) + num(facRow, C.CC_SOC),
   };
 }
 
