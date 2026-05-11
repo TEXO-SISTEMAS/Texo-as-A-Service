@@ -162,12 +162,20 @@ tbody td:first-child{text-align:left;font-weight:600}
   width:0;overflow:hidden;flex-shrink:0;
   border-left:0px solid var(--border);
   transition:width .28s cubic-bezier(.4,0,.2,1), border-color .28s;
-  background:var(--white);display:flex;
+  background:var(--white);display:flex;position:relative;
 }
-.chat-sidebar.open{width:520px;border-left:1px solid var(--border)}
+.chat-sidebar.open{border-left:1px solid var(--border)}
+.chat-sidebar.resizing{transition:none}
 .chat-sidebar-inner{
-  width:520px;flex-shrink:0;display:flex;flex-direction:column;height:100%;overflow:hidden;
+  flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;
 }
+.chat-resize-handle{
+  position:absolute;left:0;top:0;bottom:0;width:5px;
+  cursor:col-resize;z-index:20;
+  background:transparent;
+  transition:background .2s;
+}
+.chat-resize-handle:hover,.chat-resize-handle.dragging{background:var(--accent);opacity:.25}
 
 .chat-header{
   background:var(--accent);color:#fff;
@@ -300,6 +308,7 @@ tbody td:first-child{text-align:left;font-weight:600}
 
   <!-- CHAT SIDEBAR -->
   <div class="chat-sidebar" id="chatSidebar">
+    <div class="chat-resize-handle" id="chatResizeHandle"></div>
     <div class="chat-sidebar-inner">
       <div class="chat-header">
         <div class="chat-header-icon">IA</div>
@@ -307,7 +316,7 @@ tbody td:first-child{text-align:left;font-weight:600}
           <div class="chat-header-title">Asistente Financiero</div>
           <div class="chat-header-sub">Texo as a Service · Salud Financiera</div>
         </div>
-        <button class="chat-close" onclick="openHistorial()" title="Historial" style="font-size:15px;margin-right:2px">🕘</button>
+        <button class="chat-close" onclick="openHistorial()" title="Historial" style="font-size:20px;margin-right:2px">🕘</button>
         <button class="chat-close" onclick="newChat()" title="Nueva conversación" style="font-size:18px;line-height:1;margin-right:2px">+</button>
         <button class="chat-close" onclick="toggleChat()" title="Cerrar">✕</button>
       </div>
@@ -816,13 +825,52 @@ window.addEventListener('DOMContentLoaded',async()=>{ await loadUploads(); await
 <script>
 let chatHistory = [];
 let chatOpen = false;
+const CHAT_MIN = 360;
+const CHAT_MAX = 900;
+let chatWidth = parseInt(localStorage.getItem('chatWidth') || '520');
 
 function toggleChat() {
   chatOpen = !chatOpen;
-  document.getElementById('chatSidebar').classList.toggle('open', chatOpen);
+  const sidebar = document.getElementById('chatSidebar');
+  sidebar.classList.toggle('open', chatOpen);
+  if (chatOpen) sidebar.style.width = chatWidth + 'px';
+  else sidebar.style.width = '0';
   document.getElementById('btnChat').classList.toggle('active', chatOpen);
   if (chatOpen) setTimeout(() => document.getElementById('chatInput').focus(), 300);
 }
+
+(function initResize() {
+  const handle = document.getElementById('chatResizeHandle');
+  const sidebar = document.getElementById('chatSidebar');
+  let startX, startW;
+
+  handle.addEventListener('mousedown', e => {
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    sidebar.classList.add('resizing');
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(e) {
+      const delta = startX - e.clientX;
+      const w = Math.min(CHAT_MAX, Math.max(CHAT_MIN, startW + delta));
+      sidebar.style.width = w + 'px';
+      chatWidth = w;
+    }
+    function onUp() {
+      sidebar.classList.remove('resizing');
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      localStorage.setItem('chatWidth', chatWidth);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
 
 function autoResize(el) {
   el.style.height = 'auto';
