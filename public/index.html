@@ -4,140 +4,201 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Salud Financiera — POAS</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg:#07070d;--surface:#0f0f1a;--s2:#16161f;--s3:#1c1c28;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#eeeef5;--muted:#5a5a80;
-  --accent:#c8f040;--accent2:#40c8f0;
-  --red:#f04060;--green:#3effa0;--warn:#f0c040;
-  --brick:#f07040;--nasta:#a064f0;--lupe:#40c8f0;--omd:#f0c040;--roger:#f04060;
+  --bg: #f4f5f7;
+  --white: #ffffff;
+  --surface: #ffffff;
+  --border: #e2e4e9;
+  --border2: #c8cdd8;
+  --text: #0f1117;
+  --muted: #6b7280;
+  --muted2: #9ca3af;
+  --accent: #1a1a2e;
+  --brick:  #e85d26;
+  --nasta:  #6c3fc5;
+  --lupe:   #0ea5b0;
+  --omd:    #d4900a;
+  --roger:  #d42b4f;
+  --row:    #16a34a;
+  --cc:     #e85d26;
+  --dc:     #6c3fc5;
+  --green:  #16a34a;
+  --red:    #d42b4f;
+  --warn:   #d4900a;
+  --sidebar-w: 260px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;display:flex;flex-direction:column}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;display:flex;flex-direction:column}
 
-/* TOPBAR */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;background:var(--surface);border-bottom:1px solid var(--border2);flex-shrink:0;gap:16px}
-.topbar-left{display:flex;align-items:center;gap:16px}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;letter-spacing:.04em;color:var(--accent)}
-.corte-badge{background:var(--s3);border:1px solid var(--border2);border-radius:4px;padding:3px 10px;font-size:11px;color:var(--muted)}
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:60px;
+  background:var(--accent);
+  flex-shrink:0;gap:16px;
+}
+.topbar-left{display:flex;align-items:center;gap:20px}
+.logo{font-size:18px;font-weight:800;letter-spacing:.01em;color:#fff}
+.logo span{color:#f0f040;font-weight:300}
 .topbar-right{display:flex;align-items:center;gap:10px}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:5px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;border:none;transition:opacity .15s,transform .1s}
-.btn:active{transform:scale(.97)}
-.btn-primary{background:var(--accent);color:#000;font-weight:500}
-.btn-primary:hover{opacity:.88}
-.btn-ghost{background:var(--s3);color:var(--text);border:1px solid var(--border2)}
-.btn-ghost:hover{border-color:var(--accent2);color:var(--accent2)}
-.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(240,64,96,.3);padding:2px 7px;font-size:10px}
-.btn-danger:hover{background:rgba(240,64,96,.1)}
 
-/* LAYOUT */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s;letter-spacing:.02em}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:#f0f040;color:#0f1117}
+.btn-primary:hover{background:#e8e830}
+.btn-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.35)}
+.btn-outline:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6)}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(212,43,79,.3);padding:3px 8px;font-size:11px;border-radius:4px}
+.btn-danger:hover{background:rgba(212,43,79,.08)}
+
+/* ── LAYOUT ── */
 .layout{display:flex;flex:1;overflow:hidden}
 
-/* SIDEBAR */
-.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.sidebar-head{padding:14px 16px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);flex-shrink:0}
-.sidebar-list{flex:1;overflow-y:auto;padding:8px}
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--white);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-head{
+  padding:20px 20px 14px;
+  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted2);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sidebar-list{flex:1;overflow-y:auto;padding:12px}
 .sidebar-list::-webkit-scrollbar{width:3px}
 .sidebar-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.upload-item{padding:10px 12px;border-radius:6px;cursor:pointer;border:1px solid transparent;margin-bottom:4px;transition:all .15s}
-.upload-item:hover{background:var(--s2);border-color:var(--border2)}
-.upload-item.active{background:var(--s3);border-color:var(--accent)}
-.upload-item-name{font-size:11px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
-.upload-item.active .upload-item-name{color:var(--accent)}
-.upload-item-date{font-size:10px;color:var(--muted)}
-.upload-item-actions{display:flex;gap:4px;margin-top:6px}
-.empty-state{padding:32px 16px;text-align:center;color:var(--muted);font-size:11px;line-height:1.7}
 
-/* MAIN */
-.main{flex:1;overflow-y:auto;padding:24px}
-.main::-webkit-scrollbar{width:4px}
+.upload-item{padding:12px 14px;border-radius:8px;cursor:pointer;border:1.5px solid transparent;margin-bottom:6px;transition:all .15s}
+.upload-item:hover{background:#f8f9fb;border-color:var(--border)}
+.upload-item.active{background:#f0f4ff;border-color:#6c3fc5}
+.upload-item-name{font-size:11px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.upload-item.active .upload-item-name{color:#6c3fc5}
+.upload-item-date{font-size:10px;color:var(--muted2)}
+.upload-item-actions{margin-top:8px}
+.empty-state{padding:32px 16px;text-align:center;color:var(--muted2);font-size:12px;line-height:1.8}
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;padding:32px 36px;padding-bottom:0}
+.main::-webkit-scrollbar{width:5px}
 .main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
-/* SECTION TITLE */
-.section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+/* ── SECTION TITLE ── */
+.section-title{
+  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:16px;padding-bottom:10px;
+  border-bottom:2px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.section-title span{color:var(--muted2);font-weight:400;letter-spacing:0;text-transform:none;font-size:11px}
 
-/* KPIs */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:28px}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-color,var(--accent))}
-.kpi-label{font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:.04em}
-.kpi-value{font-family:'Syne',sans-serif;font-size:18px;font-weight:700}
-.kpi-sub{font-size:10px;color:var(--muted);margin-top:2px}
-.val-pos{color:var(--green)}
-.val-neg{color:var(--red)}
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:14px;margin-bottom:32px}
+.kpi{
+  background:var(--white);border:1px solid var(--border);border-radius:10px;
+  padding:20px 22px;position:relative;overflow:hidden;
+}
+.kpi-accent{border-top:3px solid var(--kpi-color,var(--accent))}
+.kpi-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.kpi-value{font-size:32px;font-weight:800;line-height:1;margin-bottom:6px;letter-spacing:-.02em}
+.kpi-sub{font-size:11px;color:var(--muted);font-weight:500}
+.kpi-pos{color:var(--green)}
+.kpi-neg{color:var(--red)}
+.kpi-neutral{color:var(--warn)}
 
-/* CHARTS */
-.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:28px}
+/* ── CHARTS ── */
+.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:32px}
 .charts-grid.triple{grid-template-columns:repeat(3,1fr)}
-.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.chart-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:22px 24px}
 .chart-card.wide{grid-column:span 2}
-.chart-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:4px}
-.chart-subtitle{font-size:10px;color:var(--muted);margin-bottom:16px}
-.chart-wrap{position:relative;height:220px}
+.chart-title{font-size:15px;font-weight:700;margin-bottom:4px;letter-spacing:-.01em}
+.chart-subtitle{font-size:11px;color:var(--muted);margin-bottom:20px;font-weight:500}
+.chart-wrap{position:relative;height:260px}
 
-/* TABLE */
-.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:28px}
+/* ── TABLE ── */
+.table-wrap{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:32px}
 table{width:100%;border-collapse:collapse}
-thead th{padding:10px 14px;text-align:right;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--s2);border-bottom:1px solid var(--border2);white-space:nowrap}
+thead th{
+  padding:12px 16px;text-align:right;font-size:10px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  background:#f8f9fb;border-bottom:1.5px solid var(--border);white-space:nowrap;
+}
 thead th:first-child{text-align:left}
 tbody tr{border-bottom:1px solid var(--border)}
 tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:var(--s2)}
-tbody td{padding:10px 14px;text-align:right;white-space:nowrap}
-tbody td:first-child{text-align:left}
-.ag-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+tbody tr:hover{background:#fafbfc}
+tbody td{padding:13px 16px;text-align:right;white-space:nowrap;font-size:13px}
+tbody td:first-child{text-align:left;font-weight:600}
+.ag-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:9px;vertical-align:middle}
+.val-pos{color:var(--green);font-weight:600}
+.val-neg{color:var(--red);font-weight:600}
 
-/* AGENCIA CARDS */
-.agencia-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:28px}
-.agencia-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.agencia-card-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--s2)}
-.agencia-card-head .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.agencia-card-head h4{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;flex:1}
-.ebitda-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px}
-.agencia-card-body{padding:12px 16px}
-.agencia-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px}
+/* ── AGENCIA CARDS ── */
+.agencia-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:32px}
+.agencia-card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.agencia-card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.agencia-card-head .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.agencia-card-head h4{font-size:16px;font-weight:800;flex:1;letter-spacing:-.01em}
+.ebitda-badge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:5px}
+.agencia-card-body{padding:14px 20px}
+.agencia-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
 .agencia-row:last-child{border:none}
-.agencia-row-label{color:var(--muted)}
-.bar-mini{height:4px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
-.bar-mini-fill{height:100%;border-radius:2px}
+.agencia-row-label{color:var(--muted);font-weight:500}
+.agencia-row-val{font-weight:700;font-size:13px}
+.bar-mini{height:5px;background:var(--border);border-radius:3px;margin-top:10px;overflow:hidden}
+.bar-mini-fill{height:100%;border-radius:3px}
 
-/* NO DATA */
-.no-data{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 32px;text-align:center;color:var(--muted);gap:12px}
-.no-data-icon{font-size:48px;opacity:.4}
-.no-data h3{font-family:'Syne',sans-serif;font-size:16px;color:var(--text);opacity:.5}
+/* ── FOOTER ── */
+.footer{
+  flex-shrink:0;
+  background:var(--accent);
+  color:rgba(255,255,255,.5);
+  font-size:11px;font-weight:500;
+  padding:12px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  letter-spacing:.03em;
+}
+.footer strong{color:rgba(255,255,255,.85)}
 
-/* TOAST */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--s3);border:1px solid var(--border2);border-radius:8px;padding:12px 18px;font-size:12px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:999;transform:translateY(60px);opacity:0;transition:all .3s;max-width:300px}
+/* ── NO DATA ── */
+.no-data{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 32px;text-align:center;color:var(--muted);gap:14px}
+.no-data-icon{font-size:56px;opacity:.3}
+.no-data h3{font-size:22px;font-weight:800;color:var(--text);opacity:.4;letter-spacing:-.02em}
+.no-data p{font-size:13px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:70px;right:28px;background:var(--text);color:#fff;border-radius:8px;padding:13px 20px;font-size:12px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:999;transform:translateY(60px);opacity:0;transition:all .3s;max-width:320px}
 .toast.show{transform:translateY(0);opacity:1}
-.toast.error{border-color:var(--red);color:var(--red)}
-.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{background:var(--red)}
+.toast.success{background:var(--green)}
 
-.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
+<!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="logo">◈ SALUD FINANCIERA</div>
-    <div class="corte-badge" id="corteBadge">Sin datos</div>
+    <div class="logo">TEXO <span>/ Salud Financiera</span></div>
   </div>
   <div class="topbar-right">
-    <button class="btn btn-ghost" onclick="triggerUpload()">↑ Cargar Excel</button>
+    <button class="btn btn-outline" onclick="triggerUpload()">↑ Cargar Excel</button>
     <button class="btn btn-primary" onclick="refreshData()" id="btnRefresh">⟳ Actualizar</button>
     <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileSelect(event)" style="display:none">
   </div>
 </div>
 
+<!-- LAYOUT -->
 <div class="layout">
   <div class="sidebar">
-    <div class="sidebar-head">Historial</div>
+    <div class="sidebar-head">Historial de cargas</div>
     <div class="sidebar-list" id="uploadList"><div class="empty-state">Cargando...</div></div>
   </div>
   <div class="main" id="main">
@@ -145,52 +206,55 @@ tbody td:first-child{text-align:left}
       <div class="no-data-icon">📊</div>
       <h3>Sin datos cargados</h3>
       <p>Subí un archivo Excel para comenzar</p>
-      <button class="btn btn-primary" style="margin-top:8px" onclick="triggerUpload()">↑ Cargar Excel</button>
+      <button class="btn btn-primary" style="margin-top:12px;background:var(--accent);color:#fff" onclick="triggerUpload()">↑ Cargar Excel</button>
     </div>
     <div id="dashboard" style="display:none"></div>
   </div>
 </div>
 
+<!-- FOOTER -->
+<div class="footer">
+  <span>Dashboard de Salud Financiera — POAS</span>
+  <span><strong>Danilo Sosa</strong> | Texo Sistemas</span>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const COLORS = {BRICK:'#f07040',NASTA:'#a064f0',LUPE:'#40c8f0',OMD:'#f0c040',ROGER:'#f04060',ROW:'#3effa0'};
-const agColor = n => COLORS[n] || '#8888aa';
+const COLORS = {BRICK:'#e85d26',NASTA:'#6c3fc5',LUPE:'#0ea5b0',OMD:'#d4900a',ROGER:'#d42b4f',ROW:'#16a34a'};
+const agColor = n => COLORS[n] || '#6b7280';
 
 const fmt = v => {
   if(v==null) return '—';
-  const n = parseFloat(v); if(isNaN(n)) return '—';
+  const n=parseFloat(v); if(isNaN(n)) return '—';
   if(Math.abs(n)>=1e9) return (n/1e9).toFixed(1)+'B';
   if(Math.abs(n)>=1e6) return (n/1e6).toFixed(1)+'M';
   if(Math.abs(n)>=1e3) return (n/1e3).toFixed(1)+'K';
   return n.toFixed(0);
 };
-const fmtPct = v => v!=null ? (parseFloat(v)*100).toFixed(1)+'%' : '—';
+const fmtPct = v => v!=null?(parseFloat(v)*100).toFixed(1)+'%':'—';
 
-function showToast(msg, type='success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show '+type;
-  setTimeout(()=>t.className='toast', 3500);
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+type;
+  setTimeout(()=>t.className='toast',3500);
 }
 
 function triggerUpload(){ document.getElementById('fileInput').click() }
 
-async function handleFileSelect(e) {
-  const file = e.target.files[0]; if(!file) return;
-  e.target.value='';
-  const btn = document.getElementById('btnRefresh');
+async function handleFileSelect(e){
+  const file=e.target.files[0]; if(!file) return; e.target.value='';
+  const btn=document.getElementById('btnRefresh');
   btn.innerHTML='<span class="spinner"></span> Subiendo...'; btn.disabled=true;
-  const form = new FormData();
-  form.append('archivo', file);
+  const form=new FormData(); form.append('archivo',file);
   try {
-    const r = await fetch('/api/upload',{method:'POST',body:form});
-    const data = await r.json();
+    const r=await fetch('/api/upload',{method:'POST',body:form});
+    const data=await r.json();
     if(!r.ok) throw new Error(data.error||'Error al subir');
     showToast(`✓ ${data.agencias} agencias cargadas`,'success');
-    await loadUploads();
-    await loadDashboard(data.fileId);
+    await loadUploads(); await loadDashboard(data.fileId);
   } catch(err){ showToast('✗ '+err.message,'error'); }
-  finally { btn.innerHTML='⟳ Actualizar'; btn.disabled=false; }
+  finally{ btn.innerHTML='⟳ Actualizar'; btn.disabled=false; }
 }
 
 async function refreshData(){
@@ -200,14 +264,14 @@ async function refreshData(){
   btn.innerHTML='⟳ Actualizar'; btn.disabled=false;
 }
 
-let activeId = null;
+let activeId=null;
 
 async function loadUploads(){
-  const r = await fetch('/api/uploads');
-  const uploads = await r.json();
-  const list = document.getElementById('uploadList');
-  if(!uploads.length){ list.innerHTML='<div class="empty-state">Todavía no hay datos.<br>Cargá un Excel.</div>'; return; }
-  list.innerHTML = uploads.map(u=>`
+  const r=await fetch('/api/uploads');
+  const uploads=await r.json();
+  const list=document.getElementById('uploadList');
+  if(!uploads.length){ list.innerHTML='<div class="empty-state">Todavía no hay datos.<br>Cargá un Excel para comenzar.</div>'; return; }
+  list.innerHTML=uploads.map(u=>`
     <div class="upload-item ${u.id==activeId?'active':''}" onclick="loadDashboard('${u.id}')">
       <div class="upload-item-name" title="${u.nombre}">${u.nombre}</div>
       <div class="upload-item-date">${new Date(u.uploaded_at).toLocaleString('es-PY',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
@@ -226,18 +290,16 @@ async function deleteUpload(id){
 }
 
 async function loadLatest(){
-  const r = await fetch('/api/latest');
-  const data = await r.json();
+  const r=await fetch('/api/latest');
+  const data=await r.json();
   if(data.empty){ showNoData(); return; }
   renderDashboard(data);
-  activeId = null; // latest doesn't have single id in sidebar
-  await loadUploads();
 }
 
 async function loadDashboard(id){
-  activeId = id;
-  const r = await fetch('/api/uploads/'+id);
-  const data = await r.json();
+  activeId=id;
+  const r=await fetch('/api/uploads/'+id);
+  const data=await r.json();
   renderDashboard(data);
   await loadUploads();
 }
@@ -245,70 +307,110 @@ async function loadDashboard(id){
 function showNoData(){
   document.getElementById('noData').style.display='flex';
   document.getElementById('dashboard').style.display='none';
-  document.getElementById('corteBadge').textContent='Sin datos';
 }
 
 const charts={};
 function destroyCharts(){ Object.values(charts).forEach(c=>c.destroy()); Object.keys(charts).forEach(k=>delete charts[k]); }
 
+// Chart.js defaults para look limpio
+const FONT = { family: 'Inter', size: 12 };
+const TICK_COLOR = '#9ca3af';
+const GRID_COLOR = '#f0f1f3';
+
+function baseOpts(pct=false){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0f1117', titleFont:{...FONT,weight:'700'}, bodyFont:FONT, padding:10, cornerRadius:6,
+      callbacks:{ label: c => ' '+fmt(c.raw)+(pct?'%':'') }
+    }},
+    scales:{
+      x:{ grid:{color:GRID_COLOR}, border:{display:false}, ticks:{color:TICK_COLOR,font:FONT} },
+      y:{ grid:{color:GRID_COLOR}, border:{display:false}, ticks:{color:TICK_COLOR,font:FONT, callback:v=>fmt(v)+(pct?'%':'')} }
+    }
+  };
+}
+
 function renderDashboard(data){
   destroyCharts();
-  const agencias = data.agencias;
+  const ag=data.agencias;
   document.getElementById('noData').style.display='none';
   document.getElementById('dashboard').style.display='block';
-  document.getElementById('corteBadge').textContent = data.fecha_corte || data.nombre || '—';
 
-  const names  = agencias.map(a=>a.nombre);
-  const colors = agencias.map(a=>agColor(a.nombre));
+  const names=ag.map(a=>a.nombre);
+  const colors=ag.map(a=>agColor(a.nombre));
 
-  const totalFact  = agencias.reduce((s,a)=>s+parseFloat(a.facturacion_total||0),0);
-  const totalRev   = agencias.reduce((s,a)=>s+parseFloat(a.revenue_total||0),0);
-  const totalEBITDA= agencias.reduce((s,a)=>s+parseFloat(a.ebitda||0),0);
-  const totalRRHH  = agencias.reduce((s,a)=>s+parseFloat(a.gastos_rrhh||0),0);
-  const totalPers  = agencias.reduce((s,a)=>s+parseFloat(a.cantidad_personas||0),0);
-  const totalCC    = agencias.reduce((s,a)=>s+parseFloat(a.facturacion_cc||0),0);
-  const totalDC    = agencias.reduce((s,a)=>s+parseFloat(a.facturacion_dc||0),0);
-  const margen     = totalFact>0?totalEBITDA/totalFact:0;
+  const totalFact  =ag.reduce((s,a)=>s+parseFloat(a.facturacion_total||0),0);
+  const totalRev   =ag.reduce((s,a)=>s+parseFloat(a.revenue_total||0),0);
+  const totalEBITDA=ag.reduce((s,a)=>s+parseFloat(a.ebitda||0),0);
+  const totalRRHH  =ag.reduce((s,a)=>s+parseFloat(a.gastos_rrhh||0),0);
+  const totalPers  =ag.reduce((s,a)=>s+parseFloat(a.cantidad_personas||0),0);
+  const totalCC    =ag.reduce((s,a)=>s+parseFloat(a.facturacion_cc||0),0);
+  const totalDC    =ag.reduce((s,a)=>s+parseFloat(a.facturacion_dc||0),0);
+  const margen     =totalFact>0?totalEBITDA/totalFact:0;
 
   document.getElementById('dashboard').innerHTML = `
     <div class="section-title">Consolidado General</div>
     <div class="kpi-grid">
-      <div class="kpi" style="--kpi-color:var(--accent)"><div class="kpi-label">FACTURACIÓN TOTAL</div><div class="kpi-value">${fmt(totalFact)}</div><div class="kpi-sub">Miles de Gs.</div></div>
-      <div class="kpi" style="--kpi-color:var(--accent2)"><div class="kpi-label">REVENUE TOTAL</div><div class="kpi-value">${fmt(totalRev)}</div><div class="kpi-sub">Miles de Gs.</div></div>
-      <div class="kpi" style="--kpi-color:${totalEBITDA>=0?'var(--green)':'var(--red)'}"><div class="kpi-label">EBITDA CONSOLIDADO</div><div class="kpi-value ${totalEBITDA>=0?'val-pos':'val-neg'}">${fmt(totalEBITDA)}</div><div class="kpi-sub">Margen: ${fmtPct(margen)}</div></div>
-      <div class="kpi" style="--kpi-color:var(--warn)"><div class="kpi-label">TOTAL RRHH</div><div class="kpi-value">${fmt(totalRRHH)}</div><div class="kpi-sub">${Math.round(totalPers)} personas promedio</div></div>
-      <div class="kpi" style="--kpi-color:var(--brick)"><div class="kpi-label">CREACIÓN DE CONTENIDO</div><div class="kpi-value">${fmt(totalCC)}</div><div class="kpi-sub">${fmtPct(totalFact>0?totalCC/totalFact:0)} del total</div></div>
-      <div class="kpi" style="--kpi-color:var(--nasta)"><div class="kpi-label">DISTRIBUCIÓN DE CONTENIDO</div><div class="kpi-value">${fmt(totalDC)}</div><div class="kpi-sub">${fmtPct(totalFact>0?totalDC/totalFact:0)} del total</div></div>
+      <div class="kpi kpi-accent" style="--kpi-color:#1a1a2e">
+        <div class="kpi-label">Facturación Total</div>
+        <div class="kpi-value">${fmt(totalFact)}</div>
+        <div class="kpi-sub">Miles de Gs. — todas las arenas</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:#0ea5b0">
+        <div class="kpi-label">Revenue Total</div>
+        <div class="kpi-value">${fmt(totalRev)}</div>
+        <div class="kpi-sub">Miles de Gs.</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:${totalEBITDA>=0?'#16a34a':'#d42b4f'}">
+        <div class="kpi-label">EBITDA Consolidado</div>
+        <div class="kpi-value ${totalEBITDA>=0?'kpi-pos':'kpi-neg'}">${fmt(totalEBITDA)}</div>
+        <div class="kpi-sub">Margen: ${fmtPct(margen)}</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:#d4900a">
+        <div class="kpi-label">Total RRHH</div>
+        <div class="kpi-value">${fmt(totalRRHH)}</div>
+        <div class="kpi-sub">${Math.round(totalPers)} personas promedio</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:#e85d26">
+        <div class="kpi-label">Creación de Contenido</div>
+        <div class="kpi-value">${fmt(totalCC)}</div>
+        <div class="kpi-sub">${fmtPct(totalFact>0?totalCC/totalFact:0)} del total</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:#6c3fc5">
+        <div class="kpi-label">Distribución de Contenido</div>
+        <div class="kpi-value">${fmt(totalDC)}</div>
+        <div class="kpi-sub">${fmtPct(totalFact>0?totalDC/totalFact:0)} del total</div>
+      </div>
     </div>
 
-    <div class="section-title">Facturación & Revenue</div>
+    <div class="section-title">Facturación & Revenue <span>— Miles de Gs.</span></div>
     <div class="charts-grid">
-      <div class="chart-card"><div class="chart-title">Facturación por Agencia</div><div class="chart-subtitle">Con 3709 — Miles de Gs.</div><div class="chart-wrap"><canvas id="cFact"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Facturación por Agencia</div><div class="chart-subtitle">Con 3709 incluido</div><div class="chart-wrap"><canvas id="cFact"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Revenue por Agencia</div><div class="chart-subtitle">Miles de Gs.</div><div class="chart-wrap"><canvas id="cRev"></canvas></div></div>
     </div>
 
     <div class="section-title">EBITDA & Rentabilidad</div>
     <div class="charts-grid">
-      <div class="chart-card"><div class="chart-title">EBITDA Con vs Sin 3709</div><div class="chart-subtitle">Miles de Gs.</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">EBITDA — Con vs Sin 3709</div><div class="chart-subtitle">Comparativo por agencia</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Margen EBITDA %</div><div class="chart-subtitle">EBITDA / Facturación</div><div class="chart-wrap"><canvas id="cMargen"></canvas></div></div>
     </div>
 
-    <div class="section-title">Mix CC / DC & Sub-Arenas</div>
+    <div class="section-title">Mix de Arenas & Sub-Arenas</div>
     <div class="charts-grid triple">
-      <div class="chart-card"><div class="chart-title">Mix CC / DC Consolidado</div><div class="chart-subtitle">% de Facturación</div><div class="chart-wrap"><canvas id="cCCDC"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Sub-Arenas CC</div><div class="chart-subtitle">Creatividad · Social · PR · Activación</div><div class="chart-wrap"><canvas id="cCC"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Mix CC / DC</div><div class="chart-subtitle">Distribución consolidada</div><div class="chart-wrap"><canvas id="cCCDC"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Sub-Arenas CC</div><div class="chart-subtitle">Por agencia — apilado</div><div class="chart-wrap"><canvas id="cCC"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Sub-Arenas DC</div><div class="chart-subtitle">OFF · ON · Performance</div><div class="chart-wrap"><canvas id="cDC"></canvas></div></div>
     </div>
 
     <div class="section-title">Estructura de Egresos</div>
     <div class="charts-grid">
-      <div class="chart-card wide"><div class="chart-title">Egresos por Agencia</div><div class="chart-subtitle">RRHH · Comerciales · Administrativos</div><div class="chart-wrap"><canvas id="cEgr"></canvas></div></div>
+      <div class="chart-card wide"><div class="chart-title">Egresos por Agencia</div><div class="chart-subtitle">RRHH · Comerciales · Administrativos — Miles de Gs.</div><div class="chart-wrap"><canvas id="cEgr"></canvas></div></div>
     </div>
 
-    <div class="section-title">Eficiencia Per Cápita</div>
+    <div class="section-title">Eficiencia — Per Cápita</div>
     <div class="charts-grid">
       <div class="chart-card"><div class="chart-title">EBITDA Per Cápita</div><div class="chart-subtitle">Miles de Gs. por persona</div><div class="chart-wrap"><canvas id="cPC"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Personas Promedio</div><div class="chart-subtitle">Dotación por agencia</div><div class="chart-wrap"><canvas id="cPers"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Dotación por Agencia</div><div class="chart-subtitle">Personas promedio</div><div class="chart-wrap"><canvas id="cPers"></canvas></div></div>
     </div>
 
     <div class="section-title">Detalle por Agencia</div>
@@ -318,7 +420,7 @@ function renderDashboard(data){
         <th>EBITDA c/3709</th><th>EBITDA s/3709</th><th>Margen</th>
         <th>% CC</th><th>% DC</th><th>Personas</th><th>Per Cápita</th>
       </tr></thead>
-      <tbody>${agencias.map(a=>{
+      <tbody>${ag.map(a=>{
         const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);
         const m=f>0?e/f:0;
         return `<tr>
@@ -334,111 +436,140 @@ function renderDashboard(data){
       </tbody>
     </table></div>
 
-    <div class="section-title">Vista por Agencia</div>
+    <div class="section-title">Vista Individual por Agencia</div>
     <div class="agencia-cards">
-      ${agencias.map(a=>{
+      ${ag.map(a=>{
         const e=parseFloat(a.ebitda||0),f=parseFloat(a.facturacion_total||0);
-        const m=f>0?e/f:0, pcc=parseFloat(a.facturacion_pct_cc||0);
-        return `<div class="agencia-card">
+        const m=f>0?e/f:0,pcc=parseFloat(a.facturacion_pct_cc||0);
+        const col=agColor(a.nombre);
+        return `<div class="agencia-card" style="border-top:3px solid ${col}">
           <div class="agencia-card-head">
-            <div class="dot" style="background:${agColor(a.nombre)}"></div>
+            <div class="dot" style="background:${col}"></div>
             <h4>${a.nombre}</h4>
-            <span class="ebitda-badge" style="background:${e>=0?'rgba(62,255,160,.12)':'rgba(240,64,96,.12)'};color:${e>=0?'var(--green)':'var(--red)'}">
-              ${fmt(a.ebitda)}
-            </span>
+            <span class="ebitda-badge" style="background:${e>=0?'#dcfce7':'#fee2e2'};color:${e>=0?'#15803d':'#b91c1c'}">${fmt(a.ebitda)}</span>
           </div>
           <div class="agencia-card-body">
-            <div class="agencia-row"><span class="agencia-row-label">Facturación</span><span>${fmt(a.facturacion_total)}</span></div>
-            <div class="agencia-row"><span class="agencia-row-label">Revenue</span><span>${fmt(a.revenue_total)}</span></div>
-            <div class="agencia-row"><span class="agencia-row-label">Sin 3709</span><span class="${parseFloat(a.ebitda_sin3709||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_sin3709)}</span></div>
-            <div class="agencia-row"><span class="agencia-row-label">Margen</span><span class="${m>=0?'val-pos':'val-neg'}">${fmtPct(m)}</span></div>
-            <div class="agencia-row"><span class="agencia-row-label">RRHH</span><span>${fmt(a.gastos_rrhh)}</span></div>
-            <div class="agencia-row"><span class="agencia-row-label">Per Cápita</span><span class="${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${fmt(a.percapita_ebitda)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Facturación</span><span class="agencia-row-val">${fmt(a.facturacion_total)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Revenue</span><span class="agencia-row-val">${fmt(a.revenue_total)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">EBITDA sin 3709</span><span class="agencia-row-val ${parseFloat(a.ebitda_sin3709||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_sin3709)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Margen</span><span class="agencia-row-val ${m>=0?'val-pos':'val-neg'}">${fmtPct(m)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">RRHH</span><span class="agencia-row-val">${fmt(a.gastos_rrhh)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Per Cápita</span><span class="agencia-row-val ${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${fmt(a.percapita_ebitda)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Personas</span><span class="agencia-row-val">${parseFloat(a.cantidad_personas||0).toFixed(1)}</span></div>
             <div class="agencia-row" style="display:block">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px">
                 <span class="agencia-row-label">CC ${fmtPct(pcc)}</span>
                 <span class="agencia-row-label">DC ${fmtPct(parseFloat(a.facturacion_pct_dc||0))}</span>
               </div>
-              <div class="bar-mini"><div class="bar-mini-fill" style="width:${(pcc*100).toFixed(1)}%;background:var(--accent)"></div></div>
+              <div class="bar-mini">
+                <div class="bar-mini-fill" style="width:${(pcc*100).toFixed(1)}%;background:${col}"></div>
+              </div>
             </div>
           </div>
         </div>`;}).join('')}
-    </div>`;
+    </div>
+    <div style="height:32px"></div>
+  `;
 
   // ── CHARTS ──
-  const cd = {
-    responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
-    scales:{
-      x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#5a5a80',font:{family:'DM Mono',size:11}}},
-      y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#5a5a80',font:{family:'DM Mono',size:11},callback:v=>fmt(v)}}
-    }
-  };
+  const o = baseOpts();
 
-  charts.fact = new Chart(document.getElementById('cFact'),{type:'bar',data:{labels:names,datasets:[{data:agencias.map(a=>parseFloat(a.facturacion_total||0)),backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:2,borderRadius:4}]},options:{...cd}});
-  charts.rev  = new Chart(document.getElementById('cRev'), {type:'bar',data:{labels:names,datasets:[{data:agencias.map(a=>parseFloat(a.revenue_total||0)),backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:2,borderRadius:4}]},options:{...cd}});
+  charts.fact = new Chart(document.getElementById('cFact'),{type:'bar',
+    data:{labels:names,datasets:[{data:ag.map(a=>parseFloat(a.facturacion_total||0)),
+      backgroundColor:colors, borderRadius:5, borderSkipped:false}]},
+    options:{...o}
+  });
+
+  charts.rev = new Chart(document.getElementById('cRev'),{type:'bar',
+    data:{labels:names,datasets:[{data:ag.map(a=>parseFloat(a.revenue_total||0)),
+      backgroundColor:colors, borderRadius:5, borderSkipped:false}]},
+    options:{...o}
+  });
 
   charts.ebitda = new Chart(document.getElementById('cEbitda'),{type:'bar',
     data:{labels:names,datasets:[
-      {label:'Con 3709',data:agencias.map(a=>parseFloat(a.ebitda||0)),backgroundColor:'rgba(200,240,64,.7)',borderColor:'#c8f040',borderWidth:2,borderRadius:4},
-      {label:'Sin 3709',data:agencias.map(a=>parseFloat(a.ebitda_sin3709||0)),backgroundColor:'rgba(64,200,240,.5)',borderColor:'#40c8f0',borderWidth:2,borderRadius:4}
+      {label:'Con 3709',data:ag.map(a=>parseFloat(a.ebitda||0)),backgroundColor:'#1a1a2e',borderRadius:4},
+      {label:'Sin 3709',data:ag.map(a=>parseFloat(a.ebitda_sin3709||0)),backgroundColor:'#6c3fc5',borderRadius:4}
     ]},
-    options:{...cd,plugins:{legend:{display:true,labels:{color:'#eeeef5',font:{family:'DM Mono',size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+    options:{...o,plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:16,boxWidth:12,boxHeight:12}},
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
   });
 
-  const margenes = agencias.map(a=>{const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);return f>0?e/f*100:0;});
+  const margenes=ag.map(a=>{const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);return f>0?e/f*100:0;});
   charts.margen = new Chart(document.getElementById('cMargen'),{type:'bar',
-    data:{labels:names,datasets:[{data:margenes,backgroundColor:margenes.map(m=>m>=0?'rgba(62,255,160,.6)':'rgba(240,64,96,.6)'),borderColor:margenes.map(m=>m>=0?'#3effa0':'#f04060'),borderWidth:2,borderRadius:4}]},
-    options:{...cd,scales:{x:{...cd.scales.x},y:{...cd.scales.y,ticks:{...cd.scales.y.ticks,callback:v=>v.toFixed(1)+'%'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw.toFixed(1)+'%'}}}}
+    data:{labels:names,datasets:[{data:margenes,
+      backgroundColor:margenes.map(m=>m>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...baseOpts(true),plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}}}
   });
 
+  const totalCC2=ag.reduce((s,a)=>s+parseFloat(a.facturacion_cc||0),0);
+  const totalDC2=ag.reduce((s,a)=>s+parseFloat(a.facturacion_dc||0),0);
   charts.ccdc = new Chart(document.getElementById('cCCDC'),{type:'doughnut',
-    data:{labels:['CC','DC'],datasets:[{data:[totalCC,totalDC],backgroundColor:['rgba(200,240,64,.7)','rgba(160,100,240,.7)'],borderColor:['#c8f040','#a064f0'],borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#eeeef5',font:{family:'DM Mono',size:11}}},tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)}}}}
+    data:{labels:['Creación de Contenido','Distribución de Contenido'],
+      datasets:[{data:[totalCC2,totalDC2],backgroundColor:['#e85d26','#6c3fc5'],borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{display:true,position:'bottom',labels:{color:'#6b7280',font:FONT,padding:14,boxWidth:12}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.label+': '+fmt(c.raw)}}}}
   });
 
   charts.cc = new Chart(document.getElementById('cCC'),{type:'bar',
     data:{labels:names,datasets:[
-      {label:'Creatividad',data:agencias.map(a=>parseFloat(a.cc_creatividad||0)),backgroundColor:'rgba(200,240,64,.7)',borderRadius:2},
-      {label:'Social Media',data:agencias.map(a=>parseFloat(a.cc_social_media||0)),backgroundColor:'rgba(64,200,240,.7)',borderRadius:2},
-      {label:'PR/Influencer',data:agencias.map(a=>parseFloat(a.cc_pr_influencer||0)),backgroundColor:'rgba(160,100,240,.7)',borderRadius:2},
-      {label:'Activación',data:agencias.map(a=>parseFloat(a.cc_activacion_prod||0)),backgroundColor:'rgba(240,112,64,.7)',borderRadius:2},
-      {label:'Otras Innov.',data:agencias.map(a=>parseFloat(a.cc_otras_innovaciones||0)),backgroundColor:'rgba(62,255,160,.7)',borderRadius:2},
+      {label:'Creatividad',data:ag.map(a=>parseFloat(a.cc_creatividad||0)),backgroundColor:'#e85d26',borderRadius:3},
+      {label:'Social Media',data:ag.map(a=>parseFloat(a.cc_social_media||0)),backgroundColor:'#0ea5b0',borderRadius:3},
+      {label:'PR/Influencer',data:ag.map(a=>parseFloat(a.cc_pr_influencer||0)),backgroundColor:'#6c3fc5',borderRadius:3},
+      {label:'Activación',data:ag.map(a=>parseFloat(a.cc_activacion_prod||0)),backgroundColor:'#d4900a',borderRadius:3},
+      {label:'Otras Innov.',data:ag.map(a=>parseFloat(a.cc_otras_innovaciones||0)),backgroundColor:'#16a34a',borderRadius:3},
     ]},
-    options:{...cd,scales:{x:{stacked:true,...cd.scales.x},y:{stacked:true,...cd.scales.y}},plugins:{legend:{display:true,labels:{color:'#eeeef5',font:{family:'DM Mono',size:10},padding:8,boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+    options:{...o,scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+      y:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
   });
 
   charts.dc = new Chart(document.getElementById('cDC'),{type:'bar',
     data:{labels:names,datasets:[
-      {label:'OFF',data:agencias.map(a=>parseFloat(a.dc_off||0)),backgroundColor:'rgba(240,192,64,.7)',borderRadius:2},
-      {label:'ON',data:agencias.map(a=>parseFloat(a.dc_on||0)),backgroundColor:'rgba(64,200,240,.6)',borderRadius:2},
-      {label:'Performance',data:agencias.map(a=>parseFloat(a.dc_performance||0)),backgroundColor:'rgba(62,255,160,.6)',borderRadius:2},
+      {label:'OFF',data:ag.map(a=>parseFloat(a.dc_off||0)),backgroundColor:'#d4900a',borderRadius:3},
+      {label:'ON',data:ag.map(a=>parseFloat(a.dc_on||0)),backgroundColor:'#0ea5b0',borderRadius:3},
+      {label:'Performance',data:ag.map(a=>parseFloat(a.dc_performance||0)),backgroundColor:'#16a34a',borderRadius:3},
     ]},
-    options:{...cd,scales:{x:{stacked:true,...cd.scales.x},y:{stacked:true,...cd.scales.y}},plugins:{legend:{display:true,labels:{color:'#eeeef5',font:{family:'DM Mono',size:10},padding:8,boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+    options:{...o,scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+      y:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
   });
 
   charts.egr = new Chart(document.getElementById('cEgr'),{type:'bar',
     data:{labels:names,datasets:[
-      {label:'RRHH',data:agencias.map(a=>parseFloat(a.gastos_rrhh||0)),backgroundColor:'rgba(240,112,64,.7)',borderRadius:2},
-      {label:'Comerciales',data:agencias.map(a=>parseFloat(a.gastos_comerciales||0)),backgroundColor:'rgba(160,100,240,.6)',borderRadius:2},
-      {label:'Administrativos',data:agencias.map(a=>parseFloat(a.gastos_admin||0)),backgroundColor:'rgba(240,192,64,.6)',borderRadius:2},
+      {label:'RRHH',data:ag.map(a=>parseFloat(a.gastos_rrhh||0)),backgroundColor:'#1a1a2e',borderRadius:3},
+      {label:'Comerciales',data:ag.map(a=>parseFloat(a.gastos_comerciales||0)),backgroundColor:'#6c3fc5',borderRadius:3},
+      {label:'Administrativos',data:ag.map(a=>parseFloat(a.gastos_admin||0)),backgroundColor:'#d4900a',borderRadius:3},
     ]},
-    options:{...cd,indexAxis:'y',scales:{x:{stacked:true,...cd.scales.x,ticks:{...cd.scales.x.ticks,callback:v=>fmt(v)}},y:{stacked:true,...cd.scales.y,grid:{display:false}}},plugins:{legend:{display:true,labels:{color:'#eeeef5',font:{family:'DM Mono',size:11},padding:12,boxWidth:10}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+    options:{...o,indexAxis:'y',
+      scales:{
+        x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}},
+        y:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:TICK_COLOR,font:{...FONT,weight:'600'}}}
+      },
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:14,boxWidth:12,boxHeight:12}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
   });
 
-  const pcVals = agencias.map(a=>parseFloat(a.percapita_ebitda||0));
+  const pcVals=ag.map(a=>parseFloat(a.percapita_ebitda||0));
   charts.pc = new Chart(document.getElementById('cPC'),{type:'bar',
-    data:{labels:names,datasets:[{data:pcVals,backgroundColor:pcVals.map(v=>v>=0?'rgba(62,255,160,.6)':'rgba(240,64,96,.6)'),borderColor:pcVals.map(v=>v>=0?'#3effa0':'#f04060'),borderWidth:2,borderRadius:4}]},
-    options:{...cd}
+    data:{labels:names,datasets:[{data:pcVals,
+      backgroundColor:pcVals.map(v=>v>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...o}
   });
 
   charts.pers = new Chart(document.getElementById('cPers'),{type:'bar',
-    data:{labels:names,datasets:[{data:agencias.map(a=>parseFloat(a.cantidad_personas||0)),backgroundColor:colors.map(c=>c+'88'),borderColor:colors,borderWidth:2,borderRadius:4}]},
-    options:{...cd,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw.toFixed(1)+' personas'}}}}
+    data:{labels:names,datasets:[{data:ag.map(a=>parseFloat(a.cantidad_personas||0)),
+      backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
+    options:{...o,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+' personas'}}}}
   });
 }
 
-window.addEventListener('DOMContentLoaded', async ()=>{ await loadUploads(); await loadLatest(); });
+window.addEventListener('DOMContentLoaded',async()=>{ await loadUploads(); await loadLatest(); });
 </script>
 </body>
 </html>
