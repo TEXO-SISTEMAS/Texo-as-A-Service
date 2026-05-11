@@ -371,39 +371,45 @@ function renderDashboard(data){
       </div>
     </div>
 
-    <div class="section-title">Facturación & Revenue <span>— contexto base</span></div>
+    <div class="section-title">1 · Rentabilidad de las 2 Arenas <span>— DC vs CC</span></div>
     <div class="charts-grid">
-      <div class="chart-card"><div class="chart-title">Facturación por Agencia</div><div class="chart-subtitle">Con 3709 incluido — Miles de Gs.</div><div class="chart-wrap"><canvas id="cFact"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Revenue por Agencia</div><div class="chart-subtitle">Miles de Gs.</div><div class="chart-wrap"><canvas id="cRev"></canvas></div></div>
-    </div>
-
-    <div class="section-title">1 · Rentabilidad de las 2 Arenas <span>— DC y CC · con y sin 3709</span></div>
-    <div class="charts-grid triple">
       <div class="chart-card"><div class="chart-title">EBITDA DC vs CC</div><div class="chart-subtitle">Resultado operativo por arena y agencia</div><div class="chart-wrap"><canvas id="cEbitdaDCCC"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">EBITDA — Con vs Sin 3709</div><div class="chart-subtitle">Impacto del cliente 3709 por agencia</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Margen EBITDA %</div><div class="chart-subtitle">EBITDA / Facturación</div><div class="chart-wrap"><canvas id="cMargen"></canvas></div></div>
     </div>
 
-    <div class="section-title">2 · Eficiencia <span>— rendimiento de inversión y aporte per-cápita</span></div>
+    <div class="section-title">2 · Sin 3709</div>
+    <div class="charts-grid">
+      <div class="chart-card wide"><div class="chart-title">EBITDA — Con vs Sin 3709</div><div class="chart-subtitle">Impacto del cliente 3709 por agencia</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
+    </div>
+
+    <div class="section-title">3 · Eficiencia <span>— rendimiento de inversión y aporte per-cápita</span></div>
     <div class="charts-grid triple">
       <div class="chart-card"><div class="chart-title">Rendimiento de Inversión</div><div class="chart-subtitle">EBITDA / Total Egresos por agencia</div><div class="chart-wrap"><canvas id="cRendInv"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">EBITDA Per Cápita</div><div class="chart-subtitle">Miles de Gs. por persona</div><div class="chart-wrap"><canvas id="cPC"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Dotación por Agencia</div><div class="chart-subtitle">Personas promedio</div><div class="chart-wrap"><canvas id="cPers"></canvas></div></div>
     </div>
 
-    <div class="section-title">3 · Aporte de Innovación <span>— servicios que escalan rápido</span></div>
+    <div class="section-title">4 · Aporte de Innovación <span>— servicios que escalan rápido</span></div>
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">Innovación por Agencia</div><div class="chart-subtitle">Otras Innov. · PR/Influencer · Social Media — facturación CC</div><div class="chart-wrap"><canvas id="cInnov"></canvas></div></div>
     </div>
 
-    <div class="section-title">4 · Expertise Foco & 5 · Concentración de Fee</div>
+    <div class="section-title">5 · Expertise Foco</div>
     <div class="charts-grid">
-      <div class="chart-card"><div class="chart-title">Expertise Foco</div><div class="chart-subtitle">Distribución CC normalizada — sub-arena dominante = foco de cada agencia</div><div class="chart-wrap"><canvas id="cFoco"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Concentración de Fee</div><div class="chart-subtitle">% sub-arena CC dominante sobre total CC — verde &lt;50% · amarillo 50–70% · rojo ≥70%</div><div class="chart-wrap"><canvas id="cConc"></canvas></div></div>
+      <div class="chart-card wide"><div class="chart-title">Expertise Foco por Agencia</div><div class="chart-subtitle">Distribución CC normalizada — sub-arena dominante = foco de cada agencia</div><div class="chart-wrap"><canvas id="cFoco"></canvas></div></div>
     </div>
 
-    <div class="section-title">Mix & Egresos <span>— soporte</span></div>
-    <div class="charts-grid triple">
+    <div class="section-title">6 · Concentración de Fee</div>
+    <div class="charts-grid">
+      <div class="chart-card wide"><div class="chart-title">Concentración de Fee por Agencia</div><div class="chart-subtitle">% sub-arena CC dominante sobre total CC — verde &lt;50% · amarillo 50–70% · rojo ≥70%</div><div class="chart-wrap"><canvas id="cConc"></canvas></div></div>
+    </div>
+
+    <div class="section-title">Soporte <span>— contexto & detalle</span></div>
+    <div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">Facturación por Agencia</div><div class="chart-subtitle">Con 3709 incluido — Miles de Gs.</div><div class="chart-wrap"><canvas id="cFact"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Revenue por Agencia</div><div class="chart-subtitle">Miles de Gs.</div><div class="chart-wrap"><canvas id="cRev"></canvas></div></div>
+    </div>
+    <div class="charts-grid triple" style="margin-top:0">
       <div class="chart-card"><div class="chart-title">Mix CC / DC</div><div class="chart-subtitle">Distribución consolidada</div><div class="chart-wrap"><canvas id="cCCDC"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Sub-Arenas CC</div><div class="chart-subtitle">Por agencia — apilado</div><div class="chart-wrap"><canvas id="cCC"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Sub-Arenas DC</div><div class="chart-subtitle">OFF · ON · Performance</div><div class="chart-wrap"><canvas id="cDC"></canvas></div></div>
@@ -412,7 +418,7 @@ function renderDashboard(data){
       <div class="chart-card wide"><div class="chart-title">Egresos por Agencia</div><div class="chart-subtitle">RRHH · Comerciales · Administrativos — Miles de Gs.</div><div class="chart-wrap"><canvas id="cEgr"></canvas></div></div>
     </div>
 
-    <div class="section-title">Detalle por Agencia</div>
+    <div class="section-title" style="margin-top:16px">Detalle por Agencia</div>
     <div class="table-wrap"><table>
       <thead><tr>
         <th>Agencia</th><th>Facturación</th><th>Revenue</th>
