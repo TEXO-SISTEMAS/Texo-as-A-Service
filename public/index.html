@@ -379,6 +379,12 @@ function renderDashboard(data){
       <div class="chart-card"><div class="chart-title">Aporte de Innovación</div><div class="chart-subtitle">Innov. + PR/Influencer + Social Media — facturación CC</div><div class="chart-wrap"><canvas id="cInnov"></canvas></div></div>
     </div>
 
+    <div class="section-title">Expertise Foco & Concentración de Fee</div>
+    <div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">Expertise Foco por Agencia</div><div class="chart-subtitle">Distribución CC normalizada — sub-arena dominante = foco</div><div class="chart-wrap"><canvas id="cFoco"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Concentración de Fee</div><div class="chart-subtitle">% de la sub-arena CC dominante sobre el total CC</div><div class="chart-wrap"><canvas id="cConc"></canvas></div></div>
+    </div>
+
     <div class="section-title">Mix de Arenas & Sub-Arenas</div>
     <div class="charts-grid triple">
       <div class="chart-card"><div class="chart-title">Mix CC / DC</div><div class="chart-subtitle">Distribución consolidada</div><div class="chart-wrap"><canvas id="cCCDC"></canvas></div></div>
@@ -429,10 +435,12 @@ function renderDashboard(data){
 
     <div class="section-title">Vista Individual por Agencia</div>
     <div class="agencia-cards">
-      ${ag.map(a=>{
+      ${ag.map((a,idx)=>{
         const e=parseFloat(a.ebitda||0),f=parseFloat(a.facturacion_total||0);
         const m=f>0?e/f:0,pcc=parseFloat(a.facturacion_pct_cc||0);
         const col=agColor(a.nombre);
+        const fi=focoInfo[idx];
+        const concColor=fi.pct>=0.7?'#d42b4f':fi.pct>=0.5?'#d4900a':'#16a34a';
         return `<div class="agencia-card" style="border-top:3px solid ${col}">
           <div class="agencia-card-head">
             <div class="dot" style="background:${col}"></div>
@@ -447,6 +455,8 @@ function renderDashboard(data){
             <div class="agencia-row"><span class="agencia-row-label">EBITDA CC</span><span class="agencia-row-val ${parseFloat(a.ebitda_cc||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_cc)}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">Rend. Inversión</span><span class="agencia-row-val ${(parseFloat(a.total_egresos||0)>0?parseFloat(a.ebitda||0)/parseFloat(a.total_egresos||0):0)>=0?'val-pos':'val-neg'}">${parseFloat(a.total_egresos||0)>0?((parseFloat(a.ebitda||0)/parseFloat(a.total_egresos||0))*100).toFixed(1)+'%':'—'}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">Aporte Innovación</span><span class="agencia-row-val">${fmt(a.aporte_innovacion)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Expertise Foco</span><span class="agencia-row-val" style="color:${col}">${fi.name}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Concentración Fee</span><span class="agencia-row-val" style="color:${concColor}">${(fi.pct*100).toFixed(1)}%</span></div>
             <div class="agencia-row"><span class="agencia-row-label">Margen</span><span class="agencia-row-val ${m>=0?'val-pos':'val-neg'}">${fmtPct(m)}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">RRHH</span><span class="agencia-row-val">${fmt(a.gastos_rrhh)}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">Per Cápita</span><span class="agencia-row-val ${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${fmt(a.percapita_ebitda)}</span></div>
@@ -561,6 +571,46 @@ function renderDashboard(data){
     data:{labels:names,datasets:[{data:ag.map(a=>parseFloat(a.cantidad_personas||0)),
       backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{...o,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+' personas'}}}}
+  });
+
+  const CC_LABELS = ['Creatividad','Social Media','PR/Influencer','Activación','Otras Innov.','Asesorías','Branding','Estrategias'];
+  const CC_KEYS   = ['cc_creatividad','cc_social_media','cc_pr_influencer','cc_activacion_prod','cc_otras_innovaciones','cc_asesorias','cc_branding','cc_estrategias'];
+  const CC_COLORS = ['#e85d26','#0ea5b0','#6c3fc5','#d4900a','#16a34a','#d42b4f','#f59e0b','#64748b'];
+
+  const focoInfo = ag.map(a => {
+    let maxVal=0, maxName='—';
+    CC_KEYS.forEach((k,i)=>{ const v=parseFloat(a[k]||0); if(v>maxVal){maxVal=v;maxName=CC_LABELS[i];} });
+    const ccTot=parseFloat(a.facturacion_cc||0);
+    return { name: maxName, pct: ccTot>0?maxVal/ccTot:0 };
+  });
+
+  charts.foco = new Chart(document.getElementById('cFoco'),{type:'bar',
+    data:{labels:names,datasets:CC_KEYS.map((k,i)=>({
+      label:CC_LABELS[i],
+      data:ag.map(a=>{ const cc=parseFloat(a.facturacion_cc||0); return cc>0?parseFloat(a[k]||0)/cc*100:0; }),
+      backgroundColor:CC_COLORS[i], borderRadius:3,
+    }))},
+    options:{...baseOpts(true),scales:{
+      x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+      y:{stacked:true,max:100,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>v+'%'}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}}}
+  });
+
+  const concVals = focoInfo.map(f=>f.pct*100);
+  charts.conc = new Chart(document.getElementById('cConc'),{type:'bar',
+    data:{labels:names,datasets:[{
+      data:concVals,
+      backgroundColor:concVals.map(v=>v>=70?'#d42b4f':v>=50?'#d4900a':'#16a34a'),
+      borderRadius:5,borderSkipped:false
+    }]},
+    options:{...baseOpts(true),
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:(c,i)=>focoInfo[c.dataIndex].name+': '+c.raw.toFixed(1)+'%'}}},
+      scales:{
+        x:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+        y:{max:100,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>v+'%'}}
+      }
+    }
   });
 
   charts.ebitdaDCCC = new Chart(document.getElementById('cEbitdaDCCC'),{type:'bar',
