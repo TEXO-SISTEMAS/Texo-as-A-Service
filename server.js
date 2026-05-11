@@ -161,7 +161,7 @@ REGLAS DE COMPORTAMIENTO:
 7. Mantén respuestas claras y directas. Para explicaciones complejas, usa listas o pasos numerados.`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-opus-4-7',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       system: systemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content }))
