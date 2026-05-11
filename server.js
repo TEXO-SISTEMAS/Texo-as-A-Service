@@ -114,6 +114,47 @@ app.get('/api/diag', async (req, res) => {
   res.json(result);
 });
 
+// ── HISTORIAL DE CHATS ───────────────────────────────────────────────────────
+app.get('/api/chat/history', async (req, res) => {
+  try {
+    const files = await drive.listChats();
+    res.json(files.map(f => ({ id: f.id, nombre: f.name, created_at: f.createdTime })));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/chat/history/:id', async (req, res) => {
+  try {
+    const data = await drive.getChat(req.params.id);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/chat/save', async (req, res) => {
+  try {
+    const { messages, title } = req.body;
+    if (!messages?.length) return res.status(400).json({ error: 'messages requerido' });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const nombre = `chat-${timestamp}.json`;
+    const saved = await drive.saveChat(nombre, { title, messages, saved_at: new Date().toISOString() });
+    res.json({ ok: true, id: saved.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/chat/history/:id', async (req, res) => {
+  try {
+    await drive.deleteChat(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── CHAT AI ───────────────────────────────────────────────────────────────────
 app.post('/api/chat', async (req, res) => {
   try {

@@ -59,4 +59,42 @@ async function getLatest() {
   return await getUpload(files[0].id);
 }
 
-module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest };
+async function saveChat(nombre, data) {
+  const drive = getDrive();
+  const stream = Readable.from([JSON.stringify(data)]);
+  const res = await drive.files.create({
+    requestBody: { name: nombre, mimeType: 'application/json', parents: [FOLDER_ID] },
+    media: { mimeType: 'application/json', body: stream },
+    fields: 'id, name, createdTime',
+    supportsAllDrives: true
+  });
+  return res.data;
+}
+
+async function listChats() {
+  const drive = getDrive();
+  const res = await drive.files.list({
+    q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name contains 'chat-' and trashed=false`,
+    fields: 'files(id, name, createdTime)',
+    orderBy: 'createdTime desc',
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true
+  });
+  return res.data.files || [];
+}
+
+async function getChat(fileId) {
+  const drive = getDrive();
+  const res = await drive.files.get(
+    { fileId, alt: 'media', supportsAllDrives: true },
+    { responseType: 'text' }
+  );
+  return JSON.parse(res.data);
+}
+
+async function deleteChat(fileId) {
+  const drive = getDrive();
+  await drive.files.delete({ fileId, supportsAllDrives: true });
+}
+
+module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, listChats, getChat, deleteChat };
