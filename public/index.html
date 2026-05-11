@@ -28,7 +28,6 @@
   --green:  #16a34a;
   --red:    #d42b4f;
   --warn:   #d4900a;
-  --sidebar-w: 260px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
@@ -58,30 +57,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 /* ── LAYOUT ── */
 .layout{display:flex;flex:1;overflow:hidden}
 
-/* ── SIDEBAR ── */
-.sidebar{
-  width:var(--sidebar-w);flex-shrink:0;
-  background:var(--white);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;overflow:hidden;
-}
-.sidebar-head{
-  padding:20px 20px 14px;
-  font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--muted2);border-bottom:1px solid var(--border);flex-shrink:0;
-}
-.sidebar-list{flex:1;overflow-y:auto;padding:12px}
-.sidebar-list::-webkit-scrollbar{width:3px}
-.sidebar-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-.upload-item{padding:12px 14px;border-radius:8px;cursor:pointer;border:1.5px solid transparent;margin-bottom:6px;transition:all .15s}
-.upload-item:hover{background:#f8f9fb;border-color:var(--border)}
-.upload-item.active{background:#f0f4ff;border-color:#6c3fc5}
-.upload-item-name{font-size:11px;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
-.upload-item.active .upload-item-name{color:#6c3fc5}
-.upload-item-date{font-size:10px;color:var(--muted2)}
-.upload-item-actions{margin-top:8px}
-.empty-state{padding:32px 16px;text-align:center;color:var(--muted2);font-size:12px;line-height:1.8}
 
 /* ── MAIN ── */
 .main{flex:1;overflow-y:auto;padding:32px 36px;padding-bottom:0}
@@ -197,10 +172,6 @@ tbody td:first-child{text-align:left;font-weight:600}
 
 <!-- LAYOUT -->
 <div class="layout">
-  <div class="sidebar">
-    <div class="sidebar-head">Historial de cargas</div>
-    <div class="sidebar-list" id="uploadList"><div class="empty-state">Cargando...</div></div>
-  </div>
   <div class="main" id="main">
     <div class="no-data" id="noData">
       <div class="no-data-icon">📊</div>
@@ -269,16 +240,7 @@ let activeId=null;
 async function loadUploads(){
   const r=await fetch('/api/uploads');
   const uploads=await r.json();
-  const list=document.getElementById('uploadList');
-  if(!uploads.length){ list.innerHTML='<div class="empty-state">Todavía no hay datos.<br>Cargá un Excel para comenzar.</div>'; return; }
-  list.innerHTML=uploads.map(u=>`
-    <div class="upload-item ${u.id==activeId?'active':''}" onclick="loadDashboard('${u.id}')">
-      <div class="upload-item-name" title="${u.nombre}">${u.nombre}</div>
-      <div class="upload-item-date">${new Date(u.uploaded_at).toLocaleString('es-PY',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
-      <div class="upload-item-actions">
-        <button class="btn btn-danger" onclick="event.stopPropagation();deleteUpload('${u.id}')">✕ Eliminar</button>
-      </div>
-    </div>`).join('');
+  return uploads;
 }
 
 async function deleteUpload(id){
