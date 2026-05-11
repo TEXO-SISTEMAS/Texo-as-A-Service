@@ -6,6 +6,7 @@
 <title>Texo as a Service — Salud Financiera</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 :root {
   --bg: #f4f5f7;
@@ -211,6 +212,21 @@ tbody td:first-child{text-align:left;font-weight:600}
 }
 .chat-send:disabled{opacity:.4;cursor:default}
 .chat-disclaimer{font-size:11px;color:var(--muted2);text-align:center;padding:0 12px 9px;flex-shrink:0;line-height:1.4}
+
+/* markdown rendered inside chat */
+.chat-msg.rendered{white-space:normal}
+.chat-msg.rendered p{margin:0 0 8px}
+.chat-msg.rendered p:last-child{margin-bottom:0}
+.chat-msg.rendered h1,.chat-msg.rendered h2,.chat-msg.rendered h3{font-size:13.5px;font-weight:700;margin:10px 0 4px}
+.chat-msg.rendered ul,.chat-msg.rendered ol{padding-left:18px;margin:4px 0 8px}
+.chat-msg.rendered li{margin-bottom:3px}
+.chat-msg.rendered strong{font-weight:700}
+.chat-msg.rendered em{font-style:italic}
+.chat-msg.rendered hr{border:none;border-top:1px solid var(--border);margin:8px 0}
+.chat-msg.rendered table{border-collapse:collapse;width:100%;margin:8px 0;font-size:12.5px}
+.chat-msg.rendered th{background:rgba(0,0,0,.06);font-weight:700;padding:5px 8px;border:1px solid var(--border2);text-align:left}
+.chat-msg.rendered td{padding:5px 8px;border:1px solid var(--border2)}
+.chat-msg.rendered code{background:rgba(0,0,0,.07);border-radius:3px;padding:1px 5px;font-family:'DM Mono',monospace;font-size:12px}
 .btn-ai{background:rgba(240,240,64,.15);color:#f0f040;border:1px solid rgba(240,240,64,.3)}
 .btn-ai:hover{background:rgba(240,240,64,.25)}
 .btn-ai.active{background:#f0f040;color:#0f1117}
@@ -255,9 +271,9 @@ tbody td:first-child{text-align:left;font-weight:600}
         <button class="chat-close" onclick="toggleChat()" title="Cerrar">✕</button>
       </div>
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-msg assistant">Hola, soy tu asistente de Salud Financiera POAS. Puedo ayudarte a interpretar los datos de rentabilidad, EBITDA, eficiencia, innovación y concentración de las agencias. ¿En qué te puedo ayudar?</div>
+        <div class="chat-msg assistant rendered">Hola, soy tu asistente de Salud Financiera de <strong>Texo as a Service</strong>. Puedo ayudarte a interpretar los datos de rentabilidad, EBITDA, eficiencia, innovación y concentración de las agencias. ¿En qué te puedo ayudar?</div>
       </div>
-      <div class="chat-disclaimer">Responde exclusivamente sobre Salud Financiera de las agencias POAS</div>
+      <div class="chat-disclaimer">Responde exclusivamente sobre Salud Financiera de Texo as a Service</div>
       <div class="chat-input-row">
         <textarea class="chat-input" id="chatInput" rows="1" placeholder="Consultá sobre los datos financieros..." onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
         <button class="chat-send" id="chatSend" onclick="sendChat()">➤</button>
@@ -763,8 +779,13 @@ function chatKeydown(e) {
 function appendMsg(role, text) {
   const wrap = document.getElementById('chatMessages');
   const div = document.createElement('div');
-  div.className = 'chat-msg ' + role;
-  div.textContent = text;
+  if (role === 'assistant') {
+    div.className = 'chat-msg assistant rendered';
+    div.innerHTML = marked.parse(text);
+  } else {
+    div.className = 'chat-msg ' + role;
+    div.textContent = text;
+  }
   wrap.appendChild(div);
   wrap.scrollTop = wrap.scrollHeight;
   return div;
