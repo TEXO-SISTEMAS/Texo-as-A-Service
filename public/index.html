@@ -315,6 +315,17 @@ function renderDashboard(data){
   const totalEbitdaDC     =ag.reduce((s,a)=>s+parseFloat(a.ebitda_dc||0),0);
   const totalEbitdaCC     =ag.reduce((s,a)=>s+parseFloat(a.ebitda_cc||0),0);
 
+  const CC_LABELS = ['Creatividad','Social Media','PR/Influencer','Activación','Otras Innov.','Asesorías','Branding','Estrategias'];
+  const CC_KEYS   = ['cc_creatividad','cc_social_media','cc_pr_influencer','cc_activacion_prod','cc_otras_innovaciones','cc_asesorias','cc_branding','cc_estrategias'];
+  const CC_COLORS = ['#e85d26','#0ea5b0','#6c3fc5','#d4900a','#16a34a','#d42b4f','#f59e0b','#64748b'];
+
+  const focoInfo = ag.map(a => {
+    let maxVal=0, maxName='—';
+    CC_KEYS.forEach((k,i)=>{ const v=parseFloat(a[k]||0); if(v>maxVal){maxVal=v;maxName=CC_LABELS[i];} });
+    const ccTot=parseFloat(a.facturacion_cc||0);
+    return { name: maxName, pct: ccTot>0?maxVal/ccTot:0 };
+  });
+
   document.getElementById('dashboard').innerHTML = `
     <div class="section-title">Consolidado General</div>
     <div class="kpi-grid">
@@ -571,17 +582,6 @@ function renderDashboard(data){
     data:{labels:names,datasets:[{data:ag.map(a=>parseFloat(a.cantidad_personas||0)),
       backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
     options:{...o,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+' personas'}}}}
-  });
-
-  const CC_LABELS = ['Creatividad','Social Media','PR/Influencer','Activación','Otras Innov.','Asesorías','Branding','Estrategias'];
-  const CC_KEYS   = ['cc_creatividad','cc_social_media','cc_pr_influencer','cc_activacion_prod','cc_otras_innovaciones','cc_asesorias','cc_branding','cc_estrategias'];
-  const CC_COLORS = ['#e85d26','#0ea5b0','#6c3fc5','#d4900a','#16a34a','#d42b4f','#f59e0b','#64748b'];
-
-  const focoInfo = ag.map(a => {
-    let maxVal=0, maxName='—';
-    CC_KEYS.forEach((k,i)=>{ const v=parseFloat(a[k]||0); if(v>maxVal){maxVal=v;maxName=CC_LABELS[i];} });
-    const ccTot=parseFloat(a.facturacion_cc||0);
-    return { name: maxName, pct: ccTot>0?maxVal/ccTot:0 };
   });
 
   charts.foco = new Chart(document.getElementById('cFoco'),{type:'bar',
