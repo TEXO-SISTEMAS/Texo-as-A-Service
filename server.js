@@ -33,8 +33,8 @@ app.post('/api/upload', upload.single('archivo'), async (req, res) => {
 
     res.json({ ok: true, fileId: saved.id, agencias: parsed.agencias.length, fecha_corte: parsed.fecha_corte });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error('ERROR /api/upload:', err);
+    res.status(500).json({ error: err.message, detail: err.response?.data || null });
   }
 });
 
@@ -48,7 +48,8 @@ app.get('/api/uploads', async (req, res) => {
       uploaded_at: f.createdTime
     })));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('ERROR /api/uploads:', err);
+    res.status(500).json({ error: err.message, detail: err.response?.data || null });
   }
 });
 
@@ -81,6 +82,33 @@ app.delete('/api/uploads/:id', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── DIAGNÓSTICO ───────────────────────────────────────────────────────────────
+app.get('/api/diag', async (req, res) => {
+  const result = {
+    folder_id: process.env.DRIVE_FOLDER_ID || 'NO SETEADO',
+    service_account_ok: false,
+    service_account_email: null,
+    drive_connection: null,
+    error: null
+  };
+  try {
+    const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+    result.service_account_ok = true;
+    result.service_account_email = creds.client_email;
+  } catch(e) {
+    result.error = 'GOOGLE_SERVICE_ACCOUNT invalido: ' + e.message;
+    return res.json(result);
+  }
+  try {
+    const files = await drive.listUploads();
+    result.drive_connection = 'OK — ' + files.length + ' archivos encontrados';
+  } catch(e) {
+    result.drive_connection = 'ERROR: ' + e.message;
+    result.error = e.response?.data || e.message;
+  }
+  res.json(result);
 });
 
 // ── START ─────────────────────────────────────────────────────────────────────
