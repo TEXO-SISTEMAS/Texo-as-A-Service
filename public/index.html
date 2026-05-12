@@ -223,6 +223,7 @@ tbody td:first-child{text-align:left;font-weight:600}
 }
 .chat-send:disabled{opacity:.4;cursor:default}
 .chat-disclaimer{font-size:11px;color:var(--muted2);text-align:center;padding:0 12px 9px;flex-shrink:0;line-height:1.4}
+.chat-chart-wrap{width:100%;height:190px;position:relative;margin-top:10px;background:#fff;border-radius:8px;padding:8px;border:1px solid var(--border)}
 
 /* markdown rendered inside chat */
 .chat-msg.rendered{white-space:normal}
@@ -884,6 +885,97 @@ function chatKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
 }
 
+const AGENCY_COLORS = ['#e85d26','#6c3fc5','#0ea5b0','#d4900a','#d42b4f'];
+const CHAT_GRID = 'rgba(0,0,0,.06)';
+const CHAT_TICK = {color:'#6b7280',font:{size:11,family:'Inter'}};
+const CHAT_BASE_OPTS = {responsive:true,maintainAspectRatio:false,animation:{duration:400},
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117'}},
+  scales:{x:{grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK},
+          y:{grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK}}};
+
+const CHAT_CHARTS = {
+  ebitda: ag => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.ebitda/1e6),
+      backgroundColor:ag.map(a=>a.ebitda>=0?'#16a34a':'#d42b4f'),borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  margen: ag => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{
+      data:ag.map(a=>a.revenue_total>0?a.ebitda/a.revenue_total*100:0),
+      backgroundColor:AGENCY_COLORS,borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}}),
+
+  sin3709: ag => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[
+      {label:'Con 3709',data:ag.map(a=>a.ebitda/1e6),backgroundColor:'#16a34a',borderRadius:4},
+      {label:'Sin 3709',data:ag.map(a=>a.ebitda_sin3709/1e6),backgroundColor:'#d4900a',borderRadius:4}]},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:{display:true,position:'top',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  rendimiento: ag => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{
+      data:ag.map(a=>a.total_egresos>0?a.ebitda/a.total_egresos*100:0),
+      backgroundColor:ag.map(a=>a.total_egresos>0&&a.ebitda/a.total_egresos>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}}),
+
+  percapita: ag => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{
+      data:ag.map(a=>a.percapita_ebitda/1e6),
+      backgroundColor:AGENCY_COLORS,borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  concentracion: ag => {
+    const CC_KEYS=['cc_creatividad','cc_social_media','cc_pr_influencer','cc_activacion_prod','cc_otras_innovaciones','cc_asesorias','cc_branding','cc_estrategias'];
+    const vals=ag.map(a=>{let mx=0;CC_KEYS.forEach(k=>{const v=parseFloat(a[k]||0);if(v>mx)mx=v;});return a.facturacion_cc>0?mx/a.facturacion_cc*100:0;});
+    return {type:'bar',
+      data:{labels:ag.map(a=>a.nombre),datasets:[{data:vals,
+        backgroundColor:vals.map(v=>v>=70?'#d42b4f':v>=50?'#d4900a':'#16a34a'),borderRadius:5,borderSkipped:false}]},
+      options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+        scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,max:100,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}};},
+
+  innovacion: ag => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[
+      {label:'Otras Innov.',data:ag.map(a=>a.cc_otras_innovaciones/1e6),backgroundColor:'#16a34a',borderRadius:3},
+      {label:'PR/Influencer',data:ag.map(a=>a.cc_pr_influencer/1e6),backgroundColor:'#6c3fc5',borderRadius:3},
+      {label:'Social Media',data:ag.map(a=>a.cc_social_media/1e6),backgroundColor:'#0ea5b0',borderRadius:3}]},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:{display:true,position:'top',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+      scales:{x:{stacked:true,grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK},
+              y:{stacked:true,grid:{color:CHAT_GRID},border:{display:false},ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  facturacion: ag => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{
+      data:ag.map(a=>a.facturacion_total/1e6),
+      backgroundColor:AGENCY_COLORS,borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+};
+
+let chatChartCount = 0;
+function renderChatChart(container, key) {
+  const data = window._dashData;
+  if (!data?.agencias?.length || !CHAT_CHARTS[key]) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-chart-wrap';
+  const canvas = document.createElement('canvas');
+  canvas.id = 'chatChart_' + (chatChartCount++);
+  wrap.appendChild(canvas);
+  container.appendChild(wrap);
+  new Chart(canvas, CHAT_CHARTS[key](data.agencias));
+}
+
 function scrollToChart(id) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -902,9 +994,11 @@ function appendMsg(role, text) {
   const div = document.createElement('div');
   if (role === 'assistant') {
     const scrollMatch = text.match(/\[\[SCROLL:([^\]]+)\]\]/);
-    const clean = text.replace(/\[\[SCROLL:[^\]]+\]\]/g, '').trim();
+    const chartMatch = text.match(/\[\[CHART:([^\]]+)\]\]/);
+    const clean = text.replace(/\[\[SCROLL:[^\]]+\]\]/g, '').replace(/\[\[CHART:[^\]]+\]\]/g, '').trim();
     div.className = 'chat-msg assistant rendered';
     div.innerHTML = marked.parse(clean);
+    if (chartMatch) renderChatChart(div, chartMatch[1]);
     if (scrollMatch) setTimeout(() => scrollToChart(scrollMatch[1]), 400);
   } else {
     div.className = 'chat-msg ' + role;

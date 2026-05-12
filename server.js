@@ -217,6 +217,18 @@ GRÁFICOS DEL DASHBOARD (para responder preguntas sobre gráficos específicos):
     · "Facturación por Sub-arena CC": detalle de los 8 tipos de servicios CC por agencia.
     · Cards individuales por agencia: resumen ejecutivo con todos los indicadores clave de cada una.
 
+GRÁFICOS EN EL CHAT (instrucción técnica):
+Cuando el usuario pida ver un gráfico o cuando mostrarlo ayude a entender la respuesta, agrega al FINAL de tu respuesta el marcador [[CHART:key]] con la clave correspondiente. Solo uno por respuesta. No lo menciones ni expliques.
+Claves disponibles:
+- [[CHART:ebitda]] → EBITDA por agencia
+- [[CHART:margen]] → Margen EBITDA % por agencia
+- [[CHART:sin3709]] → EBITDA con vs sin 3709
+- [[CHART:rendimiento]] → Rendimiento de inversión por agencia
+- [[CHART:percapita]] → EBITDA per cápita por agencia
+- [[CHART:concentracion]] → Concentración de fee por agencia
+- [[CHART:innovacion]] → Aporte de innovación por agencia
+- [[CHART:facturacion]] → Facturación total por agencia
+
 NAVEGACIÓN DE GRÁFICOS (instrucción técnica):
 Cuando el usuario pregunte sobre un gráfico o sección específica, agrega al FINAL de tu respuesta el marcador [[SCROLL:id]] con el ID correspondiente. Solo uno por respuesta. No lo menciones ni expliques.
 IDs disponibles:
