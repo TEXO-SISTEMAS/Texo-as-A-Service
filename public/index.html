@@ -893,14 +893,14 @@ const CHAT_BASE_OPTS = {responsive:true,maintainAspectRatio:false,animation:{dur
           y:{grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK}}};
 const LEG = {display:true,position:'top',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}};
 
-function agColor(ag, agency) {
+function agHighlight(ag, agency) {
   return ag.map(a => agency && a.nombre.toUpperCase()!==agency.toUpperCase() ? 'rgba(0,0,0,.1)' : AGENCY_COLORS[AGENCY_NAMES.indexOf(a.nombre)] || '#6b7280');
 }
 
 const CHAT_CHARTS = {
   ebitda: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.ebitda/1e6),
-      backgroundColor:agency ? agColor(ag,agency) : ag.map(a=>a.ebitda>=0?'#16a34a':'#d42b4f'),
+      backgroundColor:agency ? agHighlight(ag,agency) : ag.map(a=>a.ebitda>=0?'#16a34a':'#d42b4f'),
       borderRadius:5,borderSkipped:false}]},
     options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
@@ -908,28 +908,28 @@ const CHAT_CHARTS = {
   margen: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{
       data:ag.map(a=>a.revenue_total>0?a.ebitda/a.revenue_total*100:0),
-      backgroundColor:agColor(ag,agency),borderRadius:5,borderSkipped:false}]},
+      backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
     options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}}),
 
   sin3709: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[
-      {label:'Con 3709',data:ag.map(a=>a.ebitda/1e6),backgroundColor:agency?agColor(ag,agency):'#16a34a',borderRadius:4},
-      {label:'Sin 3709',data:ag.map(a=>a.ebitda_sin3709/1e6),backgroundColor:agency?agColor(ag,agency).map(c=>c==='rgba(0,0,0,.1)'?c:'#d4900a'):'#d4900a',borderRadius:4}]},
+      {label:'Con 3709',data:ag.map(a=>a.ebitda/1e6),backgroundColor:agency?agHighlight(ag,agency):'#16a34a',borderRadius:4},
+      {label:'Sin 3709',data:ag.map(a=>a.ebitda_sin3709/1e6),backgroundColor:agency?agHighlight(ag,agency).map(c=>c==='rgba(0,0,0,.1)'?c:'#d4900a'):'#d4900a',borderRadius:4}]},
     options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
   rendimiento: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{
       data:ag.map(a=>a.total_egresos>0?a.ebitda/a.total_egresos*100:0),
-      backgroundColor:agency?agColor(ag,agency):ag.map(a=>a.total_egresos>0&&a.ebitda>=0?'#16a34a':'#d42b4f'),
+      backgroundColor:agency?agHighlight(ag,agency):ag.map(a=>a.total_egresos>0&&a.ebitda>=0?'#16a34a':'#d42b4f'),
       borderRadius:5,borderSkipped:false}]},
     options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}}),
 
   percapita: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.percapita_ebitda/1e6),
-      backgroundColor:agColor(ag,agency),borderRadius:5,borderSkipped:false}]},
+      backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
     options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
@@ -952,7 +952,7 @@ const CHAT_CHARTS = {
 
   facturacion: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.facturacion_total/1e6),
-      backgroundColor:agColor(ag,agency),borderRadius:5,borderSkipped:false}]},
+      backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
     options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
