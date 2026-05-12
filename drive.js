@@ -94,7 +94,12 @@ async function getChat(fileId) {
 
 async function deleteChat(fileId) {
   const drive = getDrive();
-  await drive.files.delete({ fileId, supportsAllDrives: true });
+  try {
+    await drive.files.delete({ fileId, supportsAllDrives: true });
+  } catch(e) {
+    // Fallback: move to trash if permanent delete fails
+    await drive.files.update({ fileId, supportsAllDrives: true, requestBody: { trashed: true } });
+  }
 }
 
 module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, listChats, getChat, deleteChat };

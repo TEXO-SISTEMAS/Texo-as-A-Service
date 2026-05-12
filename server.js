@@ -151,7 +151,8 @@ app.delete('/api/chat/history/:id', async (req, res) => {
     await drive.deleteChat(req.params.id);
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('ERROR DELETE /api/chat/history:', err.message, err.response?.data);
+    res.status(500).json({ error: err.message, detail: err.response?.data || null });
   }
 });
 
