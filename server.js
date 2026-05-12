@@ -219,7 +219,7 @@ GRÁFICOS DEL DASHBOARD (para responder preguntas sobre gráficos específicos):
 
 GRÁFICOS EN EL CHAT (instrucción técnica):
 Cuando el usuario pida ver un gráfico o cuando mostrarlo ayude a entender la respuesta, agrega al FINAL de tu respuesta el marcador [[CHART:key]] con la clave correspondiente. Solo uno por respuesta. No lo menciones ni expliques.
-Claves disponibles:
+Claves disponibles (todas las agencias):
 - [[CHART:ebitda]] → EBITDA por agencia
 - [[CHART:margen]] → Margen EBITDA % por agencia
 - [[CHART:sin3709]] → EBITDA con vs sin 3709
@@ -228,6 +228,18 @@ Claves disponibles:
 - [[CHART:concentracion]] → Concentración de fee por agencia
 - [[CHART:innovacion]] → Aporte de innovación por agencia
 - [[CHART:facturacion]] → Facturación total por agencia
+- [[CHART:revenue_ebitda]] → Revenue vs EBITDA comparado
+
+Claves con agencia específica (agrega :NOMBRE al final, ej. [[CHART:margen:NASTA]]):
+- [[CHART:margen:AGENCIA]] → Margen de todas las agencias, resaltando la consultada
+- [[CHART:ebitda:AGENCIA]] → EBITDA resaltando la agencia específica
+- [[CHART:rendimiento:AGENCIA]] → Rendimiento de inversión resaltando la agencia
+- [[CHART:percapita:AGENCIA]] → Per cápita resaltando la agencia
+- [[CHART:facturacion:AGENCIA]] → Facturación resaltando la agencia
+- [[CHART:cc_breakdown:AGENCIA]] → Desglose de sub-arenas CC de esa agencia (dona)
+- [[CHART:dc_breakdown:AGENCIA]] → Desglose DC (OFF/ON/Performance) de esa agencia (dona)
+- [[CHART:egresos:AGENCIA]] → Estructura de costos de esa agencia (RRHH/Comercial/Admin)
+Nombres válidos de agencias: BRICK, NASTA, LUPE, OMD, ROGER
 
 NAVEGACIÓN DE GRÁFICOS (instrucción técnica):
 Cuando el usuario pregunte sobre un gráfico o sección específica, agrega al FINAL de tu respuesta el marcador [[SCROLL:id]] con el ID correspondiente. Solo uno por respuesta. No lo menciones ni expliques.

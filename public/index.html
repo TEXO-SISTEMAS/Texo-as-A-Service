@@ -886,94 +886,135 @@ function chatKeydown(e) {
 }
 
 const AGENCY_COLORS = ['#e85d26','#6c3fc5','#0ea5b0','#d4900a','#d42b4f'];
+const AGENCY_NAMES  = ['BRICK','NASTA','LUPE','OMD','ROGER'];
 const CHAT_GRID = 'rgba(0,0,0,.06)';
 const CHAT_TICK = {color:'#6b7280',font:{size:11,family:'Inter'}};
 const CHAT_BASE_OPTS = {responsive:true,maintainAspectRatio:false,animation:{duration:400},
   plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117'}},
   scales:{x:{grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK},
           y:{grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK}}};
+const LEG = {display:true,position:'top',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}};
+
+function agColor(ag, agency) {
+  return ag.map(a => agency && a.nombre.toUpperCase()!==agency.toUpperCase() ? 'rgba(0,0,0,.1)' : AGENCY_COLORS[AGENCY_NAMES.indexOf(a.nombre)] || '#6b7280');
+}
 
 const CHAT_CHARTS = {
-  ebitda: ag => ({type:'bar',
+  ebitda: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.ebitda/1e6),
-      backgroundColor:ag.map(a=>a.ebitda>=0?'#16a34a':'#d42b4f'),borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+      backgroundColor:agency ? agColor(ag,agency) : ag.map(a=>a.ebitda>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
-  margen: ag => ({type:'bar',
+  margen: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{
       data:ag.map(a=>a.revenue_total>0?a.ebitda/a.revenue_total*100:0),
-      backgroundColor:AGENCY_COLORS,borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+      backgroundColor:agColor(ag,agency),borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}}),
 
-  sin3709: ag => ({type:'bar',
+  sin3709: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[
-      {label:'Con 3709',data:ag.map(a=>a.ebitda/1e6),backgroundColor:'#16a34a',borderRadius:4},
-      {label:'Sin 3709',data:ag.map(a=>a.ebitda_sin3709/1e6),backgroundColor:'#d4900a',borderRadius:4}]},
-    options:{...CHAT_BASE_OPTS,plugins:{legend:{display:true,position:'top',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+      {label:'Con 3709',data:ag.map(a=>a.ebitda/1e6),backgroundColor:agency?agColor(ag,agency):'#16a34a',borderRadius:4},
+      {label:'Sin 3709',data:ag.map(a=>a.ebitda_sin3709/1e6),backgroundColor:agency?agColor(ag,agency).map(c=>c==='rgba(0,0,0,.1)'?c:'#d4900a'):'#d4900a',borderRadius:4}]},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
-  rendimiento: ag => ({type:'bar',
+  rendimiento: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{
       data:ag.map(a=>a.total_egresos>0?a.ebitda/a.total_egresos*100:0),
-      backgroundColor:ag.map(a=>a.total_egresos>0&&a.ebitda/a.total_egresos>=0?'#16a34a':'#d42b4f'),
+      backgroundColor:agency?agColor(ag,agency):ag.map(a=>a.total_egresos>0&&a.ebitda>=0?'#16a34a':'#d42b4f'),
       borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}}),
 
-  percapita: ag => ({type:'bar',
-    data:{labels:ag.map(a=>a.nombre),datasets:[{
-      data:ag.map(a=>a.percapita_ebitda/1e6),
-      backgroundColor:AGENCY_COLORS,borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+  percapita: (ag, agency) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.percapita_ebitda/1e6),
+      backgroundColor:agColor(ag,agency),borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
-  concentracion: ag => {
+  concentracion: (ag) => {
     const CC_KEYS=['cc_creatividad','cc_social_media','cc_pr_influencer','cc_activacion_prod','cc_otras_innovaciones','cc_asesorias','cc_branding','cc_estrategias'];
     const vals=ag.map(a=>{let mx=0;CC_KEYS.forEach(k=>{const v=parseFloat(a[k]||0);if(v>mx)mx=v;});return a.facturacion_cc>0?mx/a.facturacion_cc*100:0;});
-    return {type:'bar',
-      data:{labels:ag.map(a=>a.nombre),datasets:[{data:vals,
+    return {type:'bar',data:{labels:ag.map(a=>a.nombre),datasets:[{data:vals,
         backgroundColor:vals.map(v=>v>=70?'#d42b4f':v>=50?'#d4900a':'#16a34a'),borderRadius:5,borderSkipped:false}]},
-      options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
-        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+      options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
         scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,max:100,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}};},
 
-  innovacion: ag => ({type:'bar',
+  innovacion: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[
       {label:'Otras Innov.',data:ag.map(a=>a.cc_otras_innovaciones/1e6),backgroundColor:'#16a34a',borderRadius:3},
       {label:'PR/Influencer',data:ag.map(a=>a.cc_pr_influencer/1e6),backgroundColor:'#6c3fc5',borderRadius:3},
       {label:'Social Media',data:ag.map(a=>a.cc_social_media/1e6),backgroundColor:'#0ea5b0',borderRadius:3}]},
-    options:{...CHAT_BASE_OPTS,plugins:{legend:{display:true,position:'top',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
       scales:{x:{stacked:true,grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK},
               y:{stacked:true,grid:{color:CHAT_GRID},border:{display:false},ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
-  facturacion: ag => ({type:'bar',
-    data:{labels:ag.map(a=>a.nombre),datasets:[{
-      data:ag.map(a=>a.facturacion_total/1e6),
-      backgroundColor:AGENCY_COLORS,borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+  facturacion: (ag, agency) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.facturacion_total/1e6),
+      backgroundColor:agColor(ag,agency),borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  // ── Gráficos por agencia específica ──────────────────────────────────────
+  cc_breakdown: (ag, agency) => {
+    const a = agency ? ag.find(x=>x.nombre.toUpperCase()===agency.toUpperCase()) : ag[0];
+    if (!a) return null;
+    const CC_LABELS=['Creatividad','Social Media','PR/Influencer','Activación','Otras Innov.','Asesorías','Branding','Estrategias'];
+    const CC_KEYS=['cc_creatividad','cc_social_media','cc_pr_influencer','cc_activacion_prod','cc_otras_innovaciones','cc_asesorias','cc_branding','cc_estrategias'];
+    const CC_COLORS=['#e85d26','#0ea5b0','#6c3fc5','#d4900a','#16a34a','#d42b4f','#1a1a2e','#9ca3af'];
+    const vals=CC_KEYS.map(k=>parseFloat(a[k]||0)/1e6);
+    return {type:'doughnut',data:{labels:CC_LABELS,datasets:[{data:vals,backgroundColor:CC_COLORS,borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+        plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10,padding:6}},
+          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(2)}M (${a.facturacion_cc>0?(c.raw*1e6/a.facturacion_cc*100).toFixed(1):'0'}%)`}}}}};},
+
+  egresos: (ag, agency) => {
+    const a = agency ? ag.find(x=>x.nombre.toUpperCase()===agency.toUpperCase()) : ag[0];
+    if (!a) return null;
+    return {type:'doughnut',
+      data:{labels:['RRHH','Comerciales','Administrativos'],
+        datasets:[{data:[a.gastos_rrhh/1e6,a.gastos_comerciales/1e6,a.gastos_admin/1e6],
+          backgroundColor:['#e85d26','#6c3fc5','#0ea5b0'],borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+        plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
+          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(2)}M Gs.`}}}}};},
+
+  dc_breakdown: (ag, agency) => {
+    const a = agency ? ag.find(x=>x.nombre.toUpperCase()===agency.toUpperCase()) : ag[0];
+    if (!a) return null;
+    return {type:'doughnut',
+      data:{labels:['OFF','ON','Performance'],
+        datasets:[{data:[a.dc_off/1e6,a.dc_on/1e6,a.dc_performance/1e6],
+          backgroundColor:['#6c3fc5','#0ea5b0','#d4900a'],borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+        plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
+          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(2)}M Gs.`}}}}};},
+
+  revenue_ebitda: (ag) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[
+      {label:'Revenue',data:ag.map(a=>a.revenue_total/1e6),backgroundColor:'#1a1a2e',borderRadius:4},
+      {label:'EBITDA',data:ag.map(a=>a.ebitda/1e6),backgroundColor:'#16a34a',borderRadius:4}]},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 };
 
 let chatChartCount = 0;
-function renderChatChart(container, key) {
+function renderChatChart(container, keyFull) {
+  const [key, agency] = keyFull.split(':');
   const data = window._dashData;
   if (!data?.agencias?.length || !CHAT_CHARTS[key]) return;
+  const cfg = CHAT_CHARTS[key](data.agencias, agency);
+  if (!cfg) return;
   const wrap = document.createElement('div');
   wrap.className = 'chat-chart-wrap';
   const canvas = document.createElement('canvas');
   canvas.id = 'chatChart_' + (chatChartCount++);
   wrap.appendChild(canvas);
   container.appendChild(wrap);
-  new Chart(canvas, CHAT_CHARTS[key](data.agencias));
+  new Chart(canvas, cfg);
 }
 
 function scrollToChart(id) {
