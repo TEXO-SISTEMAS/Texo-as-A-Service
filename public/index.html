@@ -421,10 +421,12 @@ async function deleteUpload(id){
 }
 
 async function loadLatest(){
-  const r=await fetch('/api/latest');
-  const data=await r.json();
-  if(data.empty){ showNoData(); return; }
-  renderDashboard(data);
+  try {
+    const r=await fetch('/api/latest');
+    const data=await r.json();
+    if(data.empty || data.error || !data.agencias?.length){ showNoData(); return; }
+    renderDashboard(data);
+  } catch(e){ showNoData(); }
 }
 
 async function loadDashboard(id){
