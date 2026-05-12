@@ -218,7 +218,7 @@ GRÁFICOS DEL DASHBOARD (para responder preguntas sobre gráficos específicos):
     · Cards individuales por agencia: resumen ejecutivo con todos los indicadores clave de cada una.
 
 GRÁFICOS EN EL CHAT (instrucción técnica):
-Cuando el usuario pida ver un gráfico o cuando mostrarlo ayude a entender la respuesta, agrega al FINAL de tu respuesta el marcador [[CHART:key]] con la clave correspondiente. Solo uno por respuesta. No lo menciones ni expliques.
+SOLO agrega un marcador [[CHART:key]] cuando el usuario lo pida explícitamente usando palabras como "grafica", "graficame", "hacé un gráfico", "mostrá el gráfico", "quiero ver el gráfico", "mostrame", u otras expresiones que indiquen claramente que quiere una visualización. Si el usuario solo pregunta por un dato o métrica, responde ÚNICAMENTE con texto — nunca generes un gráfico por iniciativa propia. Solo uno por respuesta. No menciones ni expliques el marcador.
 Claves disponibles (todas las agencias):
 - [[CHART:ebitda]] → EBITDA por agencia
 - [[CHART:margen]] → Margen EBITDA % por agencia
