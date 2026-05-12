@@ -170,7 +170,7 @@ tbody td:first-child{text-align:left;font-weight:600}
 .chat-sidebar.open{border-left:1px solid var(--border)}
 .chat-sidebar.resizing{transition:none}
 .chat-sidebar-inner{
-  flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;
+  flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative;
 }
 .chat-resize-handle{
   position:absolute;left:0;top:0;bottom:0;width:5px;
@@ -843,11 +843,10 @@ function toggleChat() {
   if (chatOpen) setTimeout(() => document.getElementById('chatInput').focus(), 300);
 }
 
-(function initResize() {
+try {
   const handle = document.getElementById('chatResizeHandle');
   const sidebar = document.getElementById('chatSidebar');
   let startX, startW;
-
   handle.addEventListener('mousedown', e => {
     startX = e.clientX;
     startW = sidebar.offsetWidth;
@@ -855,7 +854,6 @@ function toggleChat() {
     handle.classList.add('dragging');
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
-
     function onMove(e) {
       const delta = startX - e.clientX;
       const w = Math.min(CHAT_MAX, Math.max(CHAT_MIN, startW + delta));
@@ -874,7 +872,7 @@ function toggleChat() {
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
   });
-})();
+} catch(e) { console.warn('initResize:', e); }
 
 function autoResize(el) {
   el.style.height = 'auto';
