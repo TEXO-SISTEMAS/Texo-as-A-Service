@@ -1012,7 +1012,7 @@ function renderChatChart(container, keyFull) {
   canvas.id = 'chatChart_' + (chatChartCount++);
   wrap.appendChild(canvas);
   container.appendChild(wrap);
-  new Chart(canvas, cfg);
+  requestAnimationFrame(() => new Chart(canvas, cfg));
 }
 
 function scrollToChart(id) {
