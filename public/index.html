@@ -841,7 +841,10 @@ function toggleChat() {
   sidebar.classList.toggle('open', chatOpen);
   if (chatOpen) {
     sidebar.style.width = chatWidth + 'px';
-    if (!_sessionRestored) { _sessionRestored = true; restoreChatSession(); }
+    if (!_sessionRestored) {
+      _sessionRestored = true;
+      setTimeout(() => restoreChatSession(), 350);
+    }
   } else {
     sidebar.style.width = '0';
   }
