@@ -157,6 +157,9 @@ tbody td:first-child{text-align:left;font-weight:600}
 .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+@keyframes chart-pulse{0%,100%{box-shadow:0 0 0 0 rgba(26,26,46,0)}40%{box-shadow:0 0 0 6px rgba(26,26,46,.18),0 0 24px rgba(26,26,46,.1)}}
+.chart-highlight{animation:chart-pulse 1s ease 3;border:2px solid var(--accent) !important;transition:border .2s}
+
 /* ── CHAT SIDEBAR ── */
 .chat-sidebar{
   width:0;overflow:hidden;flex-shrink:0;
@@ -537,20 +540,20 @@ function renderDashboard(data){
       </div>
     </div>
 
-    <div class="section-title">1 · Rentabilidad de las 2 Arenas <span>— DC vs CC</span></div>
+    <div class="section-title" id="sec-1">1 · Rentabilidad de las 2 Arenas <span>— DC vs CC</span></div>
     <p class="section-desc">Compara el resultado operativo (EBITDA) entre Distribución de Contenido (DC) y Creación de Contenido (CC). Identifica cuál arena genera más rentabilidad por agencia y dónde se concentra el margen real del negocio.</p>
     <div class="charts-grid">
       <div class="chart-card"><div class="chart-title">EBITDA DC vs CC</div><div class="chart-subtitle">Resultado operativo por arena y agencia</div><div class="chart-wrap"><canvas id="cEbitdaDCCC"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Margen EBITDA %</div><div class="chart-subtitle">EBITDA / Facturación</div><div class="chart-wrap"><canvas id="cMargen"></canvas></div></div>
     </div>
 
-    <div class="section-title">2 · Sin 3709</div>
+    <div class="section-title" id="sec-2">2 · Sin 3709</div>
     <p class="section-desc">Muestra el impacto del cliente 3709 en el EBITDA de cada agencia. Permite evaluar la rentabilidad estructural del negocio sin ese ingreso y determinar qué tan sostenible es el resultado por sí solo.</p>
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">EBITDA — Con vs Sin 3709</div><div class="chart-subtitle">Impacto del cliente 3709 por agencia</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
     </div>
 
-    <div class="section-title">3 · Eficiencia <span>— rendimiento de inversión y aporte per-cápita</span></div>
+    <div class="section-title" id="sec-3">3 · Eficiencia <span>— rendimiento de inversión y aporte per-cápita</span></div>
     <p class="section-desc">Mide qué tan bien convierte cada agencia sus egresos en EBITDA (rendimiento de inversión) y cuánto aporta cada persona al resultado operativo (per-cápita). Agencias con mayor eficiencia generan más con menos recursos.</p>
     <div class="charts-grid triple">
       <div class="chart-card"><div class="chart-title">Rendimiento de Inversión</div><div class="chart-subtitle">EBITDA / Total Egresos por agencia</div><div class="chart-wrap"><canvas id="cRendInv"></canvas></div></div>
@@ -558,25 +561,25 @@ function renderDashboard(data){
       <div class="chart-card"><div class="chart-title">Dotación por Agencia</div><div class="chart-subtitle">Personas promedio</div><div class="chart-wrap"><canvas id="cPers"></canvas></div></div>
     </div>
 
-    <div class="section-title">4 · Aporte de Innovación <span>— servicios que escalan rápido</span></div>
+    <div class="section-title" id="sec-4">4 · Aporte de Innovación <span>— servicios que escalan rápido</span></div>
     <p class="section-desc">Refleja la facturación de servicios con mayor potencial de escala: Otras Innovaciones, PR/Influencer y Social Media. Cuanto mayor el aporte, más preparada está la agencia para crecer sin aumentar proporcionalmente sus costos.</p>
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">Innovación por Agencia</div><div class="chart-subtitle">Otras Innov. · PR/Influencer · Social Media — facturación CC</div><div class="chart-wrap"><canvas id="cInnov"></canvas></div></div>
     </div>
 
-    <div class="section-title">5 · Expertise Foco</div>
+    <div class="section-title" id="sec-5">5 · Expertise Foco</div>
     <p class="section-desc">Identifica la sub-arena CC donde cada agencia concentra su mayor facturación, revelando su área de especialización dominante. El foco define la propuesta de valor diferencial de cada agencia en el mercado.</p>
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">Expertise Foco por Agencia</div><div class="chart-subtitle">Distribución CC normalizada — sub-arena dominante = foco de cada agencia</div><div class="chart-wrap"><canvas id="cFoco"></canvas></div></div>
     </div>
 
-    <div class="section-title">6 · Concentración de Fee</div>
+    <div class="section-title" id="sec-6">6 · Concentración de Fee</div>
     <p class="section-desc">Mide el riesgo de dependencia: qué porcentaje del fee CC proviene de una sola sub-arena. Alta concentración (rojo ≥70%) indica vulnerabilidad ante cambios en ese servicio. Baja concentración (verde) refleja un portafolio más diversificado y resiliente.</p>
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">Concentración de Fee por Agencia</div><div class="chart-subtitle">% sub-arena CC dominante sobre total CC — verde &lt;50% · amarillo 50–70% · rojo ≥70%</div><div class="chart-wrap"><canvas id="cConc"></canvas></div></div>
     </div>
 
-    <div class="section-title">Análisis Complementario</div>
+    <div class="section-title" id="sec-comp">Análisis Complementario</div>
     <div class="charts-grid">
       <div class="chart-card"><div class="chart-title">Facturación por Agencia</div><div class="chart-subtitle">Con 3709 incluido — Miles de Gs.</div><div class="chart-wrap"><canvas id="cFact"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Revenue por Agencia</div><div class="chart-subtitle">Miles de Gs.</div><div class="chart-wrap"><canvas id="cRev"></canvas></div></div>
@@ -881,12 +884,28 @@ function chatKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
 }
 
+function scrollToChart(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const main = document.getElementById('main');
+  const target = el.closest?.('.chart-card') || el;
+  const offset = target.getBoundingClientRect().top + main.scrollTop - main.getBoundingClientRect().top - 24;
+  main.scrollTo({ top: offset, behavior: 'smooth' });
+  target.classList.remove('chart-highlight');
+  void target.offsetWidth;
+  target.classList.add('chart-highlight');
+  setTimeout(() => target.classList.remove('chart-highlight'), 3500);
+}
+
 function appendMsg(role, text) {
   const wrap = document.getElementById('chatMessages');
   const div = document.createElement('div');
   if (role === 'assistant') {
+    const scrollMatch = text.match(/\[\[SCROLL:([^\]]+)\]\]/);
+    const clean = text.replace(/\[\[SCROLL:[^\]]+\]\]/g, '').trim();
     div.className = 'chat-msg assistant rendered';
-    div.innerHTML = marked.parse(text);
+    div.innerHTML = marked.parse(clean);
+    if (scrollMatch) setTimeout(() => scrollToChart(scrollMatch[1]), 400);
   } else {
     div.className = 'chat-msg ' + role;
     div.textContent = text;
