@@ -833,12 +833,17 @@ const CHAT_MIN = 360;
 const CHAT_MAX = 900;
 let chatWidth = parseInt(localStorage.getItem('chatWidth') || '520');
 
+let _sessionRestored = false;
 function toggleChat() {
   chatOpen = !chatOpen;
   const sidebar = document.getElementById('chatSidebar');
   sidebar.classList.toggle('open', chatOpen);
-  if (chatOpen) sidebar.style.width = chatWidth + 'px';
-  else sidebar.style.width = '0';
+  if (chatOpen) {
+    sidebar.style.width = chatWidth + 'px';
+    if (!_sessionRestored) { _sessionRestored = true; restoreChatSession(); }
+  } else {
+    sidebar.style.width = '0';
+  }
   document.getElementById('btnChat').classList.toggle('active', chatOpen);
   if (chatOpen) setTimeout(() => document.getElementById('chatInput').focus(), 300);
 }
@@ -1087,6 +1092,7 @@ async function sendChat() {
     if (json.reply) {
       chatHistory.push({ role: 'assistant', content: json.reply });
       appendMsg('assistant', json.reply);
+      saveChatSession();
     } else {
       appendMsg('assistant', 'Error: ' + (json.error || 'Respuesta inválida'));
     }
@@ -1099,9 +1105,29 @@ async function sendChat() {
   document.getElementById('chatInput').focus();
 }
 
+function saveChatSession() {
+  try { localStorage.setItem('chatSession', JSON.stringify(chatHistory)); } catch(e) {}
+}
+
+function restoreChatSession() {
+  try {
+    const saved = localStorage.getItem('chatSession');
+    if (!saved) return;
+    const history = JSON.parse(saved);
+    if (!history?.length) return;
+    chatHistory = history;
+    const wrap = document.getElementById('chatMessages');
+    wrap.innerHTML = '';
+    chatHistory.forEach(m => appendMsg(m.role, m.content));
+    document.getElementById('chatSaving').textContent = '✓ Sesión restaurada';
+    setTimeout(() => { document.getElementById('chatSaving').textContent = ''; }, 2500);
+  } catch(e) {}
+}
+
 // ── HISTORIAL ──────────────────────────────────────────────────────────────────
 function newChat() {
   chatHistory = [];
+  try { localStorage.removeItem('chatSession'); } catch(e) {}
   const wrap = document.getElementById('chatMessages');
   wrap.innerHTML = '<div class="chat-msg assistant rendered">Hola, soy tu asistente de Salud Financiera de <strong>Texo as a Service</strong>. Puedo ayudarte a interpretar los datos de rentabilidad, EBITDA, eficiencia, innovación y concentración de las agencias. ¿En qué te puedo ayudar?</div>';
   document.getElementById('chatSaving').textContent = '';
