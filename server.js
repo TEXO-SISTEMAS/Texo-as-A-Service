@@ -6,7 +6,11 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { parseExcel } = require('./parser');
 const drive = require('./drive');
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+let _anthropic = null;
+function getAnthropic() {
+  if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return _anthropic;
+}
 
 const app    = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -276,7 +280,7 @@ REGLAS DE COMPORTAMIENTO:
 6. Nunca inventes datos. Si no tienes el dato exacto, dilo claramente.
 7. Mantén respuestas claras y directas. Para explicaciones complejas, usa listas o pasos numerados.`;
 
-    const response = await anthropic.messages.create({
+    const response = await getAnthropic().messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       system: systemPrompt,
