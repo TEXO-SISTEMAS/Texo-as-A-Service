@@ -911,20 +911,39 @@ async function exportPDF() {
   const overlay = document.getElementById('pdfOverlay');
   overlay.classList.add('show');
   try {
-    // Ocultar chat sidebar temporalmente para capturar solo el dashboard
+    const main = document.getElementById('main');
     const sidebar = document.getElementById('chatSidebar');
+
+    // Ocultar sidebar
     const prevW = sidebar.style.width;
     sidebar.style.width = '0';
-    await new Promise(r => setTimeout(r, 100));
 
-    const canvas = await html2canvas(document.getElementById('main'), {
+    // Expandir #main para capturar todo el contenido (no solo lo visible)
+    const prevOverflow = main.style.overflow;
+    const prevHeight = main.style.height;
+    const prevMaxHeight = main.style.maxHeight;
+    main.style.overflow = 'visible';
+    main.style.height = main.scrollHeight + 'px';
+    main.style.maxHeight = 'none';
+
+    await new Promise(r => setTimeout(r, 200));
+
+    const canvas = await html2canvas(main, {
       scale: 1.5,
       useCORS: true,
       backgroundColor: '#f4f5f7',
       logging: false,
+      scrollX: 0,
+      scrollY: 0,
       windowWidth: 1280,
+      width: main.scrollWidth,
+      height: main.scrollHeight,
     });
 
+    // Restaurar estilos
+    main.style.overflow = prevOverflow;
+    main.style.height = prevHeight;
+    main.style.maxHeight = prevMaxHeight;
     sidebar.style.width = prevW;
 
     const { jsPDF } = window.jspdf;
