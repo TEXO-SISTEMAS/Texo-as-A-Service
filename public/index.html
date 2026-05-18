@@ -680,7 +680,7 @@ function renderDashboard(data){
           <td>${fmt(a.aporte_innovacion)}</td>
           <td>${fmtPct(a.facturacion_pct_cc)}</td><td>${fmtPct(a.facturacion_pct_dc)}</td>
           <td>${parseFloat(a.cantidad_personas||0).toFixed(1)}</td>
-          <td class="${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${fmt(a.percapita_ebitda)}</td>
+          <td class="${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${Math.round(parseFloat(a.percapita_ebitda||0)/1e3)}M</td>
         </tr>`;}).join('')}
       </tbody>
     </table></div>
@@ -711,7 +711,7 @@ function renderDashboard(data){
             <div class="agencia-row"><span class="agencia-row-label">Concentración Fee</span><span class="agencia-row-val" style="color:${concColor}">${(fi.pct*100).toFixed(1)}%</span></div>
             <div class="agencia-row"><span class="agencia-row-label">Margen</span><span class="agencia-row-val ${m>=0?'val-pos':'val-neg'}">${fmtPct(m)}</span></div>
             <div class="agencia-row"><span class="agencia-row-label">RRHH</span><span class="agencia-row-val">${fmt(a.gastos_rrhh)}</span></div>
-            <div class="agencia-row"><span class="agencia-row-label">Per Cápita</span><span class="agencia-row-val ${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${fmt(a.percapita_ebitda)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Per Cápita</span><span class="agencia-row-val ${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${Math.round(parseFloat(a.percapita_ebitda||0)/1e3)}M</span></div>
             <div class="agencia-row"><span class="agencia-row-label">Personas</span><span class="agencia-row-val">${parseFloat(a.cantidad_personas||0).toFixed(1)}</span></div>
             <div class="agencia-row" style="display:block">
               <div style="display:flex;justify-content:space-between;margin-bottom:6px">
@@ -811,12 +811,13 @@ function renderDashboard(data){
         tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
   });
 
-  const pcVals=ag.map(a=>parseFloat(a.percapita_ebitda||0));
+  const pcVals=ag.map(a=>parseFloat(a.percapita_ebitda||0)/1e3);
   charts.pc = new Chart(document.getElementById('cPC'),{type:'bar',
     data:{labels:names,datasets:[{data:pcVals,
       backgroundColor:pcVals.map(v=>v>=0?'#16a34a':'#d42b4f'),
       borderRadius:5,borderSkipped:false}]},
-    options:{...o}
+    options:{...o, scales:{...o.scales, y:{...o.scales.y, ticks:{...o.scales.y.ticks, callback:v=>Math.round(v)+'M'}}},
+      plugins:{...o.plugins, tooltip:{...o.plugins.tooltip, callbacks:{label:c=>Math.round(c.raw)+'M Miles de Gs.'}}}}
   });
 
   charts.pers = new Chart(document.getElementById('cPers'),{type:'bar',
@@ -1085,9 +1086,9 @@ const CHAT_CHARTS = {
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}}),
 
   percapita: (ag, agency) => ({type:'bar',
-    data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.percapita_ebitda/1e6),
+    data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.percapita_ebitda/1e3),
       backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>Math.round(c.raw)+'M Miles de Gs.'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
   concentracion: (ag) => {

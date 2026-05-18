@@ -168,7 +168,8 @@ app.post('/api/chat', async (req, res) => {
 
     const agenciasResumen = data?.agencias?.length
       ? data.agencias.map(a => {
-          const fmt = v => (v/1e6).toFixed(2)+'M';
+          const fmt   = v => (v/1e6).toFixed(2)+'M';
+          const fmtPC = v => Math.round(v/1e3)+'M'; // per cápita en millones de Gs.
           const margen = a.revenue_total > 0 ? (a.ebitda / a.revenue_total * 100).toFixed(1) : '—';
           const margenSin = a.revenue_total > 0 ? (a.ebitda_sin3709 / a.revenue_total * 100).toFixed(1) : '—';
           const rendInv = a.total_egresos > 0 ? (a.ebitda / a.total_egresos * 100).toFixed(1) : '—';
@@ -178,7 +179,7 @@ app.post('/api/chat', async (req, res) => {
           CC_KEYS.forEach((k,i)=>{ const v=parseFloat(a[k]||0); if(v>maxVal){maxVal=v;maxName=CC_LABELS[i];} });
           const concPct = a.facturacion_cc > 0 ? (maxVal/a.facturacion_cc*100).toFixed(1) : '—';
           const innov = fmt((a.cc_otras_innovaciones||0)+(a.cc_pr_influencer||0)+(a.cc_social_media||0));
-          return `Agencia ${a.nombre}: Facturación total=${fmt(a.facturacion_total)} (CC=${fmt(a.facturacion_cc)}, DC=${fmt(a.facturacion_dc)}), Revenue=${fmt(a.revenue_total)}, EBITDA=${fmt(a.ebitda)} (margen ${margen}%), EBITDA sin3709=${fmt(a.ebitda_sin3709)} (margen ${margenSin}%), Rendimiento inversión=${rendInv}%, Percápita EBITDA=${fmt(a.percapita_ebitda)}, Personas=${a.cantidad_personas}, Monto3709=${fmt(a.monto3709)}, Aporte innovación=${innov}, Expertise foco=${maxName} (${concPct}% del CC), Gastos RRHH=${fmt(a.gastos_rrhh)}, Gastos comerciales=${fmt(a.gastos_comerciales)}, Gastos admin=${fmt(a.gastos_admin)}, Total egresos=${fmt(a.total_egresos)}`;
+          return `Agencia ${a.nombre}: Facturación total=${fmt(a.facturacion_total)} (CC=${fmt(a.facturacion_cc)}, DC=${fmt(a.facturacion_dc)}), Revenue=${fmt(a.revenue_total)}, EBITDA=${fmt(a.ebitda)} (margen ${margen}%), EBITDA sin3709=${fmt(a.ebitda_sin3709)} (margen ${margenSin}%), Rendimiento inversión=${rendInv}%, Percápita EBITDA=${fmtPC(a.percapita_ebitda)} Miles de Gs., Personas=${a.cantidad_personas}, Monto3709=${fmt(a.monto3709)}, Aporte innovación=${innov}, Expertise foco=${maxName} (${concPct}% del CC), Gastos RRHH=${fmt(a.gastos_rrhh)}, Gastos comerciales=${fmt(a.gastos_comerciales)}, Gastos admin=${fmt(a.gastos_admin)}, Total egresos=${fmt(a.total_egresos)}`;
         }).join('\n')
       : 'No hay datos de agencias disponibles.';
 
