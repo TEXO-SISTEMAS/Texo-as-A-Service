@@ -144,6 +144,55 @@ tbody td:first-child{text-align:left;font-weight:600}
 }
 .footer strong{color:rgba(255,255,255,.85)}
 
+/* ── HERO SECTION ── */
+.hero-section{background:var(--accent);border-radius:16px;padding:32px 36px;margin-bottom:32px;color:#fff}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:20px}
+.hero-title{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.hero-title span{color:#f0f040}
+.hero-corte{font-size:12px;color:rgba(255,255,255,.45);margin-top:6px;letter-spacing:.04em;text-transform:uppercase}
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hero-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:100px;font-size:12px;font-weight:700;letter-spacing:.02em}
+.pill-green{background:rgba(22,163,74,.2);color:#4ade80;border:1px solid rgba(22,163,74,.3)}
+.pill-yellow{background:rgba(212,144,10,.2);color:#fbbf24;border:1px solid rgba(212,144,10,.3)}
+.pill-red{background:rgba(212,43,79,.2);color:#f87171;border:1px solid rgba(212,43,79,.3)}
+.pill-gray{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15)}
+.hero-questions{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.hero-q{background:rgba(255,255,255,.07);border-radius:12px;padding:18px 20px;border:1px solid rgba(255,255,255,.1);transition:background .15s}
+.hero-q:hover{background:rgba(255,255,255,.11)}
+.hero-q-icon{font-size:18px;margin-bottom:8px}
+.hero-q-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:6px}
+.hero-q-answer{font-size:14px;font-weight:700;color:#fff;line-height:1.4}
+.hero-q-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:5px;line-height:1.4}
+.hero-q-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;margin-top:6px}
+.badge-green{background:rgba(22,163,74,.25);color:#4ade80}
+.badge-yellow{background:rgba(212,144,10,.25);color:#fbbf24}
+.badge-red{background:rgba(212,43,79,.25);color:#f87171}
+
+/* ── INSIGHTS PANEL ── */
+.insights-header{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.insights-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:32px}
+.insight-card{border-radius:10px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.insight-red{background:rgba(212,43,79,.05);border:1px solid rgba(212,43,79,.18)}
+.insight-yellow{background:rgba(212,144,10,.05);border:1px solid rgba(212,144,10,.18)}
+.insight-green{background:rgba(22,163,74,.05);border:1px solid rgba(22,163,74,.18)}
+.insight-blue{background:rgba(14,165,176,.05);border:1px solid rgba(14,165,176,.18)}
+.insight-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.insight-body{flex:1;min-width:0}
+.insight-tag{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
+.insight-tag-red{color:var(--red)}
+.insight-tag-yellow{color:var(--warn)}
+.insight-tag-green{color:var(--green)}
+.insight-tag-blue{color:var(--lupe)}
+.insight-text{font-size:13px;color:var(--text);line-height:1.5;font-weight:500}
+.insight-detail{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+
+/* ── NARRATIVE ── */
+.section-narrative{background:var(--surface);border-left:3px solid var(--border2);border-radius:0 8px 8px 0;padding:12px 16px;margin:-6px 0 20px;font-size:13px;color:var(--text);line-height:1.6;font-weight:500}
+.narrative-accent{font-weight:700}
+.narrative-green{color:var(--green)}
+.narrative-red{color:var(--red)}
+.narrative-yellow{color:var(--warn)}
+
 /* ── FULLSCREEN ── */
 body.fullscreen .topbar,
 body.fullscreen .footer { display:none !important; }
@@ -557,7 +606,153 @@ function renderDashboard(data){
     return { name: maxName, pct: ccTot>0?maxVal/ccTot:0 };
   });
 
+  // ── ANÁLISIS EJECUTIVO ────────────────────────────────────────────────────
+  const agSanas       = ag.filter(a=>parseFloat(a.ebitda)>0).length;
+  const agEBITDANeg   = ag.filter(a=>parseFloat(a.ebitda)<0);
+  const agDep3709     = ag.filter(a=>parseFloat(a.ebitda_sin3709)<0 && parseFloat(a.ebitda)>=0);
+  const saludStatus   = agSanas===ag.length?'green':agSanas>=ag.length-1?'yellow':'red';
+  const saludLabel    = agSanas===ag.length?'✓ Grupo saludable':agSanas>=ag.length-1?'⚠ Mayoría sana, con alertas':'✗ Riesgo en el grupo';
+  const saludPill     = agSanas===ag.length?'pill-green':agSanas>=ag.length-1?'pill-yellow':'pill-red';
+
+  const mejorPC       = [...ag].sort((a,b)=>parseFloat(b.percapita_ebitda)-parseFloat(a.percapita_ebitda))[0];
+  const mejorInnov    = [...ag].sort((a,b)=>parseFloat(b.aporte_innovacion)-parseFloat(a.aporte_innovacion))[0];
+  const concIdx       = focoInfo.reduce((mi,fi,i)=>fi.pct>focoInfo[mi].pct?i:mi,0);
+  const agMayorConc   = ag[concIdx];
+  const concPctVal    = Math.round(focoInfo[concIdx].pct*100);
+  const pcMejor       = Math.round(parseFloat(mejorPC.percapita_ebitda)/1e3);
+  const pcPromedio    = Math.round(ag.reduce((s,a)=>s+parseFloat(a.percapita_ebitda),0)/ag.length/1e3);
+
+  // 4 preguntas CEO
+  const qSalud = agSanas===ag.length
+    ? {ans:'Sí, todas las agencias generan ganancias', sub:`Margen consolidado: ${fmtPct(margen)}`, badge:'badge-green', label:'Sanos'}
+    : {ans:`${agEBITDANeg.map(a=>a.nombre).join(' y ')} opera${agEBITDANeg.length>1?'n':''} en pérdida`, sub:`${agSanas} de ${ag.length} agencias con EBITDA positivo`, badge:'badge-red', label:'Con riesgo'};
+
+  const qRiesgo = agDep3709.length>0
+    ? {ans:`${agDep3709.map(a=>a.nombre).join(' y ')} depende${agDep3709.length>1?'n':''} del crédito 3709`, sub:'Sin ese beneficio fiscal, el resultado sería negativo', badge:'badge-yellow', label:'Dependencia fiscal'}
+    : concPctVal>=70
+    ? {ans:`${agMayorConc.nombre} concentra el ${concPctVal}% de su CC en un solo servicio`, sub:'Alta dependencia de un tipo de ingreso', badge:'badge-yellow', label:'Concentración alta'}
+    : {ans:'Sin dependencias críticas detectadas', sub:'Diversificación saludable en el grupo', badge:'badge-green', label:'Bajo riesgo'};
+
+  const qPotencial = {
+    ans:`${mejorPC.nombre} es la más productiva por persona`,
+    sub:`${pcMejor}M Gs. por empleado — ${pcMejor>pcPromedio?Math.round(pcMejor/Math.max(pcPromedio,1))+'x':'igual al'} el promedio`,
+    badge:'badge-green', label:'Mayor eficiencia'
+  };
+
+  const qIntervencion = agEBITDANeg.length>0
+    ? {ans:`${agEBITDANeg.map(a=>a.nombre).join(' y ')} necesita${agEBITDANeg.length>1?'n':''} atención urgente`, sub:'EBITDA negativo — revisar estructura de ingresos y costos', badge:'badge-red', label:'Prioridad alta'}
+    : agDep3709.length>0
+    ? {ans:`Reducir dependencia del crédito 3709 en ${agDep3709.map(a=>a.nombre).join(' y ')}`, sub:'Estrategia de diversificación de ingresos necesaria', badge:'badge-yellow', label:'Prioridad media'}
+    : {ans:'Escalar el modelo de eficiencia de '+mejorPC.nombre, sub:'Replicar su productividad en agencias con mayor dotación', badge:'badge-green', label:'Oportunidad'};
+
+  // Insights automáticos
+  const insights=[];
+  if(agEBITDANeg.length>0) insights.push({tipo:'red',tag:'Riesgo',icon:'🔴',
+    texto:`${agEBITDANeg.map(a=>a.nombre).join(' y ')} opera${agEBITDANeg.length>1?'n':''} en pérdida operativa`,
+    detalle:'EBITDA negativo — requiere revisión inmediata de ingresos y costos'});
+  if(agDep3709.length>0) insights.push({tipo:'red',tag:'Riesgo fiscal',icon:'🔴',
+    texto:`${agDep3709.map(a=>a.nombre).join(' y ')} solo es rentable gracias al crédito 3709`,
+    detalle:'Sin ese beneficio, el resultado sería negativo. Riesgo ante cambio de política fiscal'});
+  if(concPctVal>=70) insights.push({tipo:'yellow',tag:'Tensión',icon:'🟡',
+    texto:`${agMayorConc.nombre} concentra el ${concPctVal}% de su CC en ${focoInfo[concIdx].name}`,
+    detalle:'Dependencia crítica — si ese servicio cae, arrastra la mayor parte del CC'});
+  else if(concPctVal>=50) insights.push({tipo:'yellow',tag:'Atención',icon:'🟡',
+    texto:`${agMayorConc.nombre} tiene concentración moderada (${concPctVal}%) en ${focoInfo[concIdx].name}`,
+    detalle:'Monitorear diversificación para evitar dependencia de un solo tipo de ingreso'});
+  if(pcMejor>pcPromedio*1.8) insights.push({tipo:'green',tag:'Oportunidad',icon:'🟢',
+    texto:`${mejorPC.nombre} genera ${pcMejor}M Gs. por persona — ${Math.round(pcMejor/Math.max(pcPromedio,1))}x el promedio`,
+    detalle:'Su modelo de eficiencia puede replicarse en agencias con mayor dotación'});
+  insights.push({tipo:'green',tag:'Potencial',icon:'🟢',
+    texto:`${mejorInnov.nombre} lidera en servicios de innovación con ${fmt(parseFloat(mejorInnov.aporte_innovacion))} Miles de Gs.`,
+    detalle:'Social Media, PR/Influencer e Innovación — los servicios de mayor crecimiento del mercado'});
+  if(margen<0.05) insights.push({tipo:'yellow',tag:'Atención',icon:'🟡',
+    texto:`El margen consolidado del grupo es bajo: ${fmtPct(margen)}`,
+    detalle:'Se factura mucho pero queda poco — revisar eficiencia operativa y estructura de costos'});
+  if(rendInversion>0.2) insights.push({tipo:'blue',tag:'Fortaleza',icon:'⚡',
+    texto:`El grupo convierte el ${(rendInversion*100).toFixed(0)}% de sus egresos en EBITDA`,
+    detalle:'Cada 100 Gs. invertidos generan ${(rendInversion*100).toFixed(0)} Gs. de ganancia operativa'});
+
+  // Narrativas por sección
+  const rentTop=[...ag].sort((a,b)=>parseFloat(b.ebitda)-parseFloat(a.ebitda));
+  const rentNarr = agEBITDANeg.length===0
+    ? `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> y <span class="narrative-green narrative-accent">${rentTop[1].nombre}</span> son las más rentables del grupo. Todas las agencias generan ganancia operativa positiva.`
+    : `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> lidera la rentabilidad. <span class="narrative-red narrative-accent">${agEBITDANeg.map(a=>a.nombre).join(' y ')}</span> opera${agEBITDANeg.length>1?'n':''} en pérdida — requiere${agEBITDANeg.length>1?'n':''} atención.`;
+
+  const dep3709Narr = agDep3709.length===0
+    ? 'Todas las agencias mantienen rentabilidad sin depender del crédito fiscal. El resultado del grupo es estructuralmente sólido.'
+    : `<span class="narrative-red narrative-accent">${agDep3709.map(a=>a.nombre).join(' y ')}</span> solo es${agDep3709.length>1?'n':''} rentable${agDep3709.length>1?'s':''} gracias al crédito 3709. Sin ese beneficio, su resultado sería negativo. El grupo tiene <span class="narrative-yellow narrative-accent">dependencia fiscal que debe gestionarse</span>.`;
+
+  const eficNarr = `<span class="narrative-green narrative-accent">${mejorPC.nombre}</span> es la agencia más productiva: genera <span class="narrative-accent">${pcMejor}M Gs. por persona</span>. ${pcMejor>pcPromedio*1.5?`Esto es ${Math.round(pcMejor/Math.max(pcPromedio,1))}x el promedio del grupo (${pcPromedio}M Gs.), lo que indica un modelo de eficiencia diferencial.`:'El grupo mantiene niveles de productividad similares.'}`;
+
+  const innovNarr = `<span class="narrative-green narrative-accent">${mejorInnov.nombre}</span> lidera el aporte de innovación con ${fmt(parseFloat(mejorInnov.aporte_innovacion))} Miles de Gs. en Social Media, PR e Innovaciones. Estos servicios representan el <span class="narrative-accent">${fmtPct(totalFact>0?totalInnovacion/totalFact:0)}</span> de la facturación total — el motor de crecimiento del grupo.`;
+
+  const concNarr = concPctVal>=70
+    ? `<span class="narrative-red narrative-accent">${agMayorConc.nombre}</span> tiene dependencia crítica: el <span class="narrative-accent">${concPctVal}%</span> de su CC viene de un solo servicio (${focoInfo[concIdx].name}). Ante cualquier cambio en ese rubro, la caída sería significativa.`
+    : concPctVal>=50
+    ? `<span class="narrative-yellow narrative-accent">${agMayorConc.nombre}</span> muestra concentración moderada (${concPctVal}% en ${focoInfo[concIdx].name}). Se recomienda diversificar para reducir el riesgo de dependencia.`
+    : 'El grupo mantiene una distribución de servicios saludable. Ninguna agencia tiene dependencia crítica en un solo tipo de ingreso.';
+
   document.getElementById('dashboard').innerHTML = `
+  <!-- HERO -->
+  <div class="hero-section">
+    <div class="hero-top">
+      <div>
+        <div class="hero-title">¿Cómo está el grupo? <span>Una mirada ejecutiva.</span></div>
+        <div class="hero-corte">${data.fecha_corte || 'Corte actual'} · ${ag.length} agencias · ${Math.round(totalPers)} personas</div>
+      </div>
+      <div class="hero-pills">
+        <span class="hero-pill ${saludPill}">${saludLabel}</span>
+        ${agDep3709.length>0?`<span class="hero-pill pill-yellow">⚠ ${agDep3709.length} con dependencia 3709</span>`:''}
+        ${agEBITDANeg.length>0?`<span class="hero-pill pill-red">✗ ${agEBITDANeg.length} en pérdida</span>`:''}
+        <span class="hero-pill pill-gray">Facturación ${fmt(totalFact)} Gs.</span>
+      </div>
+    </div>
+    <div class="hero-questions">
+      <div class="hero-q">
+        <div class="hero-q-icon">💚</div>
+        <div class="hero-q-label">¿Estamos sanos?</div>
+        <div class="hero-q-answer">${qSalud.ans}</div>
+        <div class="hero-q-sub">${qSalud.sub}</div>
+        <div class="hero-q-badge ${qSalud.badge}">${qSalud.label}</div>
+      </div>
+      <div class="hero-q">
+        <div class="hero-q-icon">⚠️</div>
+        <div class="hero-q-label">¿Dónde está el riesgo?</div>
+        <div class="hero-q-answer">${qRiesgo.ans}</div>
+        <div class="hero-q-sub">${qRiesgo.sub}</div>
+        <div class="hero-q-badge ${qRiesgo.badge}">${qRiesgo.label}</div>
+      </div>
+      <div class="hero-q">
+        <div class="hero-q-icon">🚀</div>
+        <div class="hero-q-label">¿Dónde está el potencial?</div>
+        <div class="hero-q-answer">${qPotencial.ans}</div>
+        <div class="hero-q-sub">${qPotencial.sub}</div>
+        <div class="hero-q-badge ${qPotencial.badge}">${qPotencial.label}</div>
+      </div>
+      <div class="hero-q">
+        <div class="hero-q-icon">🎯</div>
+        <div class="hero-q-label">¿Dónde intervenir?</div>
+        <div class="hero-q-answer">${qIntervencion.ans}</div>
+        <div class="hero-q-sub">${qIntervencion.sub}</div>
+        <div class="hero-q-badge ${qIntervencion.badge}">${qIntervencion.label}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="insights-header">Tensiones · Insights · Prioridades</div>
+  <div class="insights-grid">${insights.map(ins=>`
+    <div class="insight-card insight-${ins.tipo}">
+      <div class="insight-icon">${ins.icon}</div>
+      <div class="insight-body">
+        <div class="insight-tag insight-tag-${ins.tipo}">${ins.tag}</div>
+        <div class="insight-text">${ins.texto}</div>
+        <div class="insight-detail">${ins.detalle}</div>
+      </div>
+    </div>`).join('')}
+  </div>
+
+  <!-- CONSOLIDADO -->
     <div class="section-title">Consolidado General</div>
     <div class="kpi-grid">
       <div class="kpi kpi-accent" style="--kpi-color:#1a1a2e">
@@ -602,41 +797,41 @@ function renderDashboard(data){
       </div>
     </div>
 
-    <div class="section-title" id="sec-1">1 · Rentabilidad de las 2 Arenas <span>— DC vs CC</span></div>
-    <p class="section-desc">Compara el resultado operativo (EBITDA) entre Distribución de Contenido (DC) y Creación de Contenido (CC). Identifica cuál arena genera más rentabilidad por agencia y dónde se concentra el margen real del negocio.</p>
+    <div class="section-title" id="sec-1">1 · Rentabilidad <span>— ¿Quién gana y quién pierde?</span></div>
+    <div class="section-narrative">${rentNarr}</div>
     <div class="charts-grid">
       <div class="chart-card"><div class="chart-title">EBITDA DC vs CC</div><div class="chart-subtitle">Resultado operativo por arena y agencia</div><div class="chart-wrap"><canvas id="cEbitdaDCCC"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Margen EBITDA %</div><div class="chart-subtitle">EBITDA / Facturación</div><div class="chart-wrap"><canvas id="cMargen"></canvas></div></div>
     </div>
 
-    <div class="section-title" id="sec-2">2 · Sin 3709</div>
-    <p class="section-desc">Muestra el impacto del cliente 3709 en el EBITDA de cada agencia. Permite evaluar la rentabilidad estructural del negocio sin ese ingreso y determinar qué tan sostenible es el resultado por sí solo.</p>
+    <div class="section-title" id="sec-2">2 · Sin 3709 <span>— ¿La rentabilidad es real o depende de un subsidio?</span></div>
+    <div class="section-narrative">${dep3709Narr}</div>
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">EBITDA — Con vs Sin 3709</div><div class="chart-subtitle">Impacto del cliente 3709 por agencia</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
     </div>
 
-    <div class="section-title" id="sec-3">3 · Eficiencia <span>— rendimiento de inversión y aporte per-cápita</span></div>
-    <p class="section-desc">Mide qué tan bien convierte cada agencia sus egresos en EBITDA (rendimiento de inversión) y cuánto aporta cada persona al resultado operativo (per-cápita). Agencias con mayor eficiencia generan más con menos recursos.</p>
+    <div class="section-title" id="sec-3">3 · Eficiencia <span>— ¿Quién hace más con menos?</span></div>
+    <div class="section-narrative">${eficNarr}</div>
     <div class="charts-grid triple">
       <div class="chart-card"><div class="chart-title">Rendimiento de Inversión</div><div class="chart-subtitle">EBITDA / Total Egresos por agencia</div><div class="chart-wrap"><canvas id="cRendInv"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">EBITDA Per Cápita</div><div class="chart-subtitle">Miles de Gs. por persona</div><div class="chart-wrap"><canvas id="cPC"></canvas></div></div>
       <div class="chart-card"><div class="chart-title">Dotación por Agencia</div><div class="chart-subtitle">Personas promedio</div><div class="chart-wrap"><canvas id="cPers"></canvas></div></div>
     </div>
 
-    <div class="section-title" id="sec-4">4 · Aporte de Innovación <span>— servicios que escalan rápido</span></div>
-    <p class="section-desc">Refleja la facturación de servicios con mayor potencial de escala: Otras Innovaciones, PR/Influencer y Social Media. Cuanto mayor el aporte, más preparada está la agencia para crecer sin aumentar proporcionalmente sus costos.</p>
+    <div class="section-title" id="sec-4">4 · Innovación <span>— ¿Quién está construyendo el negocio del futuro?</span></div>
+    <div class="section-narrative">${innovNarr}</div>
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">Innovación por Agencia</div><div class="chart-subtitle">Otras Innov. · PR/Influencer · Social Media — facturación CC</div><div class="chart-wrap"><canvas id="cInnov"></canvas></div></div>
     </div>
 
-    <div class="section-title" id="sec-5">5 · Expertise Foco</div>
-    <p class="section-desc">Identifica la sub-arena CC donde cada agencia concentra su mayor facturación, revelando su área de especialización dominante. El foco define la propuesta de valor diferencial de cada agencia en el mercado.</p>
+    <div class="section-title" id="sec-5">5 · Expertise Foco <span>— ¿En qué se especializa cada agencia?</span></div>
+    <div class="section-narrative">Cada agencia tiene un área donde concentra su fortaleza comercial. Esta sección muestra esa especialización dentro de la arena CC, permitiendo identificar si hay superposición entre agencias o si cada una tiene un rol diferenciado dentro del grupo.</div>
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">Expertise Foco por Agencia</div><div class="chart-subtitle">Distribución CC normalizada — sub-arena dominante = foco de cada agencia</div><div class="chart-wrap"><canvas id="cFoco"></canvas></div></div>
     </div>
 
-    <div class="section-title" id="sec-6">6 · Concentración de Fee</div>
-    <p class="section-desc">Mide el riesgo de dependencia: qué porcentaje del fee CC proviene de una sola sub-arena. Alta concentración (rojo ≥70%) indica vulnerabilidad ante cambios en ese servicio. Baja concentración (verde) refleja un portafolio más diversificado y resiliente.</p>
+    <div class="section-title" id="sec-6">6 · Concentración de Fee <span>— ¿Cuán vulnerables somos?</span></div>
+    <div class="section-narrative">${concNarr}</div>
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">Concentración de Fee por Agencia</div><div class="chart-subtitle">% sub-arena CC dominante sobre total CC — verde &lt;50% · amarillo 50–70% · rojo ≥70%</div><div class="chart-wrap"><canvas id="cConc"></canvas></div></div>
     </div>
