@@ -670,7 +670,7 @@ function renderDashboard(data){
     detalle:'Se factura mucho pero queda poco — revisar eficiencia operativa y estructura de costos'});
   if(rendInversion>0.2) insights.push({tipo:'blue',tag:'Fortaleza',icon:'⚡',
     texto:`El grupo convierte el ${(rendInversion*100).toFixed(0)}% de sus egresos en EBITDA`,
-    detalle:'Cada 100 Gs. invertidos generan ${(rendInversion*100).toFixed(0)} Gs. de ganancia operativa'});
+    detalle:`Cada 100 Gs. invertidos generan ${(rendInversion*100).toFixed(0)} Gs. de ganancia operativa`});
 
   // Narrativas por sección
   const rentTop=[...ag].sort((a,b)=>parseFloat(b.ebitda)-parseFloat(a.ebitda));
@@ -680,7 +680,7 @@ function renderDashboard(data){
 
   const dep3709Narr = agDep3709.length===0
     ? 'Todas las agencias mantienen rentabilidad sin depender del crédito fiscal. El resultado del grupo es estructuralmente sólido.'
-    : `<span class="narrative-red narrative-accent">${agDep3709.map(a=>a.nombre).join(' y ')}</span> solo es${agDep3709.length>1?'n':''} rentable${agDep3709.length>1?'s':''} gracias al crédito 3709. Sin ese beneficio, su resultado sería negativo. El grupo tiene <span class="narrative-yellow narrative-accent">dependencia fiscal que debe gestionarse</span>.`;
+    : `<span class="narrative-red narrative-accent">${agDep3709.map(a=>a.nombre).join(' y ')}</span> solo ${agDep3709.length>1?'son':'es'} rentable${agDep3709.length>1?'s':''} gracias al crédito 3709. Sin ese beneficio, su resultado sería negativo. El grupo tiene <span class="narrative-yellow narrative-accent">dependencia fiscal que debe gestionarse</span>.`;
 
   const eficNarr = `<span class="narrative-green narrative-accent">${mejorPC.nombre}</span> es la agencia más productiva: genera <span class="narrative-accent">${pcMejor}M Gs. por persona</span>. ${pcMejor>pcPromedio*1.5?`Esto es ${Math.round(pcMejor/Math.max(pcPromedio,1))}x el promedio del grupo (${pcPromedio}M Gs.), lo que indica un modelo de eficiencia diferencial.`:'El grupo mantiene niveles de productividad similares.'}`;
 
