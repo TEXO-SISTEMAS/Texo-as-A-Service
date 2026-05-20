@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uvicorn app.main:app:*)",
+      "Bash(python:*)"
+    ]
+  }
+}
