@@ -401,7 +401,8 @@ body.fullscreen .main { padding-top:72px; }
   </div>
   <div class="topbar-right">
     <button class="btn btn-ai" id="btnChat" onclick="toggleChat()">✦ Asistente IA</button>
-<button class="btn btn-outline" onclick="triggerUpload()">↑ Cargar Excel</button>
+    <button class="btn btn-outline" id="btnDetails" onclick="toggleDetails()">☰ Detalles</button>
+    <button class="btn btn-outline" onclick="triggerUpload()">↑ Cargar Excel</button>
     <button class="btn btn-primary" onclick="refreshData()" id="btnRefresh">⟳ Actualizar</button>
     <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileSelect(event)" style="display:none">
   </div>
@@ -797,6 +798,7 @@ function renderDashboard(data){
       </div>
     </div>
 
+  <div id="detailsPanel" style="display:none">
     <div class="section-title" id="sec-1">1 · Rentabilidad <span>— ¿Quién gana y quién pierde?</span></div>
     <div class="section-narrative">${rentNarr}</div>
     <div class="charts-grid">
@@ -921,6 +923,7 @@ function renderDashboard(data){
         </div>`;}).join('')}
     </div>
     <div style="height:32px"></div>
+  </div>
   `;
 
   // ── CHARTS ──
@@ -1081,6 +1084,22 @@ function renderDashboard(data){
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{ await loadUploads(); await loadLatest(); });
+
+// ── DETALLES ────────────────────────────────────────────────────────────────
+let detailsOpen = false;
+function toggleDetails() {
+  detailsOpen = !detailsOpen;
+  const panel = document.getElementById('detailsPanel');
+  const btn   = document.getElementById('btnDetails');
+  if (!panel) return;
+  panel.style.display = detailsOpen ? 'block' : 'none';
+  btn.classList.toggle('active', detailsOpen);
+  btn.textContent = detailsOpen ? '✕ Cerrar detalles' : '☰ Detalles';
+  if (detailsOpen) {
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    setTimeout(() => { Object.values(charts).forEach(c => { try { c.resize(); } catch(e){} }); }, 100);
+  }
+}
 
 // ── FULLSCREEN ──────────────────────────────────────────────────────────────
 function toggleFullscreen() {
