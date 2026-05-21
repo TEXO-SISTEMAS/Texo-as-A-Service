@@ -481,6 +481,47 @@ body.fullscreen .main { padding-top:64px; }
 .btn-sm-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text)}
 .btn-sm-outline:hover{background:#f4f5f7}
 .chat-saving{font-size:11px;color:var(--muted2);padding:0 14px 6px;text-align:right;flex-shrink:0}
+
+/* ── SCORE GRUPAL ── */
+.hero-score-block{text-align:right;flex-shrink:0;min-width:130px;padding-top:4px}
+.hero-score-num{font-size:76px;font-weight:900;line-height:1;letter-spacing:-.04em}
+.hero-score-denom{font-size:20px;font-weight:400;opacity:.45;vertical-align:super;margin-left:3px}
+.hero-score-label{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;opacity:.4;margin-top:4px}
+
+/* ── VEREDICTO ── */
+.hero-veredicto{
+  font-size:14px;color:rgba(255,255,255,.62);line-height:1.75;
+  max-width:600px;margin-bottom:28px;
+  border-left:3px solid rgba(255,255,255,.18);padding-left:18px;
+}
+
+/* ── JOURNEY MAP ── */
+.hero-journey{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+  margin-bottom:32px;position:relative;
+  border-top:1px solid rgba(255,255,255,.1);padding-top:24px;
+}
+.hero-journey::before{
+  content:'';position:absolute;top:40px;left:12.5%;right:12.5%;
+  height:1px;background:rgba(255,255,255,.07);
+}
+.hero-journey-step{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:0 8px;cursor:pointer;transition:opacity .15s;
+}
+.hero-journey-step:hover{opacity:.75}
+.hero-journey-num{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;margin-bottom:8px;
+  position:relative;z-index:1;border:1.5px solid;
+}
+.jn-1{background:rgba(251,191,36,.12);color:#fbbf24;border-color:rgba(251,191,36,.35)}
+.jn-2{background:rgba(248,113,113,.12);color:#f87171;border-color:rgba(248,113,113,.35)}
+.jn-3{background:rgba(74,222,128,.12);color:#4ade80;border-color:rgba(74,222,128,.35)}
+.jn-4{background:rgba(96,165,250,.12);color:#60a5fa;border-color:rgba(96,165,250,.35)}
+.hero-journey-kw{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.hero-journey-q{font-size:11px;color:rgba(255,255,255,.38);line-height:1.4}
 </style>
 </head>
 <body>
@@ -729,6 +770,24 @@ function renderDashboard(data){
   const pcMejor       = Math.round(parseFloat(mejorPC.percapita_ebitda)/1e3);
   const pcPromedio    = Math.round(ag.reduce((s,a)=>s+parseFloat(a.percapita_ebitda),0)/ag.length/1e3);
 
+  // ── SCORE GRUPAL 0-10 ────────────────────────────────────────────────────
+  const margenPct = margen * 100;
+  let _score = Math.min(10, Math.max(0, margenPct / 2));
+  if (agEBITDANeg.length === 0) _score += 1;
+  _score -= agDep3709.length * 0.5;
+  _score -= agEBITDANeg.length * 1.5;
+  _score = Math.min(10, Math.max(0, _score));
+  const scoreGrupal = Math.round(_score * 10) / 10;
+  const scoreColor = scoreGrupal >= 7 ? '#4ade80' : scoreGrupal >= 4 ? '#fbbf24' : '#f87171';
+
+  const veredicto = agEBITDANeg.length > 0
+    ? `El grupo presenta fragilidad operativa: ${agEBITDANeg.length} agencia${agEBITDANeg.length > 1 ? 's operan' : ' opera'} en pérdida. Requiere intervención inmediata en estructura de ingresos y costos.`
+    : agDep3709.length > 0
+    ? `El grupo es rentable pero con riesgo fiscal estructural: ${agDep3709.map(a=>a.nombre).join(' y ')} depende${agDep3709.length > 1 ? 'n' : ''} del crédito 3709. Sin ese beneficio, el resultado sería negativo.`
+    : margen < 0.05
+    ? `El grupo genera ganancias en todas las agencias pero el margen consolidado es ajustado (${fmtPct(margen)}). La rentabilidad existe pero hay poco colchón ante cambios de contexto.`
+    : `El grupo muestra salud financiera sólida. Todas las agencias generan EBITDA positivo con margen consolidado de ${fmtPct(margen)} — estructura rentable y sin dependencias críticas.`;
+
   // 4 preguntas CEO
   const qSalud = agSanas===ag.length
     ? {ans:'Sí, todas las agencias generan ganancias', sub:`Margen consolidado: ${fmtPct(margen)}`, badge:'badge-green', label:'Sanos'}
@@ -810,10 +869,37 @@ function renderDashboard(data){
         <div class="hero-product-sub">Financiera</div>
         <div class="hero-tagline">${ag.length} agencias · ${Math.round(totalPers)} personas · ${fmt(totalFact)} Miles de Gs.</div>
       </div>
-      <div class="hero-status-block">
-        <span class="hero-pill ${saludPill}">${saludLabel}</span>
-        ${agDep3709.length>0?`<span class="hero-pill pill-yellow">⚠ ${agDep3709.length} con dependencia 3709</span>`:''}
-        ${agEBITDANeg.length>0?`<span class="hero-pill pill-red">✗ ${agEBITDANeg.length} en pérdida</span>`:''}
+      <div class="hero-score-block">
+        <div class="hero-score-num" style="color:${scoreColor}">${scoreGrupal}<span class="hero-score-denom">/10</span></div>
+        <div class="hero-score-label">Score grupal · 2025</div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:7px">
+          <span class="hero-pill ${saludPill}">${saludLabel}</span>
+          ${agDep3709.length>0?`<span class="hero-pill pill-yellow">⚠ ${agDep3709.length} dep. 3709</span>`:''}
+          ${agEBITDANeg.length>0?`<span class="hero-pill pill-red">✗ ${agEBITDANeg.length} en pérdida</span>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="hero-veredicto">${veredicto}</div>
+    <div class="hero-journey">
+      <div class="hero-journey-step" onclick="document.getElementById('sec-preguntas').scrollIntoView({behavior:'smooth'})">
+        <div class="hero-journey-num jn-1">1</div>
+        <div class="hero-journey-kw" style="color:#fbbf24">Estado</div>
+        <div class="hero-journey-q">¿Estamos sanos?</div>
+      </div>
+      <div class="hero-journey-step" onclick="document.getElementById('sec-insights').scrollIntoView({behavior:'smooth'})">
+        <div class="hero-journey-num jn-2">2</div>
+        <div class="hero-journey-kw" style="color:#f87171">Riesgo</div>
+        <div class="hero-journey-q">¿Dónde está la amenaza?</div>
+      </div>
+      <div class="hero-journey-step" onclick="document.getElementById('sec-consolidado').scrollIntoView({behavior:'smooth'})">
+        <div class="hero-journey-num jn-3">3</div>
+        <div class="hero-journey-kw" style="color:#4ade80">Potencial</div>
+        <div class="hero-journey-q">¿Quién tiene mejor margen?</div>
+      </div>
+      <div class="hero-journey-step" onclick="toggleDetails();setTimeout(()=>document.getElementById('sec-1').scrollIntoView({behavior:'smooth'}),80)">
+        <div class="hero-journey-num jn-4">4</div>
+        <div class="hero-journey-kw" style="color:#60a5fa">Actuar</div>
+        <div class="hero-journey-q">Ver análisis completo</div>
       </div>
     </div>
     <div class="hero-agencies">${ag.map(a=>{
@@ -831,7 +917,7 @@ function renderDashboard(data){
       </div>`;
     }).join('')}</div>
     <div class="hero-questions-label">Cuatro preguntas que el directorio necesita responder</div>
-    <div class="hero-questions">
+    <div class="hero-questions" id="sec-preguntas">
       <div class="hero-q hero-q-${qSalud.badge==='badge-green'?'green':qSalud.badge==='badge-red'?'red':'yellow'}">
         <div class="hero-q-icon">💚</div>
         <div class="hero-q-label">¿Estamos sanos?</div>
@@ -865,7 +951,7 @@ function renderDashboard(data){
   <div class="post-hero">
 
   <!-- INSIGHTS -->
-  <div class="insights-header">Tensiones · Insights · Prioridades</div>
+  <div class="insights-header" id="sec-insights">Tensiones · Insights · Prioridades</div>
   <div class="insights-grid">${insights.map(ins=>`
     <div class="insight-card insight-${ins.tipo}">
       <div class="insight-icon-wrap">${ins.icon}</div>
@@ -878,7 +964,7 @@ function renderDashboard(data){
   </div>
 
   <!-- BANDA CONSOLIDADO -->
-  <div class="divider-band">
+  <div class="divider-band" id="sec-consolidado">
     <div>
       <div class="divider-band-title">Resumen Consolidado</div>
       <div class="divider-band-sub">Grupo · ${ag.length} agencias · ${data.fecha_corte || 'Período actual'}</div>
