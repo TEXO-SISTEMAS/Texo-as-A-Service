@@ -491,7 +491,10 @@ async function refreshIntel() {
 
   try {
     const r = await fetch('/api/marketing/refresh', { method:'POST' });
-    const data = await r.json();
+    let data;
+    try { data = await r.json(); } catch(_) {
+      throw new Error('Timeout o error del servidor (código ' + r.status + ')');
+    }
     if (!r.ok) throw new Error(data.error || 'Error del servidor');
     renderAlertas(data.alertas, data.resumen, data.generado_en);
     showToast('✓ Alertas actualizadas', 'success');

@@ -454,8 +454,8 @@ Responde ÚNICAMENTE con JSON válido, sin texto adicional:
 Genera entre 5 y 8 alertas. Incluí la fusión Omnicom+IPG, la expansión de Amplify, tendencias de IA en publicidad, y oportunidades/riesgos relevantes para el grupo.`;
 
     const response = await getAnthropic().messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
+      model: 'claude-haiku-4-5',
+      max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }]
     });
 
