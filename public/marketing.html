@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texo as a Service — Inteligencia de Marketing</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+:root{
+  --bg:#eef0f5;--white:#ffffff;--border:#e2e4e9;--border2:#c8cdd8;
+  --text:#0f1117;--muted:#6b7280;--muted2:#9ca3af;
+  --accent:#1a1a2e;--yellow:#f0f040;
+  --green:#16a34a;--red:#d42b4f;--warn:#d4900a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:17px;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;background:var(--accent);flex-shrink:0;gap:16px}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.logo{font-size:22px;font-weight:800;letter-spacing:.01em;color:#fff}
+.logo span{color:#f0f040;font-weight:300}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:6px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s;letter-spacing:.02em;text-decoration:none}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:#f0f040;color:#0f1117}
+.btn-primary:hover{background:#e8e830}
+.btn-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.35)}
+.btn-outline:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6)}
+.btn-ai{background:rgba(240,240,64,.15);color:#f0f040;border:1px solid rgba(240,240,64,.3)}
+.btn-ai:hover{background:rgba(240,240,64,.25)}
+.btn-ai.active{background:#f0f040;color:#0f1117}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden}
+.main{flex:1;overflow-y:auto}
+.main::-webkit-scrollbar{width:5px}
+.main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── FOOTER ── */
+.footer{flex-shrink:0;background:var(--accent);color:rgba(255,255,255,.5);font-size:14px;font-weight:500;padding:12px 32px;display:flex;align-items:center;justify-content:space-between;letter-spacing:.03em}
+.footer strong{color:rgba(255,255,255,.85)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:70px;right:28px;background:var(--text);color:#fff;border-radius:8px;padding:13px 20px;font-size:12px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:999;transform:translateY(60px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.error{background:var(--red)}
+.toast.success{background:var(--green)}
+
+/* ── HERO ── */
+.hero-section{
+  background:linear-gradient(135deg,#0b0f1a 0%,#1a1a2e 55%,#0d1535 100%);
+  padding:56px 44px 48px;color:#fff;position:relative;overflow:hidden;
+}
+.hero-section::before{content:'';position:absolute;top:-100px;right:-60px;width:420px;height:420px;background:radial-gradient(circle,rgba(240,240,64,.06) 0%,transparent 60%);pointer-events:none}
+.hero-section::after{content:'';position:absolute;bottom:-80px;left:40%;width:300px;height:300px;background:radial-gradient(circle,rgba(108,63,197,.07) 0%,transparent 60%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:8px 20px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.8);margin-bottom:28px}
+.hero-main{display:flex;align-items:flex-start;justify-content:space-between;gap:32px;margin-bottom:36px;position:relative}
+.hero-company{font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px}
+.hero-product{font-size:60px;font-weight:900;letter-spacing:-.04em;line-height:.95;color:#fff;margin-bottom:6px}
+.hero-product-sub{font-size:48px;font-weight:300;letter-spacing:-.02em;line-height:1;color:#f0f040}
+.hero-tagline{font-size:12px;color:rgba(255,255,255,.4);margin-top:16px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.hero-update-block{display:flex;flex-direction:column;align-items:flex-end;gap:8px;padding-top:8px;flex-shrink:0}
+.hero-update-time{font-size:11px;color:rgba(255,255,255,.3);text-align:right;line-height:1.4}
+
+/* Hero stat cards strip */
+.hero-stats{display:flex;gap:12px;flex-wrap:wrap;padding-top:28px;border-top:1px solid rgba(255,255,255,.12)}
+.hero-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:18px 22px;flex:1;min-width:140px}
+.hero-stat-green{border-top:3px solid #4ade80}
+.hero-stat-yellow{border-top:3px solid #fbbf24}
+.hero-stat-blue{border-top:3px solid #60a5fa}
+.hero-stat-purple{border-top:3px solid #a78bfa}
+.hero-stat-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px}
+.hero-stat-value{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.02em;line-height:1.1}
+.hero-stat-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px}
+
+/* ── SECTIONS ── */
+.section-wrap{padding:40px 44px}
+.section-wrap.alt{background:#f4f5f8}
+.sec-label{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px}
+.sec-heading{font-size:32px;font-weight:900;letter-spacing:-.03em;line-height:1.05;color:var(--text);margin-bottom:10px}
+.sec-bar{width:44px;height:3px;background:var(--accent);border-radius:2px;margin-bottom:24px}
+.sec-desc{font-size:14px;color:var(--muted);line-height:1.6;max-width:720px;margin-bottom:28px}
+
+/* ── HOLDING CARDS ── */
+.holding-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.holding-card{background:var(--white);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .2s,transform .2s}
+.holding-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.1);transform:translateY(-2px)}
+.holding-card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.hc-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.hc-name{font-size:20px;font-weight:800;flex:1;letter-spacing:-.01em}
+.hc-red{font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:.05em;text-transform:uppercase;background:rgba(26,26,46,.08);color:var(--accent);white-space:nowrap}
+.holding-card-body{padding:14px 20px;display:flex;flex-direction:column;gap:10px}
+.hc-spec{font-size:12px;font-weight:600;color:var(--muted)}
+.hc-tags{display:flex;flex-wrap:wrap;gap:5px}
+.hc-tag{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;background:#f1f3f8;color:var(--muted)}
+.hc-clients{font-size:12px;color:var(--muted);line-height:1.5}
+.hc-clients strong{font-weight:700;color:var(--text)}
+.hc-dato{font-size:12px;font-weight:600;color:var(--accent);background:rgba(26,26,46,.05);border-radius:6px;padding:8px 12px;line-height:1.45;border-left:3px solid var(--accent)}
+
+/* ── DIVIDER BAND ── */
+.divider-band{background:var(--accent);color:#fff;padding:36px 44px;display:flex;align-items:center;justify-content:space-between;gap:32px;flex-wrap:wrap}
+.divider-band-left{}
+.divider-band-title{font-size:28px;font-weight:900;letter-spacing:-.02em;color:var(--yellow)}
+.divider-band-sub{font-size:13px;color:rgba(255,255,255,.45);margin-top:4px;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+.divider-band-stats{display:flex;gap:40px;flex-wrap:wrap}
+.dbs-item{text-align:center}
+.dbs-val{font-size:32px;font-weight:900;letter-spacing:-.03em;color:#fff}
+.dbs-label{font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.dbs-growth{font-size:13px;font-weight:700;color:#4ade80;margin-top:2px}
+
+/* Market destacados */
+.market-chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.market-chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:12px 18px;flex:1;min-width:160px}
+.mc-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:4px}
+.mc-val{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.01em}
+.mc-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:3px}
+
+/* ── ALERTAS ── */
+.alerts-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.alerts-timestamp{font-size:12px;color:var(--muted2);font-style:italic}
+.insights-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
+.insight-card{border-radius:12px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start;border:none;border-left:4px solid transparent}
+.insight-riesgo{background:rgba(212,43,79,.055);border-left-color:var(--red)}
+.insight-oportunidad{background:rgba(22,163,74,.055);border-left-color:var(--green)}
+.insight-tension{background:rgba(108,63,197,.055);border-left-color:#6c3fc5}
+.insight-info{background:rgba(14,165,176,.055);border-left-color:#0ea5b0}
+.insight-icon-wrap{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.insight-riesgo .insight-icon-wrap{background:rgba(212,43,79,.14)}
+.insight-oportunidad .insight-icon-wrap{background:rgba(22,163,74,.14)}
+.insight-tension .insight-icon-wrap{background:rgba(108,63,197,.14)}
+.insight-info .insight-icon-wrap{background:rgba(14,165,176,.14)}
+.insight-body{flex:1;min-width:0}
+.insight-tag{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.insight-tag-riesgo{color:var(--red)}
+.insight-tag-oportunidad{color:var(--green)}
+.insight-tag-tension{color:#6c3fc5}
+.insight-tag-info{color:#0ea5b0}
+.insight-title{font-size:13.5px;color:var(--text);line-height:1.5;font-weight:700;margin-bottom:4px}
+.insight-text{font-size:12.5px;color:var(--muted);line-height:1.55}
+.insight-agencies{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.ia-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(26,26,46,.08);color:var(--accent);letter-spacing:.04em}
+
+.resumen-box{background:linear-gradient(90deg,#f1f3f8 0%,#f8f9fb 100%);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin-bottom:24px;font-size:13.5px;color:var(--text);line-height:1.8;font-weight:500}
+
+.alerts-empty{text-align:center;padding:48px 24px;color:var(--muted2);font-size:14px;background:var(--white);border:1.5px dashed var(--border2);border-radius:12px}
+.alerts-empty p{margin-top:8px;font-size:13px}
+.alerts-loading{text-align:center;padding:48px;display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--muted)}
+.spinner-dark{width:24px;height:24px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+
+/* ── CHAT SIDEBAR ── */
+.chat-sidebar{width:0;overflow:hidden;flex-shrink:0;border-left:0px solid var(--border);transition:width .28s cubic-bezier(.4,0,.2,1),border-color .28s;background:var(--white);display:flex;position:relative}
+.chat-sidebar.open{border-left:1px solid var(--border)}
+.chat-sidebar.resizing{transition:none}
+.chat-sidebar-inner{flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative}
+.chat-resize-handle{position:absolute;left:0;top:0;bottom:0;width:5px;cursor:col-resize;z-index:20;background:transparent;transition:background .2s}
+.chat-resize-handle:hover,.chat-resize-handle.dragging{background:var(--accent);opacity:.25}
+.chat-header{background:var(--accent);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.chat-header-icon{width:32px;height:32px;border-radius:8px;background:#f0f040;color:#0f1117;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:800}
+.chat-header-text{flex:1}
+.chat-header-title{font-size:15px;font-weight:700}
+.chat-header-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
+.chat-close{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;padding:0 2px;line-height:1;transition:color .15s}
+.chat-close:hover{color:#fff}
+.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.chat-msg{max-width:90%;line-height:1.55;font-size:13.5px;border-radius:12px;padding:10px 13px}
+.chat-msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.chat-msg.assistant{align-self:flex-start;background:#f4f5f7;color:var(--text);border-bottom-left-radius:4px}
+.chat-msg.rendered{white-space:normal}
+.chat-msg.rendered p{margin:0 0 8px}.chat-msg.rendered p:last-child{margin-bottom:0}
+.chat-msg.rendered ul,.chat-msg.rendered ol{padding-left:18px;margin:4px 0 8px}
+.chat-msg.rendered li{margin-bottom:3px}
+.chat-msg.rendered strong{font-weight:700}
+.chat-msg.typing{align-self:flex-start;background:#f4f5f7;padding:13px;display:flex;gap:5px;align-items:center}
+.chat-dot{width:6px;height:6px;border-radius:50%;background:var(--muted2);animation:bounce .9s infinite}
+.chat-dot:nth-child(2){animation-delay:.15s}
+.chat-dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+.chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0;background:var(--white)}
+.chat-input{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;font-family:'Inter',sans-serif;font-size:13.5px;resize:none;outline:none;line-height:1.4;max-height:100px;overflow-y:auto;transition:border-color .15s}
+.chat-input:focus{border-color:var(--accent)}
+.chat-send{width:36px;height:36px;border-radius:8px;border:none;background:var(--accent);color:#f0f040;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;transition:opacity .15s;align-self:flex-end}
+.chat-send:disabled{opacity:.4;cursor:default}
+.chat-disclaimer{font-size:11px;color:var(--muted2);text-align:center;padding:0 12px 9px;flex-shrink:0;line-height:1.4}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">Texo as a Service <span>/ Marketing</span></div>
+    <a href="/" class="btn btn-outline" style="font-size:13px">← Salud Financiera</a>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-ai" id="btnChat" onclick="toggleChat()">✦ Asistente IA</button>
+    <button class="btn btn-outline" id="btnRefresh" onclick="refreshIntel()">⟳ Actualizar intel</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <div class="main" id="main">
+
+    <!-- HERO -->
+    <div class="hero-section">
+      <div class="hero-badge">Inteligencia Estratégica · Grupo Texo · Paraguay</div>
+      <div class="hero-main">
+        <div>
+          <div class="hero-company">Texo as a Service</div>
+          <div class="hero-product">Posición</div>
+          <div class="hero-product-sub">de Mercado</div>
+          <div class="hero-tagline">Holding · Redes globales · Alertas estratégicas</div>
+        </div>
+        <div class="hero-update-block">
+          <div class="hero-update-time" id="heroUpdateTime">Sin actualizar aún</div>
+          <button class="btn btn-outline" style="font-size:12px" onclick="refreshIntel()">⟳ Actualizar intel</button>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat hero-stat-green">
+          <div class="hero-stat-label">Mercado PY 2024</div>
+          <div class="hero-stat-value">US$135.5M</div>
+          <div class="hero-stat-sub">+6.5% vs 2023 · APAP</div>
+        </div>
+        <div class="hero-stat hero-stat-yellow">
+          <div class="hero-stat-label">Empresas del holding</div>
+          <div class="hero-stat-value">10</div>
+          <div class="hero-stat-sub">Texo as a Service</div>
+        </div>
+        <div class="hero-stat hero-stat-blue">
+          <div class="hero-stat-label">Redes globales</div>
+          <div class="hero-stat-value">5</div>
+          <div class="hero-stat-sub">WPP · Publicis · Omnicom · IPG · DAN</div>
+        </div>
+        <div class="hero-stat hero-stat-purple">
+          <div class="hero-stat-label">Agencias de publicidad</div>
+          <div class="hero-stat-value">5</div>
+          <div class="hero-stat-sub">NASTA · BRICK · LUPE · OMD · ROGER</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAPA DEL HOLDING -->
+    <div class="section-wrap">
+      <div class="sec-label">01 · Estructura</div>
+      <div class="sec-heading">Mapa del Holding</div>
+      <div class="sec-bar"></div>
+      <div class="sec-desc">Las 8 empresas activas del grupo, sus redes globales, especialidades y clientes principales.</div>
+      <div class="holding-grid" id="holdingGrid">
+        <!-- generado por JS -->
+      </div>
+    </div>
+
+    <!-- BANDA MERCADO -->
+    <div class="divider-band">
+      <div class="divider-band-left">
+        <div class="divider-band-title">Mercado Publicitario</div>
+        <div class="divider-band-sub">Paraguay · 2024 · Fuente: APAP / Kantar IBOPE / Audimedia</div>
+        <div class="market-chips">
+          <div class="market-chip">
+            <div class="mc-label">Radio</div>
+            <div class="mc-val">US$14.9M</div>
+            <div class="mc-sub">+7.5% · ~80% de emisiones</div>
+          </div>
+          <div class="market-chip">
+            <div class="mc-label">Sector Banca</div>
+            <div class="mc-val">+54%</div>
+            <div class="mc-sub">Mayor crecimiento del mercado</div>
+          </div>
+          <div class="market-chip">
+            <div class="mc-label">Proyección 2025</div>
+            <div class="mc-val">+4.3%</div>
+            <div class="mc-sub">Crecimiento sostenido</div>
+          </div>
+          <div class="market-chip">
+            <div class="mc-label">Medios tradicionales</div>
+            <div class="mc-val">Récord</div>
+            <div class="mc-sub">TV y radio cierran 2025 en máximo histórico</div>
+          </div>
+        </div>
+      </div>
+      <div class="divider-band-stats">
+        <div class="dbs-item">
+          <div class="dbs-val">US$135.5M</div>
+          <div class="dbs-label">Total mercado</div>
+          <div class="dbs-growth">↑ +6.5%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTAS ESTRATÉGICAS -->
+    <div class="section-wrap alt">
+      <div class="sec-label">02 · Inteligencia</div>
+      <div class="sec-heading">Alertas Estratégicas</div>
+      <div class="sec-bar"></div>
+      <div class="sec-desc">Análisis generado por IA sobre el holding, las redes globales y el mercado. Actualizá cuando necesites una lectura fresca del contexto.</div>
+
+      <div class="alerts-meta">
+        <div class="alerts-timestamp" id="alertsTimestamp">Sin datos aún. Presioná "Actualizar intel" para generar.</div>
+      </div>
+
+      <div id="resumeWrap" style="display:none">
+        <div class="resumen-box" id="resumeBox"></div>
+      </div>
+
+      <div id="alertsWrap">
+        <div class="alerts-empty">
+          <div style="font-size:32px;opacity:.4">🔍</div>
+          <p>Todavía no hay alertas generadas.</p>
+          <p>Presioná <strong>⟳ Actualizar intel</strong> para que Claude analice el holding y el mercado.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:32px"></div>
+
+  </div>
+
+  <!-- CHAT SIDEBAR -->
+  <div class="chat-sidebar" id="chatSidebar">
+    <div class="chat-resize-handle" id="chatResizeHandle"></div>
+    <div class="chat-sidebar-inner">
+      <div class="chat-header">
+        <div class="chat-header-icon">IA</div>
+        <div class="chat-header-text">
+          <div class="chat-header-title">Asistente de Marketing</div>
+          <div class="chat-header-sub">Texo as a Service · Inteligencia de Marketing</div>
+        </div>
+        <button class="chat-close" onclick="toggleChat()" title="Cerrar">✕</button>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-msg assistant rendered">Hola, soy tu asistente de <strong>Inteligencia de Marketing</strong> de Texo as a Service. Puedo ayudarte a entender la estructura del holding, las redes globales que representan las agencias, tendencias del mercado publicitario paraguayo y el impacto de eventos como la fusión Omnicom+IPG. ¿Qué querés saber?</div>
+      </div>
+      <div class="chat-disclaimer">Responde sobre el holding Texo, redes globales y mercado publicitario</div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Consultá sobre el holding o el mercado..." onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
+        <button class="chat-send" id="chatSend" onclick="sendChat()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span>Texo as a Service — Inteligencia de Marketing</span>
+  <span><strong>Danilo Sosa</strong> | Texo Sistemas</span>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATOS HOLDING (mismos que server.js para renderizar sin esperar API) ──────
+const HOLDING = [
+  { nombre:'NASTA',   red:'WPP',             color:'#6c3fc5', anos:56,
+    especialidad:'Agencia integral · Medios, Creatividad, PR, Digital',
+    servicios:['Creatividad','Media','PR','Digital','Trade'],
+    clientes:['Claro','Nestlé','Colgate','Petrobras','SC Johnson','Kimberly Clark','BAT'],
+    dato:'La agencia más veterana del holding y con la certificación Meta más alta del país.' },
+  { nombre:'BRICK',   red:'Publicis',         color:'#e85d26', anos:24,
+    especialidad:'Creatividad + Media · Agencia integral',
+    servicios:['Creatividad','Media','Digital','PR','Content'],
+    clientes:['Banco Familiar','Tigo',"McDonald's",'Nestlé','Puma Energy','Chacomer','Cervepar'],
+    dato:'Gran Tatakua 2025 — máximo premio de publicidad en Paraguay.' },
+  { nombre:'LUPE',    red:'Independiente',    color:'#0ea5b0', anos:null,
+    especialidad:'Agencia creativa · Filosofía HeartWork',
+    servicios:['Branding','Creatividad','Digital','Audiovisual','E-commerce'],
+    clientes:['Babysec','Chevrolet','Pepsi','Pilsen','Mirinda','Grolsch'],
+    dato:'Única agencia 100% independiente del grupo.' },
+  { nombre:'OMD',     red:'Omnicom',          color:'#d4900a', anos:15,
+    especialidad:'Planificación y compra de medios',
+    servicios:['Planificación','Compra de medios','Programática','Data'],
+    clientes:['+15 marcas locales e internacionales'],
+    dato:'Fusión Omnicom+IPG 2025: OMD y Roger ahora pertenecen al mismo holding global.' },
+  { nombre:'ROGER',   red:'Initiative · IPG', color:'#d42b4f', anos:14,
+    especialidad:'Medios 360° · Cross-selling integrado',
+    servicios:['Medios integrados','Planificación','Cross-media'],
+    clientes:['Unilever','Diageo','La Consolidada','Softys','U. Columbia'],
+    dato:'Unilever Latam renovó contrato con Initiative — alianza de más de 25 años en la región.' },
+  { nombre:'SWITCH',  red:'DAN',              color:'#16a34a', anos:4,
+    especialidad:'Consultoría digital y tecnología',
+    servicios:['Transformación digital','Consultoría','Desarrollo tech'],
+    clientes:[],
+    dato:'Fundada por Texo en 2021. Integra consultoría de negocio, creatividad y tecnología.' },
+  { nombre:'AMPLIFY', red:'Independiente',    color:'#8b5cf6', anos:18,
+    especialidad:'Vía pública · OOH',
+    servicios:['Cartelería','Pantallas digitales','OOH'],
+    clientes:[],
+    dato:'Adquirió Big Bang: 30% del mercado rutero paraguayo, +1.000 soportes. Pantalla más grande del país.' },
+  { nombre:'WILD FI', red:'Independiente',    color:'#64748b', anos:null,
+    especialidad:'Marketing digital y social',
+    servicios:['Marketing digital','Social media','Performance'],
+    clientes:[],
+    dato:'' },
+];
+
+// ── RENDER HOLDING CARDS ──────────────────────────────────────────────────────
+function renderHolding() {
+  const grid = document.getElementById('holdingGrid');
+  grid.innerHTML = HOLDING.map(ag => `
+    <div class="holding-card" style="border-top:3px solid ${ag.color}">
+      <div class="holding-card-head">
+        <div class="hc-dot" style="background:${ag.color}"></div>
+        <div class="hc-name">${ag.nombre}</div>
+        <span class="hc-red">${ag.red}</span>
+      </div>
+      <div class="holding-card-body">
+        <div class="hc-spec">${ag.especialidad}${ag.anos ? ` · ${ag.anos} años` : ''}</div>
+        <div class="hc-tags">${ag.servicios.map(s=>`<span class="hc-tag">${s}</span>`).join('')}</div>
+        ${ag.clientes.length ? `<div class="hc-clients"><strong>Clientes:</strong> ${ag.clientes.join(' · ')}</div>` : ''}
+        ${ag.dato ? `<div class="hc-dato">💡 ${ag.dato}</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+// ── RENDER ALERTAS ────────────────────────────────────────────────────────────
+const TIPO_MAP = {
+  riesgo:      { cls:'riesgo',      tag:'RIESGO',       icon:'⚠' },
+  oportunidad: { cls:'oportunidad', tag:'OPORTUNIDAD',  icon:'↑' },
+  tension:     { cls:'tension',     tag:'TENSIÓN',      icon:'⚡' },
+  info:        { cls:'info',        tag:'INFO',         icon:'💡' },
+};
+
+function renderAlertas(alertas, resumen, timestamp) {
+  // Resumen
+  const resumeWrap = document.getElementById('resumeWrap');
+  const resumeBox  = document.getElementById('resumeBox');
+  if (resumen) {
+    resumeBox.innerHTML = resumen.replace(/\n/g, '<br>');
+    resumeWrap.style.display = 'block';
+  } else {
+    resumeWrap.style.display = 'none';
+  }
+
+  // Timestamp
+  if (timestamp) {
+    const d = new Date(timestamp);
+    document.getElementById('alertsTimestamp').textContent =
+      'Última actualización: ' + d.toLocaleDateString('es-PY', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('heroUpdateTime').innerHTML =
+      'Intel actualizado<br>' + d.toLocaleDateString('es-PY', { day:'numeric', month:'short', year:'numeric' });
+  }
+
+  const wrap = document.getElementById('alertsWrap');
+  if (!alertas || !alertas.length) {
+    wrap.innerHTML = `<div class="alerts-empty"><div style="font-size:32px;opacity:.4">🔍</div><p>Todavía no hay alertas generadas.</p><p>Presioná <strong>⟳ Actualizar intel</strong> para que Claude analice el holding y el mercado.</p></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="insights-grid">${alertas.map(a => {
+    const t = TIPO_MAP[a.tipo] || TIPO_MAP.info;
+    return `<div class="insight-card insight-${t.cls}">
+      <div class="insight-icon-wrap">${t.icon}</div>
+      <div class="insight-body">
+        <div class="insight-tag insight-tag-${t.cls}">${t.tag}${a.fecha ? ' · ' + a.fecha : ''}</div>
+        <div class="insight-title">${a.titulo}</div>
+        <div class="insight-text">${a.texto}</div>
+        ${a.agencias?.length ? `<div class="insight-agencies">${a.agencias.map(n=>`<span class="ia-chip">${n}</span>`).join('')}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ── LOAD ON PAGE LOAD ─────────────────────────────────────────────────────────
+async function loadMarketing() {
+  try {
+    const r = await fetch('/api/marketing');
+    const data = await r.json();
+    renderAlertas(data.alertas, data.resumen, data.ultima_actualizacion);
+  } catch(e) { console.error('loadMarketing:', e); }
+}
+
+// ── REFRESH ───────────────────────────────────────────────────────────────────
+async function refreshIntel() {
+  const btn = document.getElementById('btnRefresh');
+  btn.innerHTML = '<span class="spinner"></span> Analizando...';
+  btn.disabled = true;
+
+  // Loading state en alertas
+  document.getElementById('alertsWrap').innerHTML = `
+    <div class="alerts-loading">
+      <div class="spinner-dark"></div>
+      <span>Claude está analizando el holding y el mercado...</span>
+    </div>`;
+
+  try {
+    const r = await fetch('/api/marketing/refresh', { method:'POST' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error del servidor');
+    renderAlertas(data.alertas, data.resumen, data.generado_en);
+    showToast('✓ Alertas actualizadas', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+    loadMarketing(); // re-cargar lo que había
+  } finally {
+    btn.innerHTML = '⟳ Actualizar intel';
+    btn.disabled = false;
+  }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  renderHolding();
+  loadMarketing();
+});
+</script>
+
+<script>
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+let chatHistory = [];
+let chatOpen = false;
+const CHAT_MIN = 360, CHAT_MAX = 900;
+let chatWidth = parseInt(localStorage.getItem('chatWidthMkt') || '520');
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  const sidebar = document.getElementById('chatSidebar');
+  sidebar.classList.toggle('open', chatOpen);
+  if (chatOpen) sidebar.style.width = chatWidth + 'px';
+  else sidebar.style.width = '0';
+  document.getElementById('btnChat').classList.toggle('active', chatOpen);
+  if (chatOpen) setTimeout(() => document.getElementById('chatInput').focus(), 300);
+}
+
+try {
+  const handle = document.getElementById('chatResizeHandle');
+  const sidebar = document.getElementById('chatSidebar');
+  let startX, startW;
+  handle.addEventListener('mousedown', e => {
+    startX = e.clientX; startW = sidebar.offsetWidth;
+    sidebar.classList.add('resizing'); handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+    function onMove(e) { const w=Math.min(CHAT_MAX,Math.max(CHAT_MIN,startW+(startX-e.clientX))); sidebar.style.width=w+'px'; chatWidth=w; }
+    function onUp() { sidebar.classList.remove('resizing'); handle.classList.remove('dragging'); document.body.style.cursor=''; document.body.style.userSelect=''; localStorage.setItem('chatWidthMkt',chatWidth); document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+} catch(e) {}
+
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function chatKeydown(e) { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } }
+
+function appendMsg(role, text) {
+  const wrap = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  if (role === 'assistant') {
+    div.className = 'chat-msg assistant rendered';
+    div.innerHTML = marked.parse(text);
+  } else {
+    div.className = 'chat-msg user';
+    div.textContent = text;
+  }
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function showTyping() {
+  const wrap = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg typing'; div.id = 'chatTyping';
+  div.innerHTML = '<div class="chat-dot"></div><div class="chat-dot"></div><div class="chat-dot"></div>';
+  wrap.appendChild(div); wrap.scrollTop = wrap.scrollHeight;
+}
+function removeTyping() { const el=document.getElementById('chatTyping'); if(el) el.remove(); }
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+  document.getElementById('chatSend').disabled = true;
+  appendMsg('user', text);
+  chatHistory.push({ role:'user', content:text });
+  showTyping();
+  try {
+    const resp = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ messages: chatHistory, context: 'marketing' })
+    });
+    const json = await resp.json();
+    removeTyping();
+    if (json.reply) {
+      chatHistory.push({ role:'assistant', content:json.reply });
+      appendMsg('assistant', json.reply);
+    } else {
+      appendMsg('assistant', 'Error: ' + (json.error || 'Respuesta inválida'));
+    }
+  } catch(err) { removeTyping(); appendMsg('assistant', 'Error de conexión. Intenta nuevamente.'); }
+  document.getElementById('chatSend').disabled = false;
+  document.getElementById('chatInput').focus();
+}
+</script>
+</body>
+</html>

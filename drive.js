@@ -102,4 +102,44 @@ async function deleteChat(fileId) {
   }
 }
 
-module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, listChats, getChat, deleteChat };
+// ── MARKETING INTEL ──────────────────────────────────────────────────────────
+async function getMarketing() {
+  const drive = getDrive();
+  const res = await drive.files.list({
+    q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name = 'marketing-intel.json' and trashed=false`,
+    fields: 'files(id, name, createdTime)',
+    orderBy: 'createdTime desc',
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true
+  });
+  const files = res.data.files || [];
+  if (!files.length) return null;
+  return await getUpload(files[0].id);
+}
+
+async function saveMarketing(data) {
+  const drive = getDrive();
+  // Eliminar archivo anterior si existe
+  try {
+    const res = await drive.files.list({
+      q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name = 'marketing-intel.json' and trashed=false`,
+      fields: 'files(id)',
+      includeItemsFromAllDrives: true,
+      supportsAllDrives: true
+    });
+    for (const f of (res.data.files || [])) {
+      try { await drive.files.delete({ fileId: f.id, supportsAllDrives: true }); } catch(e) {}
+    }
+  } catch(e) {}
+
+  const stream = Readable.from([JSON.stringify(data)]);
+  const result = await drive.files.create({
+    requestBody: { name: 'marketing-intel.json', mimeType: 'application/json', parents: [FOLDER_ID] },
+    media: { mimeType: 'application/json', body: stream },
+    fields: 'id, name, createdTime',
+    supportsAllDrives: true
+  });
+  return result.data;
+}
+
+module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, listChats, getChat, deleteChat, getMarketing, saveMarketing };

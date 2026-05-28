@@ -163,8 +163,44 @@ app.delete('/api/chat/history/:id', async (req, res) => {
 // ── CHAT AI ───────────────────────────────────────────────────────────────────
 app.post('/api/chat', async (req, res) => {
   try {
-    const { messages, data } = req.body;
+    const { messages, data, context } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'messages requerido' });
+
+    // ── CONTEXTO MARKETING ────────────────────────────────────────────────────
+    if (context === 'marketing') {
+      const mktSystemPrompt = `Sos un estratega de marketing y publicidad especializado en el mercado paraguayo y en redes globales de comunicación.
+
+ESTRUCTURA DEL HOLDING TEXO (el grupo que te consulta):
+- NASTA (56 años) → WPP. Creatividad, Media, PR, Digital. Clientes: Claro, Nestlé, Colgate, Petrobras, SC Johnson, Kimberly Clark, BAT. Mayor certificación Meta del país.
+- BRICK (24 años) → Publicis Worldwide. Creatividad, Media, PR, Content. Clientes: Tigo, McDonald's, Banco Familiar, Nestlé, Puma Energy. Ganó Gran Tatakua 2025.
+- LUPE → Independiente. Agencia creativa ("HeartWork"). Clientes: Babysec, Chevrolet, Pepsi, Pilsen, Mirinda, Grolsch.
+- OMD (15 años) → Omnicom Media Group. Planificación y compra de medios. +15 marcas.
+- ROGER (14 años) → Initiative / IPG Mediabrands. Medios 360°. Clientes: Unilever, Diageo, La Consolidada, Softys.
+- SWITCH (4 años) → DAN. Consultoría digital y tecnología.
+- AMPLIFY (18 años) → Independiente. Vía pública/OOH. 30% del mercado rutero paraguayo tras adquirir Big Bang. +1.000 soportes.
+- WILD FI → Independiente. Marketing digital y social.
+
+CONTEXTO DEL MERCADO:
+- Mercado publicitario Paraguay 2024: US$135.5M (+6.5% vs 2023)
+- Radio: US$14.9M, ~80% de las emisiones publicitarias
+- Sector Banca: mayor crecimiento (+54% en anuncios)
+- Fusión Omnicom+IPG completada en 2025: OMD y ROGER ahora en el mismo holding global
+- Unilever Latam renovó contrato con Initiative (alianza histórica de 25 años)
+
+REGLAS:
+1. Respondé exclusivamente sobre el holding Texo, sus agencias, las redes globales que representan, y el mercado publicitario paraguayo y latinoamericano.
+2. Si te preguntan algo fuera de tema, redirigí amablemente.
+3. Nunca inventes datos. Si no sabés algo, decilo.
+4. Usá lenguaje ejecutivo pero accesible. Sin jerga innecesaria.`;
+
+      const response = await getAnthropic().messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: mktSystemPrompt,
+        messages: messages.map(m => ({ role: m.role, content: m.content }))
+      });
+      return res.json({ reply: response.content[0].text });
+    }
 
     const agenciasResumen = data?.agencias?.length
       ? data.agencias.map(a => {
@@ -291,6 +327,150 @@ REGLAS DE COMPORTAMIENTO:
     res.json({ reply: response.content[0].text });
   } catch (err) {
     console.error('ERROR /api/chat:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── MARKETING — DATOS ESTÁTICOS DEL HOLDING ──────────────────────────────────
+const HOLDING_DATA = [
+  { nombre:'NASTA',   red:'WPP',              color:'#6c3fc5', anos:56,
+    especialidad:'Agencia integral · Medios, Creatividad, PR, Digital',
+    servicios:['Creatividad','Media','PR','Digital','Trade'],
+    clientes:['Claro','Nestlé','Colgate','Petrobras','SC Johnson','Kimberly Clark','BAT'],
+    dato:'La agencia más veterana del holding y con la certificación Meta más alta del país.' },
+  { nombre:'BRICK',   red:'Publicis',          color:'#e85d26', anos:24,
+    especialidad:'Creatividad + Media · Agencia integral',
+    servicios:['Creatividad','Media','Digital','PR','Content'],
+    clientes:['Banco Familiar','Tigo',"McDonald's",'Nestlé','Puma Energy','Chacomer','Cervepar'],
+    dato:'Gran Tatakua 2025 — máximo premio de publicidad en Paraguay.' },
+  { nombre:'LUPE',    red:'Independiente',     color:'#0ea5b0', anos:null,
+    especialidad:'Agencia creativa · Filosofía HeartWork',
+    servicios:['Branding','Creatividad','Digital','Audiovisual','E-commerce'],
+    clientes:['Babysec','Chevrolet','Pepsi','Pilsen','Mirinda','Grolsch'],
+    dato:'Única agencia 100% independiente del grupo.' },
+  { nombre:'OMD',     red:'Omnicom',           color:'#d4900a', anos:15,
+    especialidad:'Planificación y compra de medios',
+    servicios:['Planificación','Compra de medios','Programática','Data & Analytics'],
+    clientes:['+15 marcas locales e internacionales'],
+    dato:'Fusión Omnicom+IPG 2025: OMD y Roger ahora pertenecen al mismo holding global.' },
+  { nombre:'ROGER',   red:'Initiative · IPG',  color:'#d42b4f', anos:14,
+    especialidad:'Medios 360° · Cross-selling integrado',
+    servicios:['Medios integrados','Planificación','Cross-media'],
+    clientes:['Unilever','Diageo','La Consolidada','Softys','U. Columbia'],
+    dato:'Unilever Latam renovó contrato con Initiative — alianza de más de 25 años en la región.' },
+  { nombre:'SWITCH',  red:'DAN',               color:'#16a34a', anos:4,
+    especialidad:'Consultoría digital y tecnología',
+    servicios:['Transformación digital','Consultoría','Desarrollo tech','Automatización'],
+    clientes:[],
+    dato:'Fundada por Texo en 2021. Integra consultoría de negocio, creatividad y tecnología.' },
+  { nombre:'AMPLIFY', red:'Independiente',     color:'#8b5cf6', anos:18,
+    especialidad:'Vía pública · OOH',
+    servicios:['Cartelería','Pantallas digitales','OOH','Vía pública'],
+    clientes:[],
+    dato:'Adquirió Big Bang: 30% del mercado rutero paraguayo. +1.000 soportes. Pantalla más grande del país.' },
+  { nombre:'WILD FI', red:'Independiente',     color:'#64748b', anos:null,
+    especialidad:'Marketing digital y social',
+    servicios:['Marketing digital','Social media','Performance'],
+    clientes:[],
+    dato:'' },
+];
+
+const MERCADO_DATA = {
+  total_usd: 135.5,
+  crecimiento_pct: 6.5,
+  ano: 2024,
+  fuente: 'APAP / Kantar IBOPE Media / Audimedia',
+  destacados: [
+    { label:'Radio', valor:'US$14.9M', crecimiento:'+7.5%', nota:'~80% de las emisiones' },
+    { label:'Banca', valor:'Sector líder', crecimiento:'+54% anuncios', nota:'Mayor crecimiento 2024' },
+    { label:'2025', valor:'+4.3%', crecimiento:'emisiones', nota:'Crecimiento sostenido' },
+  ]
+};
+
+// ── MARKETING — GET ───────────────────────────────────────────────────────────
+app.get('/api/marketing', async (req, res) => {
+  try {
+    const intel = await drive.getMarketing().catch(() => null);
+    res.json({
+      holding: HOLDING_DATA,
+      mercado: MERCADO_DATA,
+      alertas: intel?.alertas || [],
+      resumen: intel?.resumen || '',
+      ultima_actualizacion: intel?.generado_en || null
+    });
+  } catch (err) {
+    console.error('ERROR /api/marketing:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── MARKETING — REFRESH (Claude genera alertas estratégicas) ──────────────────
+app.post('/api/marketing/refresh', async (req, res) => {
+  try {
+    const prompt = `Sos un analista senior de marketing y publicidad, especializado en el mercado paraguayo y latinoamericano.
+
+El directorio de TEXO necesita un briefing estratégico actualizado. TEXO es el holding de marketing más grande de Paraguay, compuesto por 10 empresas.
+
+ESTRUCTURA DEL GRUPO TEXO:
+- NASTA (56 años) → WPP. Creatividad, Media, PR, Digital. Clientes: Claro, Nestlé, Colgate, Petrobras, SC Johnson.
+- BRICK (24 años) → Publicis Worldwide. Creatividad, Media, PR. Clientes: Tigo, McDonald's, Banco Familiar, Nestlé. Ganó Gran Tatakua 2025.
+- LUPE → Independiente. Agencia creativa pura. Clientes: Chevrolet, Babysec, Pepsi, Pilsen.
+- OMD (15 años) → Omnicom Media Group. Planificación y compra de medios. +15 marcas.
+- ROGER (14 años) → Initiative / IPG Mediabrands. Medios 360°. Clientes: Unilever, Diageo, La Consolidada.
+- SWITCH (4 años) → DAN. Consultoría digital y tecnología.
+- AMPLIFY (18 años) → Independiente. Vía pública/OOH. Adquirió Big Bang → 30% del mercado rutero, +1.000 soportes.
+- WILD FI → Independiente. Marketing digital.
+
+DATOS DEL MERCADO PARAGUAYO (2024):
+- Inversión publicitaria total: US$135.5 millones (+6.5% vs 2023)
+- Radio: US$14.9M (+7.5%), ~80% de las emisiones publicitarias
+- Sector Banca: +54% en anuncios (mayor crecimiento del mercado)
+- 2025: crecimiento del +4.3% en emisiones totales
+
+EVENTOS ESTRATÉGICOS RECIENTES:
+- Omnicom completó la adquisición de IPG en 2025 (US$13.500M). OMD (Omnicom) y ROGER (Initiative/IPG) ahora pertenecen al mismo holding global.
+- Unilever renovó contrato con Initiative para Latinoamérica — alianza de más de 25 años que explica la relación histórica de ROGER con Unilever.
+- AMPLIFY adquirió los activos de Big Bang, pasando a controlar el 30% del mercado de vía pública rutero de Paraguay.
+- BRICK ganó el Gran Tatakua 2025, el máximo premio de publicidad en Paraguay.
+
+Fecha: ${new Date().toLocaleDateString('es-PY', { month: 'long', year: 'numeric' })}.
+
+Genera alertas estratégicas concisas y accionables para el CEO y directorio de TEXO. Basate en tu conocimiento del mercado publicitario global y latinoamericano, las redes WPP, Publicis, Omnicom+IPG y DAN, y las tendencias de marketing digital y OOH.
+
+Responde ÚNICAMENTE con JSON válido, sin texto adicional:
+{
+  "alertas": [
+    {
+      "tipo": "riesgo|oportunidad|tension|info",
+      "titulo": "Título corto (máximo 8 palabras)",
+      "texto": "2-3 oraciones: qué pasó y cuál es el impacto concreto para TEXO",
+      "agencias": ["NASTA"],
+      "fecha": "mes/año del evento"
+    }
+  ],
+  "resumen": "1-2 párrafos del panorama estratégico para el CEO de TEXO",
+  "generado_en": "${new Date().toISOString()}"
+}
+Genera entre 5 y 8 alertas. Incluí la fusión Omnicom+IPG, la expansión de Amplify, tendencias de IA en publicidad, y oportunidades/riesgos relevantes para el grupo.`;
+
+    const response = await getAnthropic().messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    let intel;
+    try {
+      const raw = response.content[0].text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+      intel = JSON.parse(raw);
+    } catch(e) {
+      return res.status(500).json({ error: 'Error al parsear respuesta de Claude', raw: response.content[0].text });
+    }
+
+    await drive.saveMarketing(intel);
+    res.json({ ok: true, ...intel });
+  } catch (err) {
+    console.error('ERROR /api/marketing/refresh:', err);
     res.status(500).json({ error: err.message });
   }
 });
