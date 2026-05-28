@@ -476,5 +476,9 @@ Genera entre 5 y 8 alertas. Incluí la fusión Omnicom+IPG, la expansión de Amp
 });
 
 // ── START ─────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor en puerto ${PORT}`));
+// En local/Render: corre como servidor. En Vercel: exporta el app como función serverless.
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`🚀 Servidor en puerto ${PORT}`));
+}
+module.exports = app;
