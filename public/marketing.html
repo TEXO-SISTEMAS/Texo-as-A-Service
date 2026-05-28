@@ -152,6 +152,27 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .alerts-loading{text-align:center;padding:48px;display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--muted)}
 .spinner-dark{width:24px;height:24px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 
+/* ── NOTICIAS ── */
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.news-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;transition:box-shadow .2s,transform .2s;text-decoration:none;color:inherit}
+.news-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.09);transform:translateY(-2px)}
+.news-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.news-source{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);background:#f1f3f8;padding:2px 8px;border-radius:4px;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+.news-date{font-size:11px;color:var(--muted2);white-space:nowrap}
+.news-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.5;flex:1}
+.news-link{font-size:11px;color:var(--accent);font-weight:600;align-self:flex-start;opacity:.7}
+.news-empty{text-align:center;padding:32px;color:var(--muted2);font-size:13px;background:var(--white);border:1.5px dashed var(--border2);border-radius:10px}
+.news-loading{display:flex;align-items:center;gap:10px;padding:20px;color:var(--muted);font-size:13px}
+
+/* ── BRIEFING REDES ── */
+.redes-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+.red-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.red-card-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.red-nombre{font-size:16px;font-weight:800;color:var(--accent);letter-spacing:-.01em}
+.red-estado{font-size:12.5px;color:var(--text);line-height:1.5}
+.red-movimiento{font-size:12px;color:var(--muted);line-height:1.5;padding:8px 12px;background:#f8f9fb;border-radius:6px;border-left:3px solid var(--warn)}
+.red-impacto{font-size:12px;color:var(--accent);font-weight:600;line-height:1.45}
+
 /* ── CHAT SIDEBAR ── */
 .chat-sidebar{width:0;overflow:hidden;flex-shrink:0;border-left:0px solid var(--border);transition:width .28s cubic-bezier(.4,0,.2,1),border-color .28s;background:var(--white);display:flex;position:relative}
 .chat-sidebar.open{border-left:1px solid var(--border)}
@@ -295,9 +316,20 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
       </div>
     </div>
 
+    <!-- NOTICIAS DE LA INDUSTRIA -->
+    <div class="section-wrap">
+      <div class="sec-label">02 · Noticias</div>
+      <div class="sec-heading">Noticias de la Industria</div>
+      <div class="sec-bar"></div>
+      <div class="sec-desc">Titulares recientes sobre publicidad en Paraguay y movimientos de las redes globales. Actualización automática cada 30 minutos.</div>
+      <div id="newsWrap">
+        <div class="news-loading"><div class="spinner-dark"></div><span>Cargando noticias...</span></div>
+      </div>
+    </div>
+
     <!-- ALERTAS ESTRATÉGICAS -->
     <div class="section-wrap alt">
-      <div class="sec-label">02 · Inteligencia</div>
+      <div class="sec-label">03 · Inteligencia</div>
       <div class="sec-heading">Alertas Estratégicas</div>
       <div class="sec-bar"></div>
       <div class="sec-desc">Análisis generado por IA sobre el holding, las redes globales y el mercado. Actualizá cuando necesites una lectura fresca del contexto.</div>
@@ -315,6 +347,28 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
           <div style="font-size:32px;opacity:.4">🔍</div>
           <p>Todavía no hay alertas generadas.</p>
           <p>Presioná <strong>⟳ Actualizar intel</strong> para que Claude analice el holding y el mercado.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRIEFING DE REDES GLOBALES -->
+    <div class="section-wrap">
+      <div class="sec-label">04 · Redes Globales</div>
+      <div class="sec-heading">Briefing de Redes</div>
+      <div class="sec-bar"></div>
+      <div class="sec-desc">Estado actual de las redes globales que representan las agencias del holding: WPP, Publicis, Omnicom+IPG y DAN.</div>
+      <div class="alerts-meta">
+        <div class="alerts-timestamp" id="redesTimestamp">Sin datos aún.</div>
+        <button class="btn btn-outline" id="btnRefreshRedes" onclick="refreshRedes()" style="background:var(--accent);font-size:13px">⟳ Actualizar briefing</button>
+      </div>
+      <div id="redesResumenWrap" style="display:none">
+        <div class="resumen-box" id="redesResumenBox"></div>
+      </div>
+      <div id="redesWrap">
+        <div class="alerts-empty">
+          <div style="font-size:32px;opacity:.4">🌐</div>
+          <p>Sin briefing generado.</p>
+          <p>Presioná <strong>⟳ Actualizar briefing</strong> para que Claude analice las redes globales.</p>
         </div>
       </div>
     </div>
@@ -467,39 +521,111 @@ function renderAlertas(alertas, resumen, timestamp) {
   }).join('')}</div>`;
 }
 
+// ── RENDER REDES ─────────────────────────────────────────────────────────────
+function renderRedes(briefings, resumen, timestamp) {
+  if (timestamp) {
+    const d = new Date(timestamp);
+    document.getElementById('redesTimestamp').textContent =
+      'Última actualización: ' + d.toLocaleDateString('es-PY', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+  const resWrap = document.getElementById('redesResumenWrap');
+  const resBox  = document.getElementById('redesResumenBox');
+  if (resumen) { resBox.textContent = resumen; resWrap.style.display = 'block'; }
+  else { resWrap.style.display = 'none'; }
+
+  const wrap = document.getElementById('redesWrap');
+  if (!briefings || !briefings.length) {
+    wrap.innerHTML = `<div class="alerts-empty"><div style="font-size:32px;opacity:.4">🌐</div><p>Sin briefing generado.</p><p>Presioná <strong>⟳ Actualizar briefing</strong> para que Claude analice las redes globales.</p></div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="redes-grid">${briefings.map(b => `
+    <div class="red-card">
+      <div class="red-card-head"><span class="red-nombre">${b.red}</span></div>
+      <div class="red-estado">${b.estado}</div>
+      ${b.movimientos ? `<div class="red-movimiento">📌 ${b.movimientos}</div>` : ''}
+      ${b.impacto_texo ? `<div class="red-impacto">→ ${b.impacto_texo}</div>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+// ── RENDER NOTICIAS ───────────────────────────────────────────────────────────
+function renderNews(noticias) {
+  const wrap = document.getElementById('newsWrap');
+  if (!noticias || !noticias.length) {
+    wrap.innerHTML = `<div class="news-empty">No se pudieron cargar noticias en este momento.</div>`;
+    return;
+  }
+  wrap.innerHTML = `<div class="news-grid">${noticias.map(n => {
+    const date = n.pubDate ? new Date(n.pubDate).toLocaleDateString('es-PY', { day:'numeric', month:'short' }) : '';
+    return `<a class="news-card" href="${n.link}" target="_blank" rel="noopener">
+      <div class="news-meta">
+        ${n.source ? `<span class="news-source">${n.source}</span>` : ''}
+        <span class="news-date">${date}</span>
+      </div>
+      <div class="news-title">${n.title}</div>
+      <span class="news-link">Leer →</span>
+    </a>`;
+  }).join('')}</div>`;
+}
+
 // ── LOAD ON PAGE LOAD ─────────────────────────────────────────────────────────
 async function loadMarketing() {
   try {
     const r = await fetch('/api/marketing');
     const data = await r.json();
     renderAlertas(data.alertas, data.resumen, data.ultima_actualizacion);
+    renderRedes(data.redes, data.redes_resumen, data.redes_actualizacion);
   } catch(e) { console.error('loadMarketing:', e); }
 }
 
-// ── REFRESH ───────────────────────────────────────────────────────────────────
+async function loadNews() {
+  try {
+    const r = await fetch('/api/marketing/news');
+    const data = await r.json();
+    renderNews(data.noticias);
+  } catch(e) {
+    document.getElementById('newsWrap').innerHTML = `<div class="news-empty">No se pudieron cargar noticias.</div>`;
+  }
+}
+
+// ── REFRESH ALERTAS ───────────────────────────────────────────────────────────
 async function refreshIntel() {
   const btn = document.getElementById('btnRefresh');
   btn.innerHTML = '<span class="spinner"></span> Analizando...';
   btn.disabled = true;
-
-  // Loading state en alertas
-  document.getElementById('alertsWrap').innerHTML = `
-    <div class="alerts-loading">
-      <div class="spinner-dark"></div>
-      <span>Claude está analizando el holding y el mercado...</span>
-    </div>`;
-
+  document.getElementById('alertsWrap').innerHTML = `<div class="alerts-loading"><div class="spinner-dark"></div><span>Claude está analizando el holding y el mercado...</span></div>`;
   try {
-    const r = await fetch('/api/marketing/refresh', { method:'POST' });
-    const data = await r.json();
+    const r = await fetch('/api/marketing/refresh', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tipo: 'alertas' }) });
+    let data;
+    try { data = await r.json(); } catch(_) { throw new Error('Timeout o error del servidor (código ' + r.status + ')'); }
     if (!r.ok) throw new Error(data.error || 'Error del servidor');
     renderAlertas(data.alertas, data.resumen, data.generado_en);
     showToast('✓ Alertas actualizadas', 'success');
   } catch(e) {
     showToast('Error: ' + e.message, 'error');
-    loadMarketing(); // re-cargar lo que había
+    loadMarketing();
   } finally {
     btn.innerHTML = '⟳ Actualizar intel';
+    btn.disabled = false;
+  }
+}
+
+// ── REFRESH REDES ─────────────────────────────────────────────────────────────
+async function refreshRedes() {
+  const btn = document.getElementById('btnRefreshRedes');
+  btn.innerHTML = '<span class="spinner"></span> Analizando redes...';
+  btn.disabled = true;
+  document.getElementById('redesWrap').innerHTML = `<div class="alerts-loading"><div class="spinner-dark"></div><span>Claude está analizando WPP, Publicis, Omnicom+IPG y DAN...</span></div>`;
+  try {
+    const r = await fetch('/api/marketing/refresh', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tipo: 'redes' }) });
+    let data;
+    try { data = await r.json(); } catch(_) { throw new Error('Timeout o error del servidor (código ' + r.status + ')'); }
+    if (!r.ok) throw new Error(data.error || 'Error del servidor');
+    renderRedes(data.briefings, data.resumen, data.generado_en);
+    showToast('✓ Briefing de redes actualizado', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.innerHTML = '⟳ Actualizar briefing';
     btn.disabled = false;
   }
 }
@@ -515,6 +641,7 @@ function showToast(msg, type='success') {
 window.addEventListener('DOMContentLoaded', () => {
   renderHolding();
   loadMarketing();
+  loadNews();
 });
 </script>
 

@@ -2,9 +2,50 @@ const express = require('express');
 const multer  = require('multer');
 const cors    = require('cors');
 const path    = require('path');
+const https   = require('https');
 const Anthropic = require('@anthropic-ai/sdk');
 const { parseExcel } = require('./parser');
 const drive = require('./drive');
+
+// ── RSS UTILITIES ─────────────────────────────────────────────────────────────
+function fetchURL(url) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NewsReader/1.0)', 'Accept': 'application/rss+xml,application/xml' }
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return fetchURL(res.headers.location).then(resolve).catch(reject);
+      }
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => resolve(data));
+    });
+    req.on('error', reject);
+    req.setTimeout(8000, () => { req.destroy(); reject(new Error('timeout')); });
+  });
+}
+
+function parseRSS(xml, max = 8) {
+  const items = [];
+  const rx = /<item>([\s\S]*?)<\/item>/g;
+  let m;
+  while ((m = rx.exec(xml)) && items.length < max) {
+    const s = m[1];
+    const titleM = /<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/i.exec(s) || /<title>([\s\S]*?)<\/title>/i.exec(s);
+    const linkM  = /<link>([\s\S]*?)<\/link>/i.exec(s);
+    const dateM  = /<pubDate>([\s\S]*?)<\/pubDate>/i.exec(s);
+    const srcM   = /<source[^>]*>([\s\S]*?)<\/source>/i.exec(s);
+    const title  = titleM ? titleM[1].replace(/\s+-\s+[^-]+$/, '').replace(/&amp;/g,'&').replace(/&#39;/g,"'").replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim() : '';
+    const link   = linkM ? linkM[1].trim() : '';
+    const pubDate = dateM ? dateM[1].trim() : '';
+    const source = srcM ? srcM[1].replace(/&amp;/g,'&').trim() : '';
+    if (title && link) items.push({ title, link, pubDate, source });
+  }
+  return items;
+}
+
+let _newsCache = { data: null, ts: 0 };
+const NEWS_TTL = 30 * 60 * 1000; // 30 min
 
 let _anthropic = null;
 function getAnthropic() {
@@ -390,13 +431,19 @@ const MERCADO_DATA = {
 // ── MARKETING — GET ───────────────────────────────────────────────────────────
 app.get('/api/marketing', async (req, res) => {
   try {
-    const intel = await drive.getMarketing().catch(() => null);
+    const [alertasIntel, redesIntel] = await Promise.all([
+      drive.getMarketingIntel('alertas').catch(() => null),
+      drive.getMarketingIntel('redes').catch(() => null),
+    ]);
     res.json({
       holding: HOLDING_DATA,
       mercado: MERCADO_DATA,
-      alertas: intel?.alertas || [],
-      resumen: intel?.resumen || '',
-      ultima_actualizacion: intel?.generado_en || null
+      alertas: alertasIntel?.alertas || [],
+      resumen: alertasIntel?.resumen || '',
+      ultima_actualizacion: alertasIntel?.generado_en || null,
+      redes: redesIntel?.briefings || [],
+      redes_resumen: redesIntel?.resumen || '',
+      redes_actualizacion: redesIntel?.generado_en || null,
     });
   } catch (err) {
     console.error('ERROR /api/marketing:', err);
@@ -404,46 +451,70 @@ app.get('/api/marketing', async (req, res) => {
   }
 });
 
-// ── MARKETING — REFRESH (Claude genera alertas estratégicas) ──────────────────
-app.post('/api/marketing/refresh', async (req, res) => {
+// ── MARKETING — NOTICIAS (Google News RSS) ────────────────────────────────────
+app.get('/api/marketing/news', async (req, res) => {
   try {
-    const prompt = `Sos un analista senior de marketing y publicidad, especializado en el mercado paraguayo y latinoamericano.
+    if (_newsCache.data && (Date.now() - _newsCache.ts) < NEWS_TTL) {
+      return res.json(_newsCache.data);
+    }
+    const queries = [
+      'publicidad+OR+marketing+Paraguay',
+      'WPP+OR+Publicis+OR+Omnicom+publicidad',
+    ];
+    const allItems = [];
+    const seen = new Set();
+    for (const q of queries) {
+      try {
+        const url = `https://news.google.com/rss/search?q=${q}&hl=es-419&gl=AR&ceid=AR:es-419`;
+        const xml = await fetchURL(url);
+        for (const item of parseRSS(xml, 7)) {
+          const key = item.title.slice(0, 50).toLowerCase();
+          if (!seen.has(key)) { seen.add(key); allItems.push(item); }
+        }
+      } catch(e) { console.warn('RSS error:', e.message); }
+    }
+    allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+    const result = { noticias: allItems.slice(0, 10), fetched_at: new Date().toISOString() };
+    _newsCache = { data: result, ts: Date.now() };
+    res.json(result);
+  } catch (err) {
+    console.error('ERROR /api/marketing/news:', err);
+    res.status(500).json({ error: err.message, noticias: [] });
+  }
+});
 
-El directorio de TEXO necesita un briefing estratégico actualizado. TEXO es el holding de marketing más grande de Paraguay, compuesto por 10 empresas.
+// ── MARKETING — REFRESH (Claude) ─────────────────────────────────────────────
+const TEXO_CONTEXT = `HOLDING TEXO (Paraguay):
+- NASTA (56a) → WPP. Clientes: Claro, Nestlé, Colgate, Petrobras, SC Johnson.
+- BRICK (24a) → Publicis. Clientes: Tigo, McDonald's, Banco Familiar. Gran Tatakua 2025.
+- LUPE → Independiente. Clientes: Chevrolet, Babysec, Pepsi, Pilsen.
+- OMD (15a) → Omnicom. Planificación y compra de medios. +15 marcas.
+- ROGER (14a) → Initiative/IPG. Clientes: Unilever, Diageo, La Consolidada.
+- SWITCH (4a) → DAN. Consultoría digital.
+- AMPLIFY (18a) → OOH. 30% mercado rutero Paraguay (+1.000 soportes).
+- WILD FI → Marketing digital.
+Mercado PY 2024: US$135.5M (+6.5%). Fusión Omnicom+IPG 2025 (US$13.5B): OMD y ROGER = mismo holding global.`;
 
-ESTRUCTURA DEL GRUPO TEXO:
-- NASTA (56 años) → WPP. Creatividad, Media, PR, Digital. Clientes: Claro, Nestlé, Colgate, Petrobras, SC Johnson.
-- BRICK (24 años) → Publicis Worldwide. Creatividad, Media, PR. Clientes: Tigo, McDonald's, Banco Familiar, Nestlé. Ganó Gran Tatakua 2025.
-- LUPE → Independiente. Agencia creativa pura. Clientes: Chevrolet, Babysec, Pepsi, Pilsen.
-- OMD (15 años) → Omnicom Media Group. Planificación y compra de medios. +15 marcas.
-- ROGER (14 años) → Initiative / IPG Mediabrands. Medios 360°. Clientes: Unilever, Diageo, La Consolidada.
-- SWITCH (4 años) → DAN. Consultoría digital y tecnología.
-- AMPLIFY (18 años) → Independiente. Vía pública/OOH. Adquirió Big Bang → 30% del mercado rutero, +1.000 soportes.
-- WILD FI → Independiente. Marketing digital.
+const PROMPTS = {
+  alertas: () => `Sos analista senior de marketing especializado en mercado paraguayo.
+${TEXO_CONTEXT}
+Fecha: ${new Date().toLocaleDateString('es-PY', { month:'long', year:'numeric' })}.
+IMPORTANTE: Solo JSON, sin texto adicional, sin markdown.
+Formato: {"alertas":[{"tipo":"riesgo","titulo":"Max 6 palabras","texto":"Una oración con impacto para TEXO.","agencias":["NASTA"],"fecha":"05/2026"}],"resumen":"Una oración ejecutiva.","generado_en":"${new Date().toISOString()}"}
+Genera exactamente 5 alertas. Tipos: riesgo, oportunidad, tension, info. Temas: fusión Omnicom+IPG, AMPLIFY OOH, IA en publicidad, tendencia digital, riesgo de red global.`,
 
-DATOS DEL MERCADO PARAGUAYO (2024):
-- Inversión publicitaria total: US$135.5 millones (+6.5% vs 2023)
-- Radio: US$14.9M (+7.5%), ~80% de las emisiones publicitarias
-- Sector Banca: +54% en anuncios (mayor crecimiento del mercado)
-- 2025: crecimiento del +4.3% en emisiones totales
+  redes: () => `Sos analista de inteligencia competitiva en publicidad global.
+${TEXO_CONTEXT}
+Fecha: ${new Date().toLocaleDateString('es-PY', { month:'long', year:'numeric' })}.
+Genera un briefing del estado actual de cada red global presente en TEXO: WPP, Publicis, Omnicom (post-fusión con IPG), DAN.
+IMPORTANTE: Solo JSON, sin texto adicional, sin markdown.
+Formato: {"briefings":[{"red":"WPP","estado":"una oración sobre su situación actual.","movimientos":"un movimiento reciente clave.","impacto_texo":"impacto concreto para NASTA en Paraguay."},{"red":"Publicis","estado":"...","movimientos":"...","impacto_texo":"..."},{"red":"Omnicom+IPG","estado":"...","movimientos":"...","impacto_texo":"..."},{"red":"DAN","estado":"...","movimientos":"...","impacto_texo":"..."}],"resumen":"Una oración sobre el panorama global de redes.","generado_en":"${new Date().toISOString()}"}`
+};
 
-EVENTOS ESTRATÉGICOS RECIENTES:
-- Omnicom completó la adquisición de IPG en 2025 (US$13.500M). OMD (Omnicom) y ROGER (Initiative/IPG) ahora pertenecen al mismo holding global.
-- Unilever renovó contrato con Initiative para Latinoamérica — alianza de más de 25 años que explica la relación histórica de ROGER con Unilever.
-- AMPLIFY adquirió los activos de Big Bang, pasando a controlar el 30% del mercado de vía pública rutero de Paraguay.
-- BRICK ganó el Gran Tatakua 2025, el máximo premio de publicidad en Paraguay.
-
-Fecha: ${new Date().toLocaleDateString('es-PY', { month: 'long', year: 'numeric' })}.
-
-Genera alertas estratégicas concisas y accionables para el CEO y directorio de TEXO. Basate en tu conocimiento del mercado publicitario global y latinoamericano, las redes WPP, Publicis, Omnicom+IPG y DAN, y las tendencias de marketing digital y OOH.
-
-IMPORTANTE: Responde ÚNICAMENTE con el JSON. Sin texto antes ni después. Sin markdown. Solo el objeto JSON.
-
-Formato exacto:
-{"alertas":[{"tipo":"riesgo","titulo":"Titulo maximo 6 palabras","texto":"Una oración concreta con impacto para TEXO.","agencias":["NASTA"],"fecha":"05/2025"},{"tipo":"oportunidad","titulo":"Otro titulo","texto":"Una oración.","agencias":["BRICK","LUPE"],"fecha":"05/2025"}],"resumen":"Una oración ejecutiva sobre el panorama de TEXO.","generado_en":"${new Date().toISOString()}"}
-
-Genera exactamente 5 alertas (no más). Tipos: riesgo, oportunidad, tension, info. Cubrí: fusión Omnicom+IPG, expansión AMPLIFY, IA en publicidad, tendencia digital Paraguay, y un riesgo/oportunidad de red global.`;
-
+app.post('/api/marketing/refresh', async (req, res) => {
+  const tipo = (req.body?.tipo === 'redes') ? 'redes' : 'alertas';
+  try {
+    const prompt = PROMPTS[tipo]();
     const response = await getAnthropic().messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 2000,
@@ -453,13 +524,9 @@ Genera exactamente 5 alertas (no más). Tipos: riesgo, oportunidad, tension, inf
     let intel;
     try {
       const text = response.content[0].text;
-      // 1) strip markdown code fences
       let raw = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-      // 2) try direct parse
-      try {
-        intel = JSON.parse(raw);
-      } catch(_) {
-        // 3) fallback: extract the outermost { ... } block
+      try { intel = JSON.parse(raw); }
+      catch(_) {
         const match = raw.match(/\{[\s\S]*\}/);
         if (!match) throw new Error('No JSON object found in response');
         intel = JSON.parse(match[0]);
@@ -468,8 +535,8 @@ Genera exactamente 5 alertas (no más). Tipos: riesgo, oportunidad, tension, inf
       return res.status(500).json({ error: 'Error al parsear respuesta de Claude: ' + e.message, raw: response.content[0].text });
     }
 
-    await drive.saveMarketing(intel);
-    res.json({ ok: true, ...intel });
+    await drive.saveMarketingIntel(tipo, intel);
+    res.json({ ok: true, tipo, ...intel });
   } catch (err) {
     console.error('ERROR /api/marketing/refresh:', err);
     res.status(500).json({ error: err.message });
