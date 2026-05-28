@@ -452,14 +452,21 @@ app.get('/api/marketing', async (req, res) => {
 });
 
 // ── MARKETING — NOTICIAS (Google News RSS) ────────────────────────────────────
+const NEWS_KEYWORDS = ['publicidad','agencia','marketing','publicitario','medios','anuncio','campaña','creativo','creatividad','brand','wpp','publicis','omnicom','ipg','dentsu','dan ','ogilvy','bbdo','mccann','havas','grey ','tbwa','ogil','media plan','inversión publi','mercado publi','industria publi'];
+function isAdNews(title) {
+  const t = title.toLowerCase();
+  return NEWS_KEYWORDS.some(k => t.includes(k));
+}
+
 app.get('/api/marketing/news', async (req, res) => {
   try {
     if (_newsCache.data && (Date.now() - _newsCache.ts) < NEWS_TTL) {
       return res.json(_newsCache.data);
     }
     const queries = [
-      'publicidad+OR+marketing+Paraguay',
-      'WPP+OR+Publicis+OR+Omnicom+publicidad',
+      '"agencia+de+publicidad"+OR+"industria+publicitaria"',
+      'WPP+OR+Publicis+OR+Omnicom+publicidad+OR+advertising',
+      'marketing+digital+latinoamerica+agencia',
     ];
     const allItems = [];
     const seen = new Set();
@@ -467,9 +474,12 @@ app.get('/api/marketing/news', async (req, res) => {
       try {
         const url = `https://news.google.com/rss/search?q=${q}&hl=es-419&gl=AR&ceid=AR:es-419`;
         const xml = await fetchURL(url);
-        for (const item of parseRSS(xml, 7)) {
+        for (const item of parseRSS(xml, 8)) {
           const key = item.title.slice(0, 50).toLowerCase();
-          if (!seen.has(key)) { seen.add(key); allItems.push(item); }
+          if (!seen.has(key) && isAdNews(item.title)) {
+            seen.add(key);
+            allItems.push(item);
+          }
         }
       } catch(e) { console.warn('RSS error:', e.message); }
     }
