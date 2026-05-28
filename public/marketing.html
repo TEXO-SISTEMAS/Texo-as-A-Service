@@ -4,190 +4,204 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Texo as a Service — Inteligencia de Marketing</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,700;1,800;1,900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 :root{
-  --bg:#eef0f5;--white:#ffffff;--border:#e2e4e9;--border2:#c8cdd8;
-  --text:#0f1117;--muted:#6b7280;--muted2:#9ca3af;
-  --accent:#1a1a2e;--yellow:#f0f040;
-  --green:#16a34a;--red:#d42b4f;--warn:#d4900a;
+  --bg:#ffffff;--bg-soft:#f7f7f7;--bg-dark:#0a0a0a;--bg-mid:#111111;
+  --text:#0a0a0a;--text-inv:#ffffff;--muted:#6b6b6b;--muted2:#a3a3a3;
+  --border:#e5e5e5;--border-dark:#2a2a2a;
+  --yellow:#f0f040;--green:#16a34a;--red:#d42b4f;--warn:#d4900a;
+  --accent:#0a0a0a;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:17px;display:flex;flex-direction:column}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:16px;display:flex;flex-direction:column}
 
 /* ── TOPBAR ── */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:60px;background:var(--accent);flex-shrink:0;gap:16px}
-.topbar-left{display:flex;align-items:center;gap:16px}
-.logo{font-size:22px;font-weight:800;letter-spacing:.01em;color:#fff}
-.logo span{color:#f0f040;font-weight:300}
-.topbar-right{display:flex;align-items:center;gap:10px}
-.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:6px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s;letter-spacing:.02em;text-decoration:none}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:58px;background:var(--bg-dark);flex-shrink:0;gap:16px;border-bottom:1px solid var(--border-dark)}
+.topbar-left{display:flex;align-items:center;gap:20px}
+.logo{font-size:15px;font-weight:700;letter-spacing:.04em;color:#fff;text-transform:uppercase}
+.logo span{color:rgba(255,255,255,.35);font-weight:400}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:4px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;letter-spacing:.03em;text-decoration:none}
 .btn:active{transform:scale(.97)}
-.btn-primary{background:#f0f040;color:#0f1117}
+.btn-primary{background:var(--yellow);color:var(--bg-dark)}
 .btn-primary:hover{background:#e8e830}
-.btn-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.35)}
-.btn-outline:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6)}
-.btn-ai{background:rgba(240,240,64,.15);color:#f0f040;border:1px solid rgba(240,240,64,.3)}
-.btn-ai:hover{background:rgba(240,240,64,.25)}
-.btn-ai.active{background:#f0f040;color:#0f1117}
-.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+.btn-outline{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.25)}
+.btn-outline:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.5)}
+.btn-ai{background:transparent;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);font-size:13px}
+.btn-ai:hover{background:rgba(255,255,255,.07);color:#fff}
+.btn-ai.active{background:var(--yellow);color:var(--bg-dark);border-color:var(--yellow)}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── LAYOUT ── */
 .layout{display:flex;flex:1;overflow:hidden}
-.main{flex:1;overflow-y:auto}
-.main::-webkit-scrollbar{width:5px}
-.main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.main{flex:1;overflow-y:auto;background:var(--bg)}
+.main::-webkit-scrollbar{width:4px}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
 /* ── FOOTER ── */
-.footer{flex-shrink:0;background:var(--accent);color:rgba(255,255,255,.5);font-size:14px;font-weight:500;padding:12px 32px;display:flex;align-items:center;justify-content:space-between;letter-spacing:.03em}
-.footer strong{color:rgba(255,255,255,.85)}
+.footer{flex-shrink:0;background:var(--bg-dark);color:rgba(255,255,255,.35);font-size:12px;font-weight:500;padding:12px 40px;display:flex;align-items:center;justify-content:space-between;letter-spacing:.05em;text-transform:uppercase;border-top:1px solid var(--border-dark)}
+.footer strong{color:rgba(255,255,255,.7)}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:70px;right:28px;background:var(--text);color:#fff;border-radius:8px;padding:13px 20px;font-size:12px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:999;transform:translateY(60px);opacity:0;transition:all .3s;max-width:320px}
+.toast{position:fixed;bottom:60px;right:28px;background:var(--text);color:#fff;border-radius:4px;padding:12px 18px;font-size:12px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:999;transform:translateY(60px);opacity:0;transition:all .3s;max-width:320px;letter-spacing:.02em}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.error{background:var(--red)}
-.toast.success{background:var(--green)}
+.toast.success{background:#0a0a0a}
 
 /* ── HERO ── */
 .hero-section{
-  background:linear-gradient(135deg,#0b0f1a 0%,#1a1a2e 55%,#0d1535 100%);
-  padding:56px 44px 48px;color:#fff;position:relative;overflow:hidden;
+  background:var(--bg-dark);
+  padding:72px 40px 64px;
+  color:#fff;
+  position:relative;
+  overflow:hidden;
 }
-.hero-section::before{content:'';position:absolute;top:-100px;right:-60px;width:420px;height:420px;background:radial-gradient(circle,rgba(240,240,64,.06) 0%,transparent 60%);pointer-events:none}
-.hero-section::after{content:'';position:absolute;bottom:-80px;left:40%;width:300px;height:300px;background:radial-gradient(circle,rgba(108,63,197,.07) 0%,transparent 60%);pointer-events:none}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:8px 20px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.8);margin-bottom:28px}
-.hero-main{display:flex;align-items:flex-start;justify-content:space-between;gap:32px;margin-bottom:36px;position:relative}
-.hero-company{font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px}
-.hero-product{font-size:60px;font-weight:900;letter-spacing:-.04em;line-height:.95;color:#fff;margin-bottom:6px}
-.hero-product-sub{font-size:48px;font-weight:300;letter-spacing:-.02em;line-height:1;color:#f0f040}
-.hero-tagline{font-size:12px;color:rgba(255,255,255,.4);margin-top:16px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
-.hero-update-block{display:flex;flex-direction:column;align-items:flex-end;gap:8px;padding-top:8px;flex-shrink:0}
-.hero-update-time{font-size:11px;color:rgba(255,255,255,.3);text-align:right;line-height:1.4}
+.hero-section::before{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(ellipse 60% 80% at 80% 50%, rgba(240,240,64,.04) 0%, transparent 70%);
+  pointer-events:none;
+}
+.hero-inner{max-width:1200px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:40px}
+.hero-left{flex:1}
+.hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px}
+.hero-headline{font-size:clamp(56px,7vw,96px);font-weight:900;letter-spacing:-.04em;line-height:.9;color:#fff;margin-bottom:0}
+.hero-headline em{font-style:italic;font-weight:300;color:rgba(255,255,255,.55)}
+.hero-sub{font-size:13px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-top:24px}
+.hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px;flex-shrink:0;padding-bottom:4px}
+.hero-update-time{font-size:11px;color:rgba(255,255,255,.25);text-align:right;line-height:1.5;letter-spacing:.04em}
+.btn-refresh-hero{background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.15);font-size:12px;padding:7px 14px;white-space:nowrap}
+.btn-refresh-hero:hover{color:#fff;border-color:rgba(255,255,255,.4)}
 
-/* Hero stat cards strip */
-.hero-stats{display:flex;gap:12px;flex-wrap:wrap;padding-top:28px;border-top:1px solid rgba(255,255,255,.12)}
-.hero-stat{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:18px 22px;flex:1;min-width:140px}
-.hero-stat-green{border-top:3px solid #4ade80}
-.hero-stat-yellow{border-top:3px solid #fbbf24}
-.hero-stat-blue{border-top:3px solid #60a5fa}
-.hero-stat-purple{border-top:3px solid #a78bfa}
-.hero-stat-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px}
-.hero-stat-value{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.02em;line-height:1.1}
-.hero-stat-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px}
+/* Hero stats strip */
+.hero-stats{display:flex;gap:0;margin-top:56px;border-top:1px solid rgba(255,255,255,.1);padding-top:32px;max-width:1200px;margin-left:auto;margin-right:auto}
+.hero-stat{flex:1;padding:0 40px 0 0;border-right:1px solid rgba(255,255,255,.08)}
+.hero-stat:first-child{padding-left:0}
+.hero-stat:last-child{border-right:none;padding-right:0}
+.hero-stat-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px}
+.hero-stat-value{font-size:28px;font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1}
+.hero-stat-sub{font-size:11px;color:rgba(255,255,255,.3);margin-top:6px;line-height:1.4}
 
-/* ── SECTIONS ── */
-.section-wrap{padding:40px 44px}
-.section-wrap.alt{background:#f4f5f8}
-.sec-label{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px}
-.sec-heading{font-size:32px;font-weight:900;letter-spacing:-.03em;line-height:1.05;color:var(--text);margin-bottom:10px}
-.sec-bar{width:44px;height:3px;background:var(--accent);border-radius:2px;margin-bottom:24px}
-.sec-desc{font-size:14px;color:var(--muted);line-height:1.6;max-width:720px;margin-bottom:28px}
+/* ── HOLDING SECTION ── */
+.section-holding{padding:80px 40px;max-width:1200px;margin:0 auto}
+.sec-eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:16px}
+.sec-heading{font-size:clamp(36px,5vw,52px);font-weight:900;letter-spacing:-.04em;line-height:.95;color:var(--text);margin-bottom:8px}
+.sec-heading em{font-style:italic;font-weight:300;color:var(--muted)}
+.sec-rule{width:100%;height:1px;background:var(--border);margin:28px 0}
+.sec-desc{font-size:14px;color:var(--muted);line-height:1.7;max-width:560px;margin-bottom:48px}
 
-/* ── HOLDING CARDS ── */
-.holding-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
-.holding-card{background:var(--white);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .2s,transform .2s}
-.holding-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.1);transform:translateY(-2px)}
-.holding-card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
-.hc-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
-.hc-name{font-size:20px;font-weight:800;flex:1;letter-spacing:-.01em}
-.hc-red{font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:.05em;text-transform:uppercase;background:rgba(26,26,46,.08);color:var(--accent);white-space:nowrap}
-.holding-card-body{padding:14px 20px;display:flex;flex-direction:column;gap:10px}
-.hc-spec{font-size:12px;font-weight:600;color:var(--muted)}
-.hc-tags{display:flex;flex-wrap:wrap;gap:5px}
-.hc-tag{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;background:#f1f3f8;color:var(--muted)}
-.hc-clients{font-size:12px;color:var(--muted);line-height:1.5}
+/* Holding grid — asymmetric cards */
+.holding-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1px;background:var(--border)}
+.holding-card{background:var(--bg);padding:32px;transition:background .2s}
+.holding-card:hover{background:var(--bg-soft)}
+.hc-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.hc-name{font-size:28px;font-weight:900;letter-spacing:-.03em;line-height:1}
+.hc-red{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);padding:4px 10px;border:1px solid var(--border);border-radius:2px}
+.hc-spec{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.hc-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.hc-tag{font-size:11px;font-weight:600;padding:3px 8px;background:var(--bg-soft);color:var(--muted);letter-spacing:.02em;border-radius:2px}
+.hc-clients{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:10px}
 .hc-clients strong{font-weight:700;color:var(--text)}
-.hc-dato{font-size:12px;font-weight:600;color:var(--accent);background:rgba(26,26,46,.05);border-radius:6px;padding:8px 12px;line-height:1.45;border-left:3px solid var(--accent)}
+.hc-dato{font-size:12px;color:var(--muted);font-style:italic;line-height:1.5;padding-top:12px;border-top:1px solid var(--border)}
 
-/* ── DIVIDER BAND ── */
-.divider-band{background:var(--accent);color:#fff;padding:36px 44px;display:flex;align-items:center;justify-content:space-between;gap:32px;flex-wrap:wrap}
-.divider-band-left{}
-.divider-band-title{font-size:28px;font-weight:900;letter-spacing:-.02em;color:var(--yellow)}
-.divider-band-sub{font-size:13px;color:rgba(255,255,255,.45);margin-top:4px;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
-.divider-band-stats{display:flex;gap:40px;flex-wrap:wrap}
-.dbs-item{text-align:center}
-.dbs-val{font-size:32px;font-weight:900;letter-spacing:-.03em;color:#fff}
-.dbs-label{font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
-.dbs-growth{font-size:13px;font-weight:700;color:#4ade80;margin-top:2px}
+/* ── MARKET SECTION ── */
+.section-market{background:var(--bg-dark);padding:72px 40px;color:#fff}
+.market-inner{max-width:1200px;margin:0 auto}
+.market-top{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;margin-bottom:48px;padding-bottom:48px;border-bottom:1px solid rgba(255,255,255,.08)}
+.market-headline{font-size:clamp(40px,5vw,64px);font-weight:900;letter-spacing:-.04em;line-height:.95;color:#fff}
+.market-headline em{font-style:italic;font-weight:300;color:rgba(255,255,255,.45)}
+.market-total{text-align:right;flex-shrink:0}
+.market-total-num{font-size:clamp(32px,4vw,52px);font-weight:900;letter-spacing:-.04em;color:#fff;line-height:1}
+.market-total-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:6px}
+.market-total-growth{font-size:14px;font-weight:700;color:var(--yellow);margin-top:4px}
+.market-source{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-top:4px}
+.market-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.06)}
+.market-item{background:var(--bg-dark);padding:24px 28px}
+.mi-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px}
+.mi-val{font-size:24px;font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1}
+.mi-sub{font-size:12px;color:rgba(255,255,255,.35);margin-top:6px;line-height:1.4}
 
-/* Market destacados */
-.market-chips{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
-.market-chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:12px 18px;flex:1;min-width:160px}
-.mc-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:4px}
-.mc-val{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.01em}
-.mc-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:3px}
+/* ── ALERTS SECTION ── */
+.section-alerts{padding:80px 40px;background:var(--bg-soft)}
+.alerts-inner{max-width:1200px;margin:0 auto}
+.alerts-meta-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px}
+.alerts-timestamp{font-size:12px;color:var(--muted2);font-style:italic;letter-spacing:.02em}
 
-/* ── ALERTAS ── */
-.alerts-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
-.alerts-timestamp{font-size:12px;color:var(--muted2);font-style:italic}
-.insights-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
-.insight-card{border-radius:12px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start;border:none;border-left:4px solid transparent}
-.insight-riesgo{background:rgba(212,43,79,.055);border-left-color:var(--red)}
-.insight-oportunidad{background:rgba(22,163,74,.055);border-left-color:var(--green)}
-.insight-tension{background:rgba(108,63,197,.055);border-left-color:#6c3fc5}
-.insight-info{background:rgba(14,165,176,.055);border-left-color:#0ea5b0}
-.insight-icon-wrap{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.insight-riesgo .insight-icon-wrap{background:rgba(212,43,79,.14)}
-.insight-oportunidad .insight-icon-wrap{background:rgba(22,163,74,.14)}
-.insight-tension .insight-icon-wrap{background:rgba(108,63,197,.14)}
-.insight-info .insight-icon-wrap{background:rgba(14,165,176,.14)}
-.insight-body{flex:1;min-width:0}
-.insight-tag{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+/* Resumen box */
+.resumen-box{background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--text);padding:20px 28px;margin-bottom:32px;font-size:14px;color:var(--text);line-height:1.8;font-style:italic}
+
+/* Alert cards grid */
+.insights-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border);margin-bottom:2px}
+.insight-card{background:var(--bg);padding:28px 32px;display:grid;grid-template-columns:80px 1fr;gap:20px;align-items:start}
+.insight-card:hover{background:#fefefe}
+.insight-icon-col{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding-top:2px}
+.insight-icon-wrap{width:36px;height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.insight-riesgo .insight-icon-wrap{background:rgba(212,43,79,.1)}
+.insight-oportunidad .insight-icon-wrap{background:rgba(22,163,74,.1)}
+.insight-tension .insight-icon-wrap{background:rgba(108,63,197,.1)}
+.insight-info .insight-icon-wrap{background:rgba(14,165,176,.1)}
+.insight-tag{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
 .insight-tag-riesgo{color:var(--red)}
 .insight-tag-oportunidad{color:var(--green)}
 .insight-tag-tension{color:#6c3fc5}
 .insight-tag-info{color:#0ea5b0}
-.insight-title{font-size:13.5px;color:var(--text);line-height:1.5;font-weight:700;margin-bottom:4px}
-.insight-text{font-size:12.5px;color:var(--muted);line-height:1.55}
-.insight-agencies{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-.ia-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(26,26,46,.08);color:var(--accent);letter-spacing:.04em}
+.insight-body{}
+.insight-title{font-size:15px;font-weight:800;letter-spacing:-.02em;color:var(--text);line-height:1.3;margin-bottom:8px}
+.insight-text{font-size:13px;color:var(--muted);line-height:1.6}
+.insight-agencies{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}
+.ia-chip{font-size:10px;font-weight:700;padding:3px 8px;background:var(--bg-soft);color:var(--muted);letter-spacing:.05em;border-radius:2px;border:1px solid var(--border)}
 
-.resumen-box{background:linear-gradient(90deg,#f1f3f8 0%,#f8f9fb 100%);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 22px;margin-bottom:24px;font-size:13.5px;color:var(--text);line-height:1.8;font-weight:500}
+/* Top accent bar per type */
+.insight-riesgo{border-top:2px solid var(--red)}
+.insight-oportunidad{border-top:2px solid var(--green)}
+.insight-tension{border-top:2px solid #6c3fc5}
+.insight-info{border-top:2px solid #0ea5b0}
 
-.alerts-empty{text-align:center;padding:48px 24px;color:var(--muted2);font-size:14px;background:var(--white);border:1.5px dashed var(--border2);border-radius:12px}
+/* Empty / loading states */
+.alerts-empty{text-align:center;padding:64px 24px;color:var(--muted2);font-size:14px;background:var(--bg);border:1px solid var(--border)}
 .alerts-empty p{margin-top:8px;font-size:13px}
-.alerts-loading{text-align:center;padding:48px;display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--muted)}
-.spinner-dark{width:24px;height:24px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.alerts-loading{text-align:center;padding:64px;display:flex;flex-direction:column;align-items:center;gap:16px;color:var(--muted);background:var(--bg);border:1px solid var(--border)}
+.spinner-dark{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite}
 
 /* ── CHAT SIDEBAR ── */
-.chat-sidebar{width:0;overflow:hidden;flex-shrink:0;border-left:0px solid var(--border);transition:width .28s cubic-bezier(.4,0,.2,1),border-color .28s;background:var(--white);display:flex;position:relative}
+.chat-sidebar{width:0;overflow:hidden;flex-shrink:0;border-left:0px solid var(--border);transition:width .28s cubic-bezier(.4,0,.2,1),border-color .28s;background:var(--bg);display:flex;position:relative}
 .chat-sidebar.open{border-left:1px solid var(--border)}
 .chat-sidebar.resizing{transition:none}
 .chat-sidebar-inner{flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative}
-.chat-resize-handle{position:absolute;left:0;top:0;bottom:0;width:5px;cursor:col-resize;z-index:20;background:transparent;transition:background .2s}
-.chat-resize-handle:hover,.chat-resize-handle.dragging{background:var(--accent);opacity:.25}
-.chat-header{background:var(--accent);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
-.chat-header-icon{width:32px;height:32px;border-radius:8px;background:#f0f040;color:#0f1117;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:800}
+.chat-resize-handle{position:absolute;left:0;top:0;bottom:0;width:4px;cursor:col-resize;z-index:20;background:transparent;transition:background .2s}
+.chat-resize-handle:hover,.chat-resize-handle.dragging{background:var(--border)}
+.chat-header{background:var(--bg-dark);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;border-bottom:1px solid var(--border-dark)}
+.chat-header-icon{width:30px;height:30px;border-radius:4px;background:var(--yellow);color:var(--bg-dark);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;font-weight:800}
 .chat-header-text{flex:1}
-.chat-header-title{font-size:15px;font-weight:700}
-.chat-header-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
-.chat-close{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;padding:0 2px;line-height:1;transition:color .15s}
+.chat-header-title{font-size:13px;font-weight:700;letter-spacing:.02em}
+.chat-header-sub{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;letter-spacing:.05em;text-transform:uppercase}
+.chat-close{background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:18px;padding:0 2px;line-height:1;transition:color .15s}
 .chat-close:hover{color:#fff}
-.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
-.chat-messages::-webkit-scrollbar{width:4px}
-.chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.chat-msg{max-width:90%;line-height:1.55;font-size:13.5px;border-radius:12px;padding:10px 13px}
-.chat-msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
-.chat-msg.assistant{align-self:flex-start;background:#f4f5f7;color:var(--text);border-bottom-left-radius:4px}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-messages::-webkit-scrollbar{width:3px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:1px}
+.chat-msg{max-width:90%;line-height:1.55;font-size:13px;padding:10px 13px;border-radius:2px}
+.chat-msg.user{align-self:flex-end;background:var(--bg-dark);color:#fff}
+.chat-msg.assistant{align-self:flex-start;background:var(--bg-soft);color:var(--text)}
 .chat-msg.rendered{white-space:normal}
 .chat-msg.rendered p{margin:0 0 8px}.chat-msg.rendered p:last-child{margin-bottom:0}
 .chat-msg.rendered ul,.chat-msg.rendered ol{padding-left:18px;margin:4px 0 8px}
 .chat-msg.rendered li{margin-bottom:3px}
 .chat-msg.rendered strong{font-weight:700}
-.chat-msg.typing{align-self:flex-start;background:#f4f5f7;padding:13px;display:flex;gap:5px;align-items:center}
-.chat-dot{width:6px;height:6px;border-radius:50%;background:var(--muted2);animation:bounce .9s infinite}
+.chat-msg.typing{align-self:flex-start;background:var(--bg-soft);padding:13px;display:flex;gap:5px;align-items:center;border-radius:2px}
+.chat-dot{width:5px;height:5px;border-radius:50%;background:var(--muted2);animation:bounce .9s infinite}
 .chat-dot:nth-child(2){animation-delay:.15s}
 .chat-dot:nth-child(3){animation-delay:.3s}
-@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
-.chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0;background:var(--white)}
-.chat-input{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;font-family:'Inter',sans-serif;font-size:13.5px;resize:none;outline:none;line-height:1.4;max-height:100px;overflow-y:auto;transition:border-color .15s}
-.chat-input:focus{border-color:var(--accent)}
-.chat-send{width:36px;height:36px;border-radius:8px;border:none;background:var(--accent);color:#f0f040;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;transition:opacity .15s;align-self:flex-end}
-.chat-send:disabled{opacity:.4;cursor:default}
-.chat-disclaimer{font-size:11px;color:var(--muted2);text-align:center;padding:0 12px 9px;flex-shrink:0;line-height:1.4}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.chat-input{flex:1;border:1px solid var(--border);border-radius:2px;padding:8px 11px;font-family:'Inter',sans-serif;font-size:13px;resize:none;outline:none;line-height:1.4;max-height:100px;overflow-y:auto;transition:border-color .15s;color:var(--text);background:var(--bg)}
+.chat-input:focus{border-color:var(--text)}
+.chat-send{width:34px;height:34px;border-radius:2px;border:none;background:var(--bg-dark);color:var(--yellow);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:opacity .15s;align-self:flex-end}
+.chat-send:disabled{opacity:.3;cursor:default}
+.chat-disclaimer{font-size:10px;color:var(--muted2);text-align:center;padding:0 12px 9px;flex-shrink:0;line-height:1.4;letter-spacing:.03em}
 </style>
 </head>
 <body>
@@ -196,11 +210,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 <div class="topbar">
   <div class="topbar-left">
     <div class="logo">Texo as a Service <span>/ Marketing</span></div>
-    <a href="/" class="btn btn-outline" style="font-size:13px">← Salud Financiera</a>
+    <a href="/" class="btn btn-outline" style="font-size:11px;padding:6px 14px">← Salud Financiera</a>
   </div>
   <div class="topbar-right">
     <button class="btn btn-ai" id="btnChat" onclick="toggleChat()">✦ Asistente IA</button>
-    <button class="btn btn-outline" id="btnRefresh" onclick="refreshIntel()">⟳ Actualizar intel</button>
+    <button class="btn btn-outline" id="btnRefresh" onclick="refreshIntel()" style="font-size:12px">⟳ Actualizar intel</button>
   </div>
 </div>
 
@@ -210,36 +224,34 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 
     <!-- HERO -->
     <div class="hero-section">
-      <div class="hero-badge">Inteligencia Estratégica · Grupo Texo · Paraguay</div>
-      <div class="hero-main">
-        <div>
-          <div class="hero-company">Texo as a Service</div>
-          <div class="hero-product">Posición</div>
-          <div class="hero-product-sub">de Mercado</div>
-          <div class="hero-tagline">Holding · Redes globales · Alertas estratégicas</div>
+      <div class="hero-inner">
+        <div class="hero-left">
+          <div class="hero-eyebrow">Texo as a Service · Inteligencia de Marketing · Paraguay</div>
+          <h1 class="hero-headline">Posición<br><em>de Mercado</em></h1>
+          <div class="hero-sub">Holding · Redes globales · Alertas estratégicas</div>
         </div>
-        <div class="hero-update-block">
+        <div class="hero-right">
           <div class="hero-update-time" id="heroUpdateTime">Sin actualizar aún</div>
-          <button class="btn btn-outline" style="font-size:12px" onclick="refreshIntel()">⟳ Actualizar intel</button>
+          <button class="btn btn-refresh-hero btn-outline" onclick="refreshIntel()">⟳ Actualizar intel</button>
         </div>
       </div>
       <div class="hero-stats">
-        <div class="hero-stat hero-stat-green">
+        <div class="hero-stat">
           <div class="hero-stat-label">Mercado PY 2024</div>
           <div class="hero-stat-value">US$135.5M</div>
           <div class="hero-stat-sub">+6.5% vs 2023 · APAP</div>
         </div>
-        <div class="hero-stat hero-stat-yellow">
+        <div class="hero-stat">
           <div class="hero-stat-label">Empresas del holding</div>
           <div class="hero-stat-value">10</div>
           <div class="hero-stat-sub">Texo as a Service</div>
         </div>
-        <div class="hero-stat hero-stat-blue">
+        <div class="hero-stat">
           <div class="hero-stat-label">Redes globales</div>
           <div class="hero-stat-value">5</div>
           <div class="hero-stat-sub">WPP · Publicis · Omnicom · IPG · DAN</div>
         </div>
-        <div class="hero-stat hero-stat-purple">
+        <div class="hero-stat">
           <div class="hero-stat-label">Agencias de publicidad</div>
           <div class="hero-stat-value">5</div>
           <div class="hero-stat-sub">NASTA · BRICK · LUPE · OMD · ROGER</div>
@@ -248,78 +260,84 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
     </div>
 
     <!-- MAPA DEL HOLDING -->
-    <div class="section-wrap">
-      <div class="sec-label">01 · Estructura</div>
-      <div class="sec-heading">Mapa del Holding</div>
-      <div class="sec-bar"></div>
-      <div class="sec-desc">Las 8 empresas activas del grupo, sus redes globales, especialidades y clientes principales.</div>
+    <div style="padding:80px 40px 0;max-width:1200px;margin:0 auto">
+      <div class="sec-eyebrow">01 · Estructura</div>
+      <h2 class="sec-heading">Mapa del <em>Holding</em></h2>
+      <div class="sec-rule"></div>
+      <p class="sec-desc">Las 8 empresas activas del grupo, sus redes globales, especialidades y clientes principales.</p>
+    </div>
+    <div style="padding:0 40px 80px;max-width:1200px;margin:0 auto;width:100%">
       <div class="holding-grid" id="holdingGrid">
         <!-- generado por JS -->
       </div>
     </div>
 
-    <!-- BANDA MERCADO -->
-    <div class="divider-band">
-      <div class="divider-band-left">
-        <div class="divider-band-title">Mercado Publicitario</div>
-        <div class="divider-band-sub">Paraguay · 2024 · Fuente: APAP / Kantar IBOPE / Audimedia</div>
-        <div class="market-chips">
-          <div class="market-chip">
-            <div class="mc-label">Radio</div>
-            <div class="mc-val">US$14.9M</div>
-            <div class="mc-sub">+7.5% · ~80% de emisiones</div>
+    <!-- MERCADO -->
+    <div class="section-market">
+      <div class="market-inner">
+        <div class="market-top">
+          <div>
+            <div class="sec-eyebrow" style="color:rgba(255,255,255,.25);margin-bottom:16px">02 · Mercado</div>
+            <h2 class="market-headline">Mercado<br><em>Publicitario</em></h2>
           </div>
-          <div class="market-chip">
-            <div class="mc-label">Sector Banca</div>
-            <div class="mc-val">+54%</div>
-            <div class="mc-sub">Mayor crecimiento del mercado</div>
-          </div>
-          <div class="market-chip">
-            <div class="mc-label">Proyección 2025</div>
-            <div class="mc-val">+4.3%</div>
-            <div class="mc-sub">Crecimiento sostenido</div>
-          </div>
-          <div class="market-chip">
-            <div class="mc-label">Medios tradicionales</div>
-            <div class="mc-val">Récord</div>
-            <div class="mc-sub">TV y radio cierran 2025 en máximo histórico</div>
+          <div class="market-total">
+            <div class="market-total-num">US$135.5M</div>
+            <div class="market-total-label">Total mercado</div>
+            <div class="market-total-growth">↑ +6.5%</div>
+            <div class="market-source">Paraguay 2024 · APAP / Kantar IBOPE</div>
           </div>
         </div>
-      </div>
-      <div class="divider-band-stats">
-        <div class="dbs-item">
-          <div class="dbs-val">US$135.5M</div>
-          <div class="dbs-label">Total mercado</div>
-          <div class="dbs-growth">↑ +6.5%</div>
+        <div class="market-grid">
+          <div class="market-item">
+            <div class="mi-label">Radio</div>
+            <div class="mi-val">US$14.9M</div>
+            <div class="mi-sub">+7.5% · ~80% de las emisiones</div>
+          </div>
+          <div class="market-item">
+            <div class="mi-label">Sector Banca</div>
+            <div class="mi-val">+54%</div>
+            <div class="mi-sub">Mayor crecimiento del mercado 2024</div>
+          </div>
+          <div class="market-item">
+            <div class="mi-label">Proyección 2025</div>
+            <div class="mi-val">+4.3%</div>
+            <div class="mi-sub">Crecimiento sostenido en emisiones</div>
+          </div>
+          <div class="market-item">
+            <div class="mi-label">Medios tradicionales</div>
+            <div class="mi-val">Récord</div>
+            <div class="mi-sub">TV y radio cierran 2025 en máximo histórico</div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ALERTAS ESTRATÉGICAS -->
-    <div class="section-wrap alt">
-      <div class="sec-label">02 · Inteligencia</div>
-      <div class="sec-heading">Alertas Estratégicas</div>
-      <div class="sec-bar"></div>
-      <div class="sec-desc">Análisis generado por IA sobre el holding, las redes globales y el mercado. Actualizá cuando necesites una lectura fresca del contexto.</div>
+    <div class="section-alerts">
+      <div class="alerts-inner">
+        <div class="sec-eyebrow">03 · Inteligencia</div>
+        <h2 class="sec-heading">Alertas <em>Estratégicas</em></h2>
+        <div class="sec-rule"></div>
+        <div class="alerts-meta-row">
+          <p class="sec-desc" style="margin:0;max-width:480px">Análisis generado por IA sobre el holding, las redes globales y el mercado.</p>
+          <div class="alerts-timestamp" id="alertsTimestamp">Sin datos aún. Presioná "Actualizar intel" para generar.</div>
+        </div>
 
-      <div class="alerts-meta">
-        <div class="alerts-timestamp" id="alertsTimestamp">Sin datos aún. Presioná "Actualizar intel" para generar.</div>
-      </div>
+        <div id="resumeWrap" style="display:none">
+          <div class="resumen-box" id="resumeBox"></div>
+        </div>
 
-      <div id="resumeWrap" style="display:none">
-        <div class="resumen-box" id="resumeBox"></div>
-      </div>
-
-      <div id="alertsWrap">
-        <div class="alerts-empty">
-          <div style="font-size:32px;opacity:.4">🔍</div>
-          <p>Todavía no hay alertas generadas.</p>
-          <p>Presioná <strong>⟳ Actualizar intel</strong> para que Claude analice el holding y el mercado.</p>
+        <div id="alertsWrap">
+          <div class="alerts-empty">
+            <div style="font-size:28px;opacity:.3;margin-bottom:8px">—</div>
+            <p>Todavía no hay alertas generadas.</p>
+            <p style="margin-top:6px">Presioná <strong>⟳ Actualizar intel</strong> para que Claude analice el holding y el mercado.</p>
+          </div>
         </div>
       </div>
     </div>
 
-    <div style="height:32px"></div>
+    <div style="height:40px;background:var(--bg-soft)"></div>
 
   </div>
 
@@ -331,7 +349,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
         <div class="chat-header-icon">IA</div>
         <div class="chat-header-text">
           <div class="chat-header-title">Asistente de Marketing</div>
-          <div class="chat-header-sub">Texo as a Service · Inteligencia de Marketing</div>
+          <div class="chat-header-sub">Inteligencia · Texo as a Service</div>
         </div>
         <button class="chat-close" onclick="toggleChat()" title="Cerrar">✕</button>
       </div>
@@ -356,7 +374,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 <div class="toast" id="toast"></div>
 
 <script>
-// ── DATOS HOLDING (mismos que server.js para renderizar sin esperar API) ──────
+// ── DATOS HOLDING ─────────────────────────────────────────────────────────────
 const HOLDING = [
   { nombre:'NASTA',   red:'WPP',             color:'#6c3fc5', anos:56,
     especialidad:'Agencia integral · Medios, Creatividad, PR, Digital',
@@ -400,22 +418,18 @@ const HOLDING = [
     dato:'' },
 ];
 
-// ── RENDER HOLDING CARDS ──────────────────────────────────────────────────────
 function renderHolding() {
   const grid = document.getElementById('holdingGrid');
   grid.innerHTML = HOLDING.map(ag => `
-    <div class="holding-card" style="border-top:3px solid ${ag.color}">
-      <div class="holding-card-head">
-        <div class="hc-dot" style="background:${ag.color}"></div>
-        <div class="hc-name">${ag.nombre}</div>
+    <div class="holding-card">
+      <div class="hc-top">
+        <div class="hc-name" style="color:${ag.color}">${ag.nombre}</div>
         <span class="hc-red">${ag.red}</span>
       </div>
-      <div class="holding-card-body">
-        <div class="hc-spec">${ag.especialidad}${ag.anos ? ` · ${ag.anos} años` : ''}</div>
-        <div class="hc-tags">${ag.servicios.map(s=>`<span class="hc-tag">${s}</span>`).join('')}</div>
-        ${ag.clientes.length ? `<div class="hc-clients"><strong>Clientes:</strong> ${ag.clientes.join(' · ')}</div>` : ''}
-        ${ag.dato ? `<div class="hc-dato">💡 ${ag.dato}</div>` : ''}
-      </div>
+      <div class="hc-spec">${ag.especialidad}${ag.anos ? ` · <strong style="color:var(--text)">${ag.anos} años</strong>` : ''}</div>
+      <div class="hc-tags">${ag.servicios.map(s=>`<span class="hc-tag">${s}</span>`).join('')}</div>
+      ${ag.clientes.length ? `<div class="hc-clients" style="margin-bottom:10px"><strong>Clientes:</strong> ${ag.clientes.join(' · ')}</div>` : ''}
+      ${ag.dato ? `<div class="hc-dato">${ag.dato}</div>` : ''}
     </div>`).join('');
 }
 
@@ -428,7 +442,6 @@ const TIPO_MAP = {
 };
 
 function renderAlertas(alertas, resumen, timestamp) {
-  // Resumen
   const resumeWrap = document.getElementById('resumeWrap');
   const resumeBox  = document.getElementById('resumeBox');
   if (resumen) {
@@ -437,28 +450,27 @@ function renderAlertas(alertas, resumen, timestamp) {
   } else {
     resumeWrap.style.display = 'none';
   }
-
-  // Timestamp
   if (timestamp) {
     const d = new Date(timestamp);
     document.getElementById('alertsTimestamp').textContent =
       'Última actualización: ' + d.toLocaleDateString('es-PY', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
     document.getElementById('heroUpdateTime').innerHTML =
-      'Intel actualizado<br>' + d.toLocaleDateString('es-PY', { day:'numeric', month:'short', year:'numeric' });
+      'Intel actualizado · ' + d.toLocaleDateString('es-PY', { day:'numeric', month:'short', year:'numeric' });
   }
-
   const wrap = document.getElementById('alertsWrap');
   if (!alertas || !alertas.length) {
-    wrap.innerHTML = `<div class="alerts-empty"><div style="font-size:32px;opacity:.4">🔍</div><p>Todavía no hay alertas generadas.</p><p>Presioná <strong>⟳ Actualizar intel</strong> para que Claude analice el holding y el mercado.</p></div>`;
+    wrap.innerHTML = `<div class="alerts-empty"><div style="font-size:28px;opacity:.3;margin-bottom:8px">—</div><p>Todavía no hay alertas generadas.</p><p style="margin-top:6px">Presioná <strong>⟳ Actualizar intel</strong> para que Claude analice el holding y el mercado.</p></div>`;
     return;
   }
-
   wrap.innerHTML = `<div class="insights-grid">${alertas.map(a => {
     const t = TIPO_MAP[a.tipo] || TIPO_MAP.info;
     return `<div class="insight-card insight-${t.cls}">
-      <div class="insight-icon-wrap">${t.icon}</div>
+      <div class="insight-icon-col">
+        <div class="insight-icon-wrap">${t.icon}</div>
+        <div class="insight-tag insight-tag-${t.cls}">${t.tag}</div>
+        ${a.fecha ? `<div style="font-size:10px;color:var(--muted2);letter-spacing:.04em">${a.fecha}</div>` : ''}
+      </div>
       <div class="insight-body">
-        <div class="insight-tag insight-tag-${t.cls}">${t.tag}${a.fecha ? ' · ' + a.fecha : ''}</div>
         <div class="insight-title">${a.titulo}</div>
         <div class="insight-text">${a.texto}</div>
         ${a.agencias?.length ? `<div class="insight-agencies">${a.agencias.map(n=>`<span class="ia-chip">${n}</span>`).join('')}</div>` : ''}
@@ -467,7 +479,6 @@ function renderAlertas(alertas, resumen, timestamp) {
   }).join('')}</div>`;
 }
 
-// ── LOAD ON PAGE LOAD ─────────────────────────────────────────────────────────
 async function loadMarketing() {
   try {
     const r = await fetch('/api/marketing');
@@ -476,19 +487,15 @@ async function loadMarketing() {
   } catch(e) { console.error('loadMarketing:', e); }
 }
 
-// ── REFRESH ───────────────────────────────────────────────────────────────────
 async function refreshIntel() {
   const btn = document.getElementById('btnRefresh');
   btn.innerHTML = '<span class="spinner"></span> Analizando...';
   btn.disabled = true;
-
-  // Loading state en alertas
   document.getElementById('alertsWrap').innerHTML = `
     <div class="alerts-loading">
       <div class="spinner-dark"></div>
-      <span>Claude está analizando el holding y el mercado...</span>
+      <span style="font-size:13px;letter-spacing:.02em">Claude está analizando el holding y el mercado...</span>
     </div>`;
-
   try {
     const r = await fetch('/api/marketing/refresh', { method:'POST' });
     let data;
@@ -500,21 +507,19 @@ async function refreshIntel() {
     showToast('✓ Alertas actualizadas', 'success');
   } catch(e) {
     showToast('Error: ' + e.message, 'error');
-    loadMarketing(); // re-cargar lo que había
+    loadMarketing();
   } finally {
     btn.innerHTML = '⟳ Actualizar intel';
     btn.disabled = false;
   }
 }
 
-// ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg, type='success') {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast show ' + type;
   setTimeout(() => t.className = 'toast', 3500);
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   renderHolding();
   loadMarketing();
@@ -526,7 +531,7 @@ window.addEventListener('DOMContentLoaded', () => {
 let chatHistory = [];
 let chatOpen = false;
 const CHAT_MIN = 360, CHAT_MAX = 900;
-let chatWidth = parseInt(localStorage.getItem('chatWidthMkt') || '520');
+let chatWidth = parseInt(localStorage.getItem('chatWidthMkt') || '500');
 
 function toggleChat() {
   chatOpen = !chatOpen;
