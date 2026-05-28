@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "experimentalServices": {
+    "frontend": {
+      "routePrefix": "/*"
+    }
+  },
   "builds": [
     {
       "src": "server.js",
