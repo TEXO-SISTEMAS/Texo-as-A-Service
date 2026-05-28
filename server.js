@@ -437,25 +437,16 @@ Fecha: ${new Date().toLocaleDateString('es-PY', { month: 'long', year: 'numeric'
 
 Genera alertas estratégicas concisas y accionables para el CEO y directorio de TEXO. Basate en tu conocimiento del mercado publicitario global y latinoamericano, las redes WPP, Publicis, Omnicom+IPG y DAN, y las tendencias de marketing digital y OOH.
 
-Responde ÚNICAMENTE con JSON válido, sin texto adicional:
-{
-  "alertas": [
-    {
-      "tipo": "riesgo|oportunidad|tension|info",
-      "titulo": "Título corto (máximo 8 palabras)",
-      "texto": "2-3 oraciones: qué pasó y cuál es el impacto concreto para TEXO",
-      "agencias": ["NASTA"],
-      "fecha": "mes/año del evento"
-    }
-  ],
-  "resumen": "1-2 párrafos del panorama estratégico para el CEO de TEXO",
-  "generado_en": "${new Date().toISOString()}"
-}
-Genera entre 5 y 8 alertas. Incluí la fusión Omnicom+IPG, la expansión de Amplify, tendencias de IA en publicidad, y oportunidades/riesgos relevantes para el grupo.`;
+IMPORTANTE: Responde ÚNICAMENTE con el JSON. Sin texto antes ni después. Sin markdown. Solo el objeto JSON.
+
+Formato exacto:
+{"alertas":[{"tipo":"riesgo","titulo":"Titulo maximo 6 palabras","texto":"Una oración concreta con impacto para TEXO.","agencias":["NASTA"],"fecha":"05/2025"},{"tipo":"oportunidad","titulo":"Otro titulo","texto":"Una oración.","agencias":["BRICK","LUPE"],"fecha":"05/2025"}],"resumen":"Una oración ejecutiva sobre el panorama de TEXO.","generado_en":"${new Date().toISOString()}"}
+
+Genera exactamente 5 alertas (no más). Tipos: riesgo, oportunidad, tension, info. Cubrí: fusión Omnicom+IPG, expansión AMPLIFY, IA en publicidad, tendencia digital Paraguay, y un riesgo/oportunidad de red global.`;
 
     const response = await getAnthropic().messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 1500,
+      max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }]
     });
 
