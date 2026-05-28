@@ -163,6 +163,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .news-link{font-size:11px;color:var(--accent);font-weight:600;align-self:flex-start;opacity:.7}
 .news-empty{text-align:center;padding:32px;color:var(--muted2);font-size:13px;background:var(--white);border:1.5px dashed var(--border2);border-radius:10px}
 .news-loading{display:flex;align-items:center;gap:10px;padding:20px;color:var(--muted);font-size:13px}
+.news-sublabel{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);margin-bottom:12px}
 
 /* ── BRIEFING REDES ── */
 .redes-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
@@ -548,13 +549,9 @@ function renderRedes(briefings, resumen, timestamp) {
 }
 
 // ── RENDER NOTICIAS ───────────────────────────────────────────────────────────
-function renderNews(noticias) {
-  const wrap = document.getElementById('newsWrap');
-  if (!noticias || !noticias.length) {
-    wrap.innerHTML = `<div class="news-empty">No se pudieron cargar noticias en este momento.</div>`;
-    return;
-  }
-  wrap.innerHTML = `<div class="news-grid">${noticias.map(n => {
+function newsCards(items) {
+  if (!items.length) return `<div class="news-empty">Sin noticias disponibles en este momento.</div>`;
+  return `<div class="news-grid">${items.map(n => {
     const date = n.pubDate ? new Date(n.pubDate).toLocaleDateString('es-PY', { day:'numeric', month:'short' }) : '';
     return `<a class="news-card" href="${n.link}" target="_blank" rel="noopener">
       <div class="news-meta">
@@ -565,6 +562,20 @@ function renderNews(noticias) {
       <span class="news-link">Leer →</span>
     </a>`;
   }).join('')}</div>`;
+}
+
+function renderNews(data) {
+  const wrap = document.getElementById('newsWrap');
+  const py = data.noticias_py || [];
+  const gl = data.noticias_global || [];
+  if (!py.length && !gl.length) {
+    wrap.innerHTML = `<div class="news-empty">No se pudieron cargar noticias en este momento.</div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    ${py.length ? `<div class="news-sublabel">🇵🇾 Paraguay</div>${newsCards(py)}` : ''}
+    ${gl.length ? `<div class="news-sublabel" style="margin-top:24px">🌐 Redes Globales</div>${newsCards(gl)}` : ''}
+  `;
 }
 
 // ── LOAD ON PAGE LOAD ─────────────────────────────────────────────────────────
@@ -581,7 +592,7 @@ async function loadNews() {
   try {
     const r = await fetch('/api/marketing/news');
     const data = await r.json();
-    renderNews(data.noticias);
+    renderNews(data);
   } catch(e) {
     document.getElementById('newsWrap').innerHTML = `<div class="news-empty">No se pudieron cargar noticias.</div>`;
   }

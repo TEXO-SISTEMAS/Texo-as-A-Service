@@ -452,10 +452,13 @@ app.get('/api/marketing', async (req, res) => {
 });
 
 // ── MARKETING — NOTICIAS (Google News RSS) ────────────────────────────────────
-const NEWS_KEYWORDS = ['publicidad','agencia','marketing','publicitario','medios','anuncio','campaña','creativo','creatividad','brand','wpp','publicis','omnicom','ipg','dentsu','dan ','ogilvy','bbdo','mccann','havas','grey ','tbwa','ogil','media plan','inversión publi','mercado publi','industria publi'];
+const AD_KEYWORDS = ['publicidad','agencia','marketing','publicitario','medios','anuncio','campaña','creativo','creatividad','wpp','publicis','omnicom','ipg','dentsu','ogilvy','bbdo','mccann','havas','tbwa','apap','tatakua','inversión publi','industria publi'];
 function isAdNews(title) {
   const t = title.toLowerCase();
-  return NEWS_KEYWORDS.some(k => t.includes(k));
+  return AD_KEYWORDS.some(k => t.includes(k));
+}
+function hasPy(title) {
+  return /paraguay/i.test(title);
 }
 
 app.get('/api/marketing/news', async (req, res) => {
@@ -463,33 +466,59 @@ app.get('/api/marketing/news', async (req, res) => {
     if (_newsCache.data && (Date.now() - _newsCache.ts) < NEWS_TTL) {
       return res.json(_newsCache.data);
     }
-    const queries = [
-      '"agencia+de+publicidad"+OR+"industria+publicitaria"',
-      'WPP+OR+Publicis+OR+Omnicom+publicidad+OR+advertising',
-      'marketing+digital+latinoamerica+agencia',
+
+    // Query 1: noticias de publicidad/marketing locales Paraguay
+    const localQueries = [
+      'publicidad+Paraguay',
+      'agencia+publicidad+Paraguay',
+      'marketing+Paraguay',
     ];
-    const allItems = [];
-    const seen = new Set();
-    for (const q of queries) {
+    // Query 2: movimientos de redes globales
+    const globalQueries = [
+      'WPP+OR+Publicis+OR+Omnicom+IPG+advertising+2025',
+    ];
+
+    const local = [], global = [], seen = new Set();
+
+    for (const q of localQueries) {
+      try {
+        const url = `https://news.google.com/rss/search?q=${q}&hl=es-419&gl=PY&ceid=PY:es-419`;
+        const xml = await fetchURL(url);
+        for (const item of parseRSS(xml, 6)) {
+          const key = item.title.slice(0, 50).toLowerCase();
+          if (!seen.has(key) && isAdNews(item.title) && hasPy(item.title)) {
+            seen.add(key); local.push({ ...item, categoria: 'paraguay' });
+          }
+        }
+      } catch(e) { console.warn('RSS local error:', e.message); }
+    }
+
+    for (const q of globalQueries) {
       try {
         const url = `https://news.google.com/rss/search?q=${q}&hl=es-419&gl=AR&ceid=AR:es-419`;
         const xml = await fetchURL(url);
-        for (const item of parseRSS(xml, 8)) {
+        for (const item of parseRSS(xml, 6)) {
           const key = item.title.slice(0, 50).toLowerCase();
           if (!seen.has(key) && isAdNews(item.title)) {
-            seen.add(key);
-            allItems.push(item);
+            seen.add(key); global.push({ ...item, categoria: 'global' });
           }
         }
-      } catch(e) { console.warn('RSS error:', e.message); }
+      } catch(e) { console.warn('RSS global error:', e.message); }
     }
-    allItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-    const result = { noticias: allItems.slice(0, 10), fetched_at: new Date().toISOString() };
+
+    local.sort((a,b) => new Date(b.pubDate)-new Date(a.pubDate));
+    global.sort((a,b) => new Date(b.pubDate)-new Date(a.pubDate));
+
+    const result = {
+      noticias_py: local.slice(0, 6),
+      noticias_global: global.slice(0, 4),
+      fetched_at: new Date().toISOString()
+    };
     _newsCache = { data: result, ts: Date.now() };
     res.json(result);
   } catch (err) {
     console.error('ERROR /api/marketing/news:', err);
-    res.status(500).json({ error: err.message, noticias: [] });
+    res.status(500).json({ error: err.message, noticias_py: [], noticias_global: [] });
   }
 });
 
