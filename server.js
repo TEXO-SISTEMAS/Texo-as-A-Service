@@ -461,10 +461,20 @@ Genera entre 5 y 8 alertas. Incluí la fusión Omnicom+IPG, la expansión de Amp
 
     let intel;
     try {
-      const raw = response.content[0].text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
-      intel = JSON.parse(raw);
+      const text = response.content[0].text;
+      // 1) strip markdown code fences
+      let raw = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+      // 2) try direct parse
+      try {
+        intel = JSON.parse(raw);
+      } catch(_) {
+        // 3) fallback: extract the outermost { ... } block
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error('No JSON object found in response');
+        intel = JSON.parse(match[0]);
+      }
     } catch(e) {
-      return res.status(500).json({ error: 'Error al parsear respuesta de Claude', raw: response.content[0].text });
+      return res.status(500).json({ error: 'Error al parsear respuesta de Claude: ' + e.message, raw: response.content[0].text });
     }
 
     await drive.saveMarketing(intel);
