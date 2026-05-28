@@ -54,36 +54,32 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 
 /* ── HERO ── */
 .hero-section{
-  background:var(--bg-dark);
+  background:var(--bg);
   padding:72px 40px 64px;
-  color:#fff;
+  color:var(--text);
   position:relative;
   overflow:hidden;
-}
-.hero-section::before{
-  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
-  background:radial-gradient(ellipse 60% 80% at 80% 50%, rgba(240,240,64,.04) 0%, transparent 70%);
-  pointer-events:none;
+  border-bottom:1px solid var(--border);
 }
 .hero-inner{max-width:1200px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:40px}
 .hero-left{flex:1}
-.hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px}
-.hero-headline{font-size:clamp(56px,7vw,96px);font-weight:900;letter-spacing:-.04em;line-height:.9;color:#fff;margin-bottom:0}
-.hero-headline em{font-style:italic;font-weight:300;color:rgba(255,255,255,.55)}
-.hero-sub{font-size:13px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-top:24px}
+.hero-eyebrow{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted2);margin-bottom:20px}
+.hero-headline{font-size:clamp(56px,7vw,96px);font-weight:900;letter-spacing:-.04em;line-height:.9;color:var(--text);margin-bottom:0}
+.hero-headline em{font-style:italic;font-weight:300;color:var(--muted)}
+.hero-sub{font-size:13px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-top:24px}
 .hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px;flex-shrink:0;padding-bottom:4px}
-.hero-update-time{font-size:11px;color:rgba(255,255,255,.25);text-align:right;line-height:1.5;letter-spacing:.04em}
-.btn-refresh-hero{background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.15);font-size:12px;padding:7px 14px;white-space:nowrap}
-.btn-refresh-hero:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+.hero-update-time{font-size:11px;color:var(--muted2);text-align:right;line-height:1.5;letter-spacing:.04em}
+.btn-refresh-hero{background:transparent;color:var(--muted);border:1px solid var(--border);font-size:12px;padding:7px 14px;white-space:nowrap;color:var(--text)}
+.btn-refresh-hero:hover{background:var(--bg-soft);border-color:var(--text)}
 
 /* Hero stats strip */
-.hero-stats{display:flex;gap:0;margin-top:56px;border-top:1px solid rgba(255,255,255,.1);padding-top:32px;max-width:1200px;margin-left:auto;margin-right:auto}
-.hero-stat{flex:1;padding:0 40px 0 0;border-right:1px solid rgba(255,255,255,.08)}
+.hero-stats{display:flex;gap:0;margin-top:56px;border-top:1px solid var(--border);padding-top:32px;max-width:1200px;margin-left:auto;margin-right:auto}
+.hero-stat{flex:1;padding:0 40px 0 0;border-right:1px solid var(--border)}
 .hero-stat:first-child{padding-left:0}
 .hero-stat:last-child{border-right:none;padding-right:0}
-.hero-stat-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px}
-.hero-stat-value{font-size:28px;font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1}
-.hero-stat-sub{font-size:11px;color:rgba(255,255,255,.3);margin-top:6px;line-height:1.4}
+.hero-stat-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px}
+.hero-stat-value{font-size:28px;font-weight:900;color:var(--text);letter-spacing:-.03em;line-height:1}
+.hero-stat-sub{font-size:11px;color:var(--muted2);margin-top:6px;line-height:1.4}
 
 /* ── HOLDING SECTION ── */
 .section-holding{padding:80px 40px;max-width:1200px;margin:0 auto}
@@ -232,7 +228,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
         </div>
         <div class="hero-right">
           <div class="hero-update-time" id="heroUpdateTime">Sin actualizar aún</div>
-          <button class="btn btn-refresh-hero btn-outline" onclick="refreshIntel()">⟳ Actualizar intel</button>
+          <button class="btn btn-refresh-hero" onclick="refreshIntel()">⟳ Actualizar intel</button>
         </div>
       </div>
       <div class="hero-stats">
