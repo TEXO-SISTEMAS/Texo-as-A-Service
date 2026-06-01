@@ -4,6 +4,9 @@ const cors    = require('cors');
 const path    = require('path');
 const https   = require('https');
 const Anthropic = require('@anthropic-ai/sdk');
+const jwt     = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+const { google } = require('googleapis');
 const { parseExcel } = require('./parser');
 const drive = require('./drive');
 
@@ -58,7 +61,96 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+
+// ── AUTH HELPERS ──────────────────────────────────────────────────────────────
+const JWT_SECRET = process.env.JWT_SECRET || 'texo-dev-secret-change-in-prod';
+
+function getOAuth2Client() {
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI || 'https://texo-as-a-service.vercel.app/auth/google/callback'
+  );
+}
+
+function requireAuth(req, res, next) {
+  const token = req.cookies?.session;
+  if (!token) {
+    if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'No autorizado' });
+    return res.redirect('/login?next=' + encodeURIComponent(req.originalUrl));
+  }
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch(e) {
+    res.clearCookie('session');
+    if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Sesión expirada' });
+    res.redirect('/login');
+  }
+}
+
+// ── RUTAS PÚBLICAS (sin auth) ──────────────────────────────────────────────────
+app.get('/login', (req, res) => {
+  if (req.cookies?.session) {
+    try { jwt.verify(req.cookies.session, JWT_SECRET); return res.redirect('/'); } catch(e) {}
+  }
+  res.sendFile(path.join(__dirname, 'public/login.html'));
+});
+
+app.get('/auth/google', (req, res) => {
+  const oauth2Client = getOAuth2Client();
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'online',
+    scope: ['profile', 'email'],
+    prompt: 'select_account',
+    state: req.query.next || '/'
+  });
+  res.redirect(url);
+});
+
+app.get('/auth/google/callback', async (req, res) => {
+  const { code, state } = req.query;
+  if (!code) return res.redirect('/login?error=no_code');
+  try {
+    const oauth2Client = getOAuth2Client();
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+    const { data: userInfo } = await oauth2.userinfo.get();
+    const token = jwt.sign(
+      { email: userInfo.email, name: userInfo.name, picture: userInfo.picture || null },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    const isSecure = !!process.env.VERCEL || req.headers['x-forwarded-proto'] === 'https';
+    res.cookie('session', token, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+    const redirectTo = (state && state.startsWith('/')) ? state : '/';
+    res.redirect(redirectTo);
+  } catch(e) {
+    console.error('OAuth callback error:', e);
+    res.redirect('/login?error=auth_failed');
+  }
+});
+
+app.get('/auth/logout', (req, res) => {
+  res.clearCookie('session');
+  res.redirect('/login');
+});
+
+// ── PROTECCIÓN GLOBAL ─────────────────────────────────────────────────────────
+app.use(requireAuth);
+
+// ── ARCHIVOS ESTÁTICOS (protegidos) ───────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ── ME ─────────────────────────────────────────────────────────────────────────
+app.get('/api/me', (req, res) => res.json(req.user));
 
 // ── UPLOAD ────────────────────────────────────────────────────────────────────
 app.post('/api/upload', upload.single('archivo'), async (req, res) => {
