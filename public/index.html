@@ -711,8 +711,28 @@ body.fullscreen .main { padding-top:64px; }
   font-size:15px;font-weight:700;color:#fff;line-height:1.3;
 }
 .intro-dim-sub{
-  font-size:12px;color:rgba(255,255,255,.35);line-height:1.6;
+  font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;
 }
+.intro-dim-detail{
+  font-size:11px;color:rgba(255,255,255,.3);line-height:1.6;
+  border-top:1px solid rgba(255,255,255,.07);padding-top:8px;margin-top:2px;
+}
+.intro-dim-goal{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:700;letter-spacing:.06em;
+  color:rgba(255,255,255,.3);margin-top:4px;
+}
+.intro-dim-goal em{
+  font-style:normal;color:rgba(255,255,255,.55);
+  background:rgba(255,255,255,.07);border-radius:4px;
+  padding:2px 6px;font-weight:600;
+}
+.intro-dim-arrow{
+  font-size:10px;color:rgba(255,255,255,.2);margin-top:auto;
+  padding-top:6px;text-align:right;
+  transition:color .15s;
+}
+.intro-dim:hover .intro-dim-arrow{color:rgba(255,255,255,.5)}
 .intro-dim-dot{
   width:28px;height:3px;border-radius:2px;margin-bottom:6px;
 }
@@ -1203,36 +1223,54 @@ function renderDashboard(data){
         <div class="intro-dim-num">01</div>
         <div class="intro-dim-name">Rentabilidad de las 2 arenas</div>
         <div class="intro-dim-sub">EBITDA y margen en Content Creation y Digital Commerce</div>
+        <div class="intro-dim-detail">¿Cuánto queda después de pagar todos los costos? Analizamos CC y DC por separado porque cada una tiene estructura distinta.</div>
+        <div class="intro-dim-goal">Objetivo: <em>EBITDA positivo · Margen +10%</em></div>
+        <div class="intro-dim-arrow">Ver análisis →</div>
       </div>
       <div class="intro-dim" onclick="openSection('sec-2')">
         <div class="intro-dim-dot" style="background:#e85d26"></div>
         <div class="intro-dim-num">02</div>
         <div class="intro-dim-name">Sin 3709</div>
-        <div class="intro-dim-sub">Rentabilidad real excluyendo el crédito fiscal</div>
+        <div class="intro-dim-sub">Rentabilidad real excluyendo el crédito fiscal 3709</div>
+        <div class="intro-dim-detail">¿La ganancia es genuina o depende de un beneficio del Estado? El crédito puede cambiar — la rentabilidad real no debería depender de él.</div>
+        <div class="intro-dim-goal">Objetivo: <em>EBITDA positivo sin el crédito fiscal</em></div>
+        <div class="intro-dim-arrow">Ver análisis →</div>
       </div>
       <div class="intro-dim" onclick="openSection('sec-3')">
         <div class="intro-dim-dot" style="background:#0ea5b0"></div>
         <div class="intro-dim-num">03</div>
         <div class="intro-dim-name">Eficiencia</div>
-        <div class="intro-dim-sub">Rendimiento de inversión y aporte per cápita por agencia</div>
+        <div class="intro-dim-sub">Rendimiento de inversión y EBITDA per cápita</div>
+        <div class="intro-dim-detail">¿Cuánto genera la agencia por cada peso invertido y por cada persona? Una agencia puede ser rentable pero ineficiente.</div>
+        <div class="intro-dim-goal">Objetivo: <em>Rendimiento +15% · Per cápita creciente</em></div>
+        <div class="intro-dim-arrow">Ver análisis →</div>
       </div>
       <div class="intro-dim" onclick="openSection('sec-4')">
         <div class="intro-dim-dot" style="background:#4ade80"></div>
         <div class="intro-dim-num">04</div>
         <div class="intro-dim-name">Aporte de innovación</div>
-        <div class="intro-dim-sub">Lo que escala rápido: Social Media, PR, Otras Innovaciones</div>
+        <div class="intro-dim-sub">Social Media, PR/Influencer y Otras Innovaciones</div>
+        <div class="intro-dim-detail">¿Cuánto del negocio viene de los servicios que más crecen en el mercado? Define quién construye el negocio del futuro.</div>
+        <div class="intro-dim-goal">Objetivo: <em>+12% de la facturación del grupo</em></div>
+        <div class="intro-dim-arrow">Ver análisis →</div>
       </div>
       <div class="intro-dim" onclick="openSection('sec-5')">
         <div class="intro-dim-dot" style="background:#f0f040"></div>
         <div class="intro-dim-num">05</div>
         <div class="intro-dim-name">Expertise foco</div>
-        <div class="intro-dim-sub">La sub-arena dominante: fortaleza diferencial de cada agencia</div>
+        <div class="intro-dim-sub">La sub-arena dominante dentro del CC de cada agencia</div>
+        <div class="intro-dim-detail">¿Cada agencia tiene un rol único o dos compiten en lo mismo? La diferenciación interna maximiza el valor del grupo.</div>
+        <div class="intro-dim-goal">Objetivo: <em>Roles diferenciados · Sin solapamiento</em></div>
+        <div class="intro-dim-arrow">Ver análisis →</div>
       </div>
       <div class="intro-dim" onclick="openSection('sec-6')">
         <div class="intro-dim-dot" style="background:#f87171"></div>
         <div class="intro-dim-num">06</div>
         <div class="intro-dim-name">Concentración de fee</div>
-        <div class="intro-dim-sub">Riesgo de dependencia en un solo tipo de servicio</div>
+        <div class="intro-dim-sub">% del CC que viene de un solo tipo de servicio</div>
+        <div class="intro-dim-detail">¿Cuán vulnerable es la agencia si ese servicio cae? Alta concentración = alto riesgo ante cambios del mercado.</div>
+        <div class="intro-dim-goal">Objetivo: <em>Concentración bajo el 50% · Sin zona roja</em></div>
+        <div class="intro-dim-arrow">Ver análisis →</div>
       </div>
     </div>
   </div>
