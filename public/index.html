@@ -541,7 +541,7 @@ body.fullscreen .main { padding-top:64px; }
   color:rgba(255,255,255,.35);cursor:pointer;white-space:nowrap;
   border-bottom:2px solid transparent;
   transition:color .15s, border-color .15s;
-  user-select:none;
+  user-select:none;outline:none;
 }
 .snav-item:hover{color:rgba(255,255,255,.75)}
 .snav-item.snav-active{color:#f0f040;border-bottom-color:#f0f040}
@@ -580,6 +580,7 @@ body.fullscreen .main { padding-top:64px; }
 }
 .intro-dim:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18);transform:translateY(-2px)}
 .intro-dim:active{transform:translateY(0)}
+.intro-dim:focus{outline:none}
 .intro-dim-num{
   font-size:12px;font-weight:700;letter-spacing:.1em;
   color:rgba(255,255,255,.25);
@@ -932,7 +933,7 @@ function renderDashboard(data){
   document.getElementById('dashboard').innerHTML = `
   <!-- STICKY NAV -->
   <div class="section-nav" id="sectionNav">
-    <div class="snav-item snav-active" data-sec="sec-1" onclick="openSection('sec-1')">01 · Rentabilidad</div>
+    <div class="snav-item snav-active" data-sec="sec-1" onclick="openSection('sec-1')" tabindex="-1">01 · Rentabilidad</div>
     <div class="snav-item" data-sec="sec-2" onclick="openSection('sec-2')">02 · Sin 3709</div>
     <div class="snav-item" data-sec="sec-3" onclick="openSection('sec-3')">03 · Eficiencia</div>
     <div class="snav-item" data-sec="sec-4" onclick="openSection('sec-4')">04 · Innovación</div>
@@ -1400,9 +1401,9 @@ function openSection(id) {
 function initScrollSpy() {
   const mainEl = document.getElementById('main');
   if (!mainEl) return;
-  const secIds = ['sec-resumen','sec-1','sec-2','sec-3','sec-4','sec-5','sec-6'];
+  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','sec-resumen'];
   mainEl.addEventListener('scroll', () => {
-    let current = 'sec-resumen';
+    let current = 'sec-1';
     for (const id of secIds) {
       const el = document.getElementById(id);
       if (el && el.getBoundingClientRect().top <= 80) current = id;
