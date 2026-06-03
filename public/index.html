@@ -986,12 +986,12 @@ function renderDashboard(data){
     : 'El grupo mantiene una distribución de servicios saludable. Ninguna agencia tiene dependencia crítica en un solo tipo de ingreso.';
 
   // ── DIAGNÓSTICO ESPECÍFICO SEC-1: RENTABILIDAD ──────────────────────────────
-  const totalEbitdaCC = ag.reduce((s,a)=>s+parseFloat(a.ebitda_cc||0),0);
-  const totalEbitdaDC = ag.reduce((s,a)=>s+parseFloat(a.ebitda_dc||0),0);
-  const arenaLiderNombre = totalEbitdaCC >= totalEbitdaDC ? 'Content Creation' : 'Digital Commerce';
-  const arenaLiderVal = Math.max(totalEbitdaCC, totalEbitdaDC);
-  const arenaDebil = totalEbitdaCC < totalEbitdaDC ? 'CC' : 'DC';
-  const arenaDebilVal = Math.min(totalEbitdaCC, totalEbitdaDC);
+  const rentEbitdaCC = ag.reduce((s,a)=>s+parseFloat(a.ebitda_cc||0),0);
+  const rentEbitdaDC = ag.reduce((s,a)=>s+parseFloat(a.ebitda_dc||0),0);
+  const arenaLiderNombre = rentEbitdaCC >= rentEbitdaDC ? 'Content Creation' : 'Digital Commerce';
+  const arenaLiderVal = Math.max(rentEbitdaCC, rentEbitdaDC);
+  const arenaDebil = rentEbitdaCC < rentEbitdaDC ? 'CC' : 'DC';
+  const arenaDebilVal = Math.min(rentEbitdaCC, rentEbitdaDC);
 
   const agEnPerdida = ag.filter(a=>parseFloat(a.ebitda||0)<0);
   const agSanasRent = ag.filter(a=>parseFloat(a.ebitda||0)>=0);
@@ -1008,12 +1008,12 @@ function renderDashboard(data){
     arenas: {
       icon: totalEbitdaCC>0&&totalEbitdaDC>0?'✅':'⚠️',
       q: '¿Las 2 arenas son rentables?',
-      ans: totalEbitdaCC>0&&totalEbitdaDC>0
+      ans: rentEbitdaCC>0&&rentEbitdaDC>0
         ? `Sí. ${arenaLiderNombre} lidera con ${fmt(arenaLiderVal)} Miles de Gs.`
         : `No. ${arenaDebil} tiene EBITDA negativo (${fmt(arenaDebilVal)})`,
-      sub: `CC: ${fmt(totalEbitdaCC)} · DC: ${fmt(totalEbitdaDC)}`,
-      badge: totalEbitdaCC>0&&totalEbitdaDC>0?'badge-green':'badge-red',
-      label: totalEbitdaCC>0&&totalEbitdaDC>0?'Ambas positivas':'Una en riesgo'
+      sub: `CC: ${fmt(rentEbitdaCC)} · DC: ${fmt(rentEbitdaDC)}`,
+      badge: rentEbitdaCC>0&&rentEbitdaDC>0?'badge-green':'badge-red',
+      label: rentEbitdaCC>0&&rentEbitdaDC>0?'Ambas positivas':'Una en riesgo'
     },
     mejorMargen: {
       icon: '🏆',
