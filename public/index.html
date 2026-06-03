@@ -1124,6 +1124,61 @@ function renderDashboard(data){
     }
   };
 
+  // ── DIAGNÓSTICO SEC-02: SIN 3709 ───────────────────────────────────────────
+  const totalMonto3709 = ag.reduce((s,a)=>s+parseFloat(a.monto3709||0),0);
+  const pctEbitdaDep = totalEBITDA>0?(totalMonto3709/totalEBITDA*100).toFixed(1):0;
+  const dep3709Diag = {
+    cuantas:{icon:agDep3709.length===0?'✅':'⚠️',q:'¿Cuántas agencias dependen del 3709?',ans:agDep3709.length===0?'Ninguna — todas son rentables sin el beneficio':`${agDep3709.length} de ${ag.length}: ${agDep3709.map(a=>a.nombre).join(' y ')}`,sub:`Impacto total: ${fmt(totalMonto3709)} Miles de Gs.`,badge:agDep3709.length===0?'badge-green':'badge-red',label:agDep3709.length===0?'Sin dependencia':'Dependencia crítica'},
+    impacto:{icon:'💰',q:'¿Qué % del EBITDA es crédito 3709?',ans:`El crédito representa el ${pctEbitdaDep}% del EBITDA consolidado`,sub:`Sin ese beneficio el EBITDA grupal bajaría a ${fmt(totalEBITDA-totalMonto3709)} Miles de Gs.`,badge:parseFloat(pctEbitdaDep)>30?'badge-red':parseFloat(pctEbitdaDep)>15?'badge-yellow':'badge-green',label:parseFloat(pctEbitdaDep)>30?'Exposición alta':parseFloat(pctEbitdaDep)>15?'Exposición moderada':'Exposición baja'},
+    riesgo:{icon:'🏛️',q:'¿Qué pasa si se elimina el 3709?',ans:agDep3709.length>0?`${agDep3709.map(a=>a.nombre).join(' y ')} pasarían a pérdida inmediatamente`:'El grupo mantendría rentabilidad positiva',sub:'Riesgo regulatorio: cambio en política fiscal afecta directamente el EBITDA',badge:agDep3709.length>0?'badge-red':'badge-green',label:agDep3709.length>0?'Riesgo alto':'Bajo riesgo'},
+    accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:agDep3709.length>0?`Diversificar ingresos en ${agDep3709.map(a=>a.nombre).join(' y ')} para ser rentables sin el beneficio`:'Monitorear cambios regulatorios y mantener estructura',sub:agDep3709.length>0?'Estrategia: aumentar facturación real hasta cubrir la brecha del crédito fiscal':'Sin acción urgente necesaria',badge:agDep3709.length>0?'badge-yellow':'badge-green',label:agDep3709.length>0?'Acción requerida':'Monitorear'}
+  };
+
+  // ── DIAGNÓSTICO SEC-03: EFICIENCIA ──────────────────────────────────────────
+  const eficData = ag.map(a=>({...a,rend:parseFloat(a.total_egresos||0)>0?parseFloat(a.ebitda||0)/parseFloat(a.total_egresos||0)*100:0,perCapV:parseFloat(a.cantidad_personas||0)>0?parseFloat(a.ebitda||0)/parseFloat(a.cantidad_personas||0):0}));
+  const eficMejorRend = eficData.reduce((b,a)=>a.rend>b.rend?a:b,eficData[0]);
+  const eficPeorRend = eficData.reduce((b,a)=>a.rend<b.rend?a:b,eficData[0]);
+  const rendPromedio = eficData.reduce((s,a)=>s+a.rend,0)/eficData.length;
+  const eficDiag = {
+    rendimiento:{icon:'⚙️',q:'¿Quién tiene mejor rendimiento?',ans:`${eficMejorRend.nombre} con ${eficMejorRend.rend.toFixed(1)}% de rendimiento de inversión`,sub:`Por cada 100 Gs. invertidos genera ${eficMejorRend.rend.toFixed(0)} Gs. de EBITDA`,badge:eficMejorRend.rend>=25?'badge-green':eficMejorRend.rend>=10?'badge-yellow':'badge-red',label:eficMejorRend.rend>=25?'Muy eficiente':'Eficiente'},
+    perCap:{icon:'👤',q:'¿Quién genera más EBITDA por persona?',ans:`${mejorPC.nombre} — ${fmt(parseFloat(mejorPC.percapita_ebitda||0))} Miles Gs. por empleado`,sub:`${pcPromedio>0?Math.round(parseFloat(mejorPC.percapita_ebitda||0)/pcPromedio):1}x el promedio del grupo (${fmt(pcPromedio)} Miles Gs.)`,badge:'badge-green',label:'Mayor productividad'},
+    sobreDot:{icon:'📊',q:'¿Hay agencias con bajo rendimiento?',ans:eficPeorRend.rend<10?`${eficPeorRend.nombre} tiene el rendimiento más bajo: ${eficPeorRend.rend.toFixed(1)}%`:'El grupo mantiene niveles de eficiencia razonables',sub:`Promedio del grupo: ${rendPromedio.toFixed(1)}%. Umbral saludable: +15%`,badge:eficPeorRend.rend<10?'badge-red':'badge-green',label:eficPeorRend.rend<10?'Revisar estructura':'Sin alertas'},
+    accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:eficPeorRend.rend<10?`Revisar estructura de costos en ${eficPeorRend.nombre}`:`Replicar modelo de ${eficMejorRend.nombre} en el resto del grupo`,sub:'Optimizar RRHH o aumentar revenue son las dos palancas de eficiencia',badge:eficPeorRend.rend<10?'badge-yellow':'badge-green',label:eficPeorRend.rend<10?'Optimización pendiente':'Escalar el modelo'}
+  };
+
+  // ── DIAGNÓSTICO SEC-04: INNOVACIÓN ──────────────────────────────────────────
+  const innovPctGrupo = totalFact>0?totalInnovacion/totalFact*100:0;
+  const innovLider = ag.reduce((b,a)=>parseFloat(a.aporte_innovacion||0)>parseFloat(b.aporte_innovacion||0)?a:b,ag[0]);
+  const agBajoPromInnoв = ag.filter(a=>parseFloat(a.aporte_innovacion||0)<totalInnovacion/ag.length);
+  const innovDiag = {
+    lider:{icon:'🏆',q:'¿Quién lidera en innovación?',ans:`${innovLider.nombre} con ${fmt(parseFloat(innovLider.aporte_innovacion||0))} Miles Gs.`,sub:`${totalFact>0?(parseFloat(innovLider.aporte_innovacion||0)/totalFact*100).toFixed(1):0}% de la facturación total del grupo`,badge:'badge-green',label:'Líder de innovación'},
+    grupo:{icon:'📈',q:'¿Cuánto innova el grupo?',ans:`${fmt(totalInnovacion)} Miles Gs. en servicios de alto crecimiento`,sub:`${innovPctGrupo.toFixed(1)}% de la facturación total — referencia saludable: +12%`,badge:innovPctGrupo>=12?'badge-green':innovPctGrupo>=6?'badge-yellow':'badge-red',label:innovPctGrupo>=12?'Grupo innovador':innovPctGrupo>=6?'En desarrollo':'Bajo nivel'},
+    oportunidad:{icon:'🚀',q:'¿Dónde hay más oportunidad?',ans:agBajoPromInnoв.length>0?`${agBajoPromInnoв.map(a=>a.nombre).join(', ')} están por debajo del promedio del grupo`:'Todas las agencias contribuyen activamente',sub:'Social Media y PR/Influencer son los servicios de mayor crecimiento del mercado',badge:agBajoPromInnoв.length>0?'badge-yellow':'badge-green',label:agBajoPromInnoв.length>0?'Oportunidad identificada':'Grupo alineado'},
+    accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:'Impulsar Social Media y PR en agencias rezagadas para aumentar el mix innovador del grupo',sub:`Objetivo: llevar el aporte grupal al +12% de la facturación total`,badge:'badge-yellow',label:'Estrategia recomendada'}
+  };
+
+  // ── DIAGNÓSTICO SEC-05: EXPERTISE FOCO ─────────────────────────────────────
+  const focosUnicos = [...new Set(focoInfo.map(f=>f.name))];
+  const focosMap = focoInfo.reduce((m,f)=>{if(!m[f.name])m[f.name]=0;m[f.name]++;return m;},{});
+  const focoDuplicados = Object.entries(focosMap).filter(([,v])=>v>1).map(([k])=>k);
+  const focoDiag = {
+    diferenciacion:{icon:focoDuplicados.length===0?'✅':'⚠️',q:'¿Cada agencia tiene rol diferenciado?',ans:focoDuplicados.length===0?'Sí — cada agencia tiene un expertise único':`Superposición en: ${focoDuplicados.join(', ')}`,sub:`${ag.length} agencias con ${focosUnicos.length} expertises distintos en el grupo`,badge:focoDuplicados.length===0?'badge-green':'badge-yellow',label:focoDuplicados.length===0?'Roles diferenciados':'Revisar solapamiento'},
+    mayor:{icon:'🎯',q:'¿Cuál es el expertise más frecuente?',ans:`${Object.entries(focosMap).sort(([,a],[,b])=>b-a)[0][0]} — presente en ${Object.entries(focosMap).sort(([,a],[,b])=>b-a)[0][1]} agencias`,sub:'Indica dónde el grupo tiene mayor masa crítica de conocimiento',badge:'badge-green',label:'Fortaleza grupal'},
+    riesgo:{icon:'📊',q:'¿Hay agencias muy concentradas?',ans:`${agMayorConc.nombre} concentra el ${concPctVal.toFixed(0)}% de su CC en ${focoInfo[concIdx].name}`,sub:concPctVal>=70?'Dependencia crítica ante cambios en ese servicio':concPctVal>=50?'Concentración moderada':'Distribución saludable',badge:concPctVal>=70?'badge-red':concPctVal>=50?'badge-yellow':'badge-green',label:concPctVal>=70?'Riesgo alto':'Monitorear'},
+    accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:focoDuplicados.length>0?`Diferenciar claramente ${focoDuplicados.join(', ')} entre las agencias que lo comparten`:concPctVal>=70?`Diversificar ${agMayorConc.nombre} más allá de ${focoInfo[concIdx].name}`:'Reforzar y comunicar los roles únicos de cada agencia',sub:'El posicionamiento claro maximiza el valor y evita canibalización interna',badge:focoDuplicados.length>0||concPctVal>=70?'badge-yellow':'badge-green',label:focoDuplicados.length>0||concPctVal>=70?'Acción sugerida':'Posición sólida'}
+  };
+
+  // ── DIAGNÓSTICO SEC-06: CONCENTRACIÓN DE FEE ────────────────────────────────
+  const agRiesgoAlto = ag.filter((_,i)=>focoInfo[i]&&focoInfo[i].pct>=0.7);
+  const agRiesgoMedio = ag.filter((_,i)=>focoInfo[i]&&focoInfo[i].pct>=0.5&&focoInfo[i].pct<0.7);
+  const agSana6 = ag.filter((_,i)=>focoInfo[i]&&focoInfo[i].pct<0.5);
+  const concDiag = {
+    estado:{icon:agRiesgoAlto.length===0?'✅':'🔴',q:'¿Hay dependencia crítica?',ans:agRiesgoAlto.length===0?'No — ninguna supera el 70% de concentración':`Sí — ${agRiesgoAlto.map(a=>a.nombre).join(' y ')} tienen concentración crítica`,sub:`${agSana6.length} sanas · ${agRiesgoMedio.length} en alerta · ${agRiesgoAlto.length} críticas`,badge:agRiesgoAlto.length===0?'badge-green':'badge-red',label:agRiesgoAlto.length===0?'Sin dependencia crítica':'Atención urgente'},
+    mayor:{icon:'⚠️',q:'¿Quién concentra más?',ans:`${agMayorConc.nombre}: ${concPctVal.toFixed(0)}% en ${focoInfo[concIdx].name}`,sub:concPctVal>=70?'Si ese servicio cae arrastra la mayor parte del CC':concPctVal>=50?'Diversificación recomendada':'Distribución saludable',badge:concPctVal>=70?'badge-red':concPctVal>=50?'badge-yellow':'badge-green',label:concPctVal>=70?'Riesgo crítico':'Moderado'},
+    umbral:{icon:'📏',q:'¿Cuántas están en zona segura?',ans:`${agSana6.length} de ${ag.length} agencias con concentración menor al 50%`,sub:'Verde <50%: diversificado · Amarillo 50-70%: moderado · Rojo ≥70%: riesgo crítico',badge:agSana6.length===ag.length?'badge-green':agSana6.length>=ag.length/2?'badge-yellow':'badge-red',label:agSana6.length===ag.length?'Todas en zona segura':'Mayoría segura'},
+    accion:{icon:'🎯',q:'¿Qué hacer?',ans:agRiesgoAlto.length>0?`Diversificar ${agRiesgoAlto.map(a=>a.nombre).join(' y ')} — reducir concentración bajo el 70%`:'Mantener distribución y monitorear trimestralmente',sub:'La diversificación reduce el riesgo ante pérdida de clientes o caída de una categoría',badge:agRiesgoAlto.length>0?'badge-yellow':'badge-green',label:agRiesgoAlto.length>0?'Acción requerida':'Mantener y monitorear'}
+  };
+
   document.getElementById('dashboard').innerHTML = `
   <!-- STICKY NAV -->
   <div class="section-nav" id="sectionNav">
@@ -1347,64 +1402,268 @@ function renderDashboard(data){
 
     <div class="sec-separator"></div>
 
+    <!-- ══ 02 · SIN 3709 ══ -->
     <div id="sec-2" class="sec-block">
       <div class="sec-label">02 · Sin 3709</div>
       <div class="sec-heading">¿La rentabilidad es real?</div>
       <div class="sec-bar"></div>
     </div>
-    <div class="section-narrative">${dep3709Narr}</div>
-    <div class="charts-grid">
-      <div class="chart-card wide"><div class="chart-title">EBITDA — Con vs Sin 3709</div><div class="chart-subtitle">Impacto del cliente 3709 por agencia</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
+      <div class="sec-step-body">El crédito fiscal <strong>3709</strong> es un beneficio tributario que algunas agencias reciben y que infla su EBITDA contable. Esta sección separa la rentabilidad <em>con</em> y <em>sin</em> ese beneficio para revelar si la ganancia es genuina o depende de un subsidio fiscal que puede cambiar en cualquier momento.</div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
+      <div class="sec-step-body"><div class="step-formula">
+        <div class="step-formula-row"><div class="step-formula-label">Fuente</div><div class="step-formula-val">Excel de Salud Financiera — columna Monto 3709 por agencia</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">EBITDA sin</div><div class="step-formula-val"><em>EBITDA total</em> − Monto 3709 = ganancia real sin el beneficio fiscal</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Alerta</div><div class="step-formula-val">Si <em>EBITDA sin 3709 &lt; 0</em>, la agencia solo es rentable gracias al crédito fiscal</div></div>
+      </div></div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">3</div><div class="sec-step-title">Gráficos principales</div></div>
+      <div class="charts-grid">
+        <div class="chart-card wide">
+          <div class="chart-title">EBITDA — Con vs Sin 3709<span class="chart-help">?<span class="chart-help-tip">Compara el EBITDA declarado (con el crédito) vs el EBITDA real (sin el beneficio fiscal). Barras que caen al negativo al quitar el 3709 = dependencia crítica.</span></span></div>
+          <div class="chart-subtitle">Impacto del crédito fiscal 3709 por agencia</div>
+          <div class="chart-wrap"><canvas id="cEbitda"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">EBITDA sin 3709 = EBITDA − Monto 3709</div>
+            <div class="ci-row"><span class="ci-label">Impacto total</span><span class="ci-val">El grupo recibe <strong>${fmt(totalMonto3709)}</strong> Miles Gs. en crédito 3709 — ${pctEbitdaDep}% del EBITDA consolidado</span></div>
+            <div class="ci-row"><span class="ci-label">Dependientes</span><span class="ci-val">${agDep3709.length>0?agDep3709.map(a=>a.nombre).join(', ')+' — solo rentables con el beneficio':'Ninguna — todas son rentables sin el 3709'}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">4</div><div class="sec-step-title">Lectura de resultados</div></div>
+      <div class="sec-step-body">${dep3709Narr}
+        <table class="rent-table" style="margin-top:16px">
+          <thead><tr><th>Agencia</th><th>EBITDA con 3709</th><th>Monto 3709</th><th>EBITDA sin 3709</th><th>Depende</th></tr></thead>
+          <tbody>${ag.map(a=>{const e=parseFloat(a.ebitda||0),m=parseFloat(a.monto3709||0),s=parseFloat(a.ebitda_sin3709||0);const dep=s<0&&e>=0;const cls=s<0?'val-neg':dep?'val-warn':'val-pos';const bdg=s<0?'background:rgba(212,43,79,.12);color:#b91c1c':dep?'background:rgba(212,144,10,.12);color:#b45309':'background:rgba(22,163,74,.12);color:#15803d';return `<tr><td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span><strong>${a.nombre}</strong></td><td class="val-pos">${fmt(e)}</td><td>${fmt(m)}</td><td class="${cls}">${fmt(s)}</td><td><span class="rent-badge" style="${bdg}">${s<0?'Pérdida sin 3709':dep?'Dependiente':'Independiente'}</span></td></tr>`;}).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">5</div><div class="sec-step-title">Diagnóstico · Sin 3709</div></div>
+      <div class="diag-grid">${['cuantas','impacto','riesgo','accion'].map(k=>`<div class="diag-card"><div class="diag-card-icon">${dep3709Diag[k].icon}</div><div class="diag-card-q">${dep3709Diag[k].q}</div><div class="diag-card-ans">${dep3709Diag[k].ans}</div><div class="diag-card-sub">${dep3709Diag[k].sub}</div><div class="diag-card-badge ${dep3709Diag[k].badge}">${dep3709Diag[k].label}</div></div>`).join('')}</div>
     </div>
 
     <div class="sec-separator"></div>
 
+    <!-- ══ 03 · EFICIENCIA ══ -->
     <div id="sec-3" class="sec-block">
       <div class="sec-label">03 · Eficiencia</div>
       <div class="sec-heading">¿Quién hace más con menos?</div>
       <div class="sec-bar"></div>
     </div>
-    <div class="section-narrative">${eficNarr}</div>
-    <div class="charts-grid triple">
-      <div class="chart-card"><div class="chart-title">Rendimiento de Inversión</div><div class="chart-subtitle">EBITDA / Total Egresos</div><div class="chart-wrap"><canvas id="cRendInv"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">EBITDA Per Cápita</div><div class="chart-subtitle">Millones de Gs. por persona</div><div class="chart-wrap"><canvas id="cPC"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Dotación por Agencia</div><div class="chart-subtitle">Personas promedio</div><div class="chart-wrap"><canvas id="cPers"></canvas></div></div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
+      <div class="sec-step-body">Mide la <strong>productividad real</strong> de cada agencia: cuánto EBITDA genera por cada peso invertido en costos (rendimiento de inversión) y cuánto genera por cada persona (per cápita). Una agencia puede ser rentable pero ineficiente si necesita demasiados recursos para conseguir esa ganancia.</div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
+      <div class="sec-step-body"><div class="step-formula">
+        <div class="step-formula-row"><div class="step-formula-label">Rendimiento</div><div class="step-formula-val"><em>EBITDA</em> ÷ Total Egresos × 100% → "por cada 100 Gs. de costo, cuánto queda"</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Per Cápita</div><div class="step-formula-val"><em>EBITDA</em> ÷ Cantidad de personas → Miles de Gs. de ganancia por empleado</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Egresos</div><div class="step-formula-val">RRHH + Gastos Comerciales + Gastos Administrativos</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Referencia</div><div class="step-formula-val">Rendimiento saludable: <em>+15%</em> · Excelente: <em>+25%</em></div></div>
+      </div></div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">3</div><div class="sec-step-title">Gráficos principales</div></div>
+      <div class="charts-grid triple">
+        <div class="chart-card">
+          <div class="chart-title">Rendimiento de Inversión<span class="chart-help">?<span class="chart-help-tip">EBITDA como % del total de egresos. Mide cuánto se gana por cada peso gastado. +25% = excelente · 15-25% = sólido · &lt;15% = revisar estructura de costos.</span></span></div>
+          <div class="chart-subtitle">EBITDA / Total Egresos</div>
+          <div class="chart-wrap"><canvas id="cRendInv"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">Rendimiento = EBITDA ÷ Total Egresos × 100%</div>
+            <div class="ci-row"><span class="ci-label">Mejor</span><span class="ci-val"><strong>${eficMejorRend.nombre}</strong> — ${eficMejorRend.rend.toFixed(1)}%</span></div>
+            <div class="ci-row"><span class="ci-label">Promedio</span><span class="ci-val">${rendPromedio.toFixed(1)}% (umbral saludable: +15%)</span></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">EBITDA Per Cápita<span class="chart-help">?<span class="chart-help-tip">Ganancia operativa dividida por la cantidad de personas. Indica la productividad por empleado. Cuanto mayor, más eficiente es la estructura de RRHH.</span></span></div>
+          <div class="chart-subtitle">Miles de Gs. de EBITDA por persona</div>
+          <div class="chart-wrap"><canvas id="cPC"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">Per Cápita = EBITDA ÷ Cantidad de personas</div>
+            <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${mejorPC.nombre}</strong> — ${fmt(parseFloat(mejorPC.percapita_ebitda||0))} Miles Gs./persona</span></div>
+            <div class="ci-row"><span class="ci-label">Promedio</span><span class="ci-val">${fmt(pcPromedio)} Miles Gs. por persona</span></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Dotación por Agencia<span class="chart-help">?<span class="chart-help-tip">Cantidad de personas promedio por agencia. Útil para analizar si hay sobredotación: agencias con mucha gente pero bajo per cápita pueden estar sobredimensionadas.</span></span></div>
+          <div class="chart-subtitle">Personas promedio</div>
+          <div class="chart-wrap"><canvas id="cPers"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">Dotación = promedio de personas en el período</div>
+            <div class="ci-row"><span class="ci-label">Total grupo</span><span class="ci-val">${Math.round(ag.reduce((s,a)=>s+parseFloat(a.cantidad_personas||0),0))} personas en ${ag.length} agencias</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">4</div><div class="sec-step-title">Lectura de resultados</div></div>
+      <div class="sec-step-body">${eficNarr}
+        <table class="rent-table" style="margin-top:16px">
+          <thead><tr><th>Agencia</th><th>EBITDA</th><th>Total Egresos</th><th>Rendimiento %</th><th>Personas</th><th>Per Cápita</th></tr></thead>
+          <tbody>${eficData.map(a=>{const cls=a.rend>=15?'val-pos':a.rend>=5?'val-warn':'val-neg';return `<tr><td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span><strong>${a.nombre}</strong></td><td>${fmt(parseFloat(a.ebitda||0))}</td><td>${fmt(parseFloat(a.total_egresos||0))}</td><td class="${cls}">${a.rend.toFixed(1)}%</td><td>${Math.round(parseFloat(a.cantidad_personas||0))}</td><td>${fmt(a.perCapV)}</td></tr>`;}).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">5</div><div class="sec-step-title">Diagnóstico · Eficiencia</div></div>
+      <div class="diag-grid">${['rendimiento','perCap','sobreDot','accion'].map(k=>`<div class="diag-card"><div class="diag-card-icon">${eficDiag[k].icon}</div><div class="diag-card-q">${eficDiag[k].q}</div><div class="diag-card-ans">${eficDiag[k].ans}</div><div class="diag-card-sub">${eficDiag[k].sub}</div><div class="diag-card-badge ${eficDiag[k].badge}">${eficDiag[k].label}</div></div>`).join('')}</div>
     </div>
 
     <div class="sec-separator"></div>
 
+    <!-- ══ 04 · INNOVACIÓN ══ -->
     <div id="sec-4" class="sec-block">
-      <div class="sec-label">04 · Innovación</div>
+      <div class="sec-label">04 · Aporte de Innovación</div>
       <div class="sec-heading">¿Quién construye el negocio del futuro?</div>
       <div class="sec-bar"></div>
     </div>
-    <div class="section-narrative">${innovNarr}</div>
-    <div class="charts-grid">
-      <div class="chart-card wide"><div class="chart-title">Innovación por Agencia</div><div class="chart-subtitle">Otras Innov. · PR/Influencer · Social Media</div><div class="chart-wrap"><canvas id="cInnov"></canvas></div></div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
+      <div class="sec-step-body">Mide cuánto factura cada agencia en los servicios de <strong>alto crecimiento</strong>: Social Media, PR/Influencer y Otras Innovaciones. Estos servicios escalan más rápido que los tradicionales y definen quién está construyendo el negocio del futuro. Una agencia con alto aporte de innovación tiene mejor posicionamiento ante cambios del mercado.</div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
+      <div class="sec-step-body"><div class="step-formula">
+        <div class="step-formula-row"><div class="step-formula-label">Fórmula</div><div class="step-formula-val"><em>Aporte</em> = Social Media + PR/Influencer + Otras Innovaciones (dentro del CC)</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">% del grupo</div><div class="step-formula-val">Aporte total ÷ Facturación total del grupo × 100%</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Referencia</div><div class="step-formula-val">Saludable: <em>+12%</em> de la facturación · Excelente: <em>+20%</em></div></div>
+      </div></div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">3</div><div class="sec-step-title">Gráficos principales</div></div>
+      <div class="charts-grid">
+        <div class="chart-card wide">
+          <div class="chart-title">Innovación por Agencia<span class="chart-help">?<span class="chart-help-tip">Barras apiladas con los 3 servicios de alto crecimiento. Verde = Otras Innovaciones, violeta = PR/Influencer, celeste = Social Media. La suma es el aporte total de innovación de cada agencia.</span></span></div>
+          <div class="chart-subtitle">Otras Innov. · PR/Influencer · Social Media — Miles de Gs.</div>
+          <div class="chart-wrap"><canvas id="cInnov"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">Aporte = Social Media + PR/Influencer + Otras Innovaciones</div>
+            <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${innovLider.nombre}</strong> — ${fmt(parseFloat(innovLider.aporte_innovacion||0))} Miles Gs.</span></div>
+            <div class="ci-row"><span class="ci-label">Total grupo</span><span class="ci-val">${fmt(totalInnovacion)} Miles Gs. = ${innovPctGrupo.toFixed(1)}% de la facturación ${innovPctGrupo>=12?'✓ Sobre el umbral saludable':'⚠ Por debajo del umbral (+12%)'}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">4</div><div class="sec-step-title">Lectura de resultados</div></div>
+      <div class="sec-step-body">${innovNarr}
+        <table class="rent-table" style="margin-top:16px">
+          <thead><tr><th>Agencia</th><th>Social Media</th><th>PR/Influencer</th><th>Otras Innov.</th><th>Total Aporte</th><th>% de su CC</th></tr></thead>
+          <tbody>${ag.map(a=>{const sm=parseFloat(a.cc_social_media||0),pr=parseFloat(a.cc_pr_influencer||0),ot=parseFloat(a.cc_otras_innovaciones||0),tot=sm+pr+ot,cc=parseFloat(a.facturacion_cc||0);const pct=cc>0?(tot/cc*100).toFixed(1):'—';return `<tr><td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span><strong>${a.nombre}</strong></td><td>${fmt(sm)}</td><td>${fmt(pr)}</td><td>${fmt(ot)}</td><td class="val-pos">${fmt(tot)}</td><td>${pct}%</td></tr>`;}).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">5</div><div class="sec-step-title">Diagnóstico · Innovación</div></div>
+      <div class="diag-grid">${['lider','grupo','oportunidad','accion'].map(k=>`<div class="diag-card"><div class="diag-card-icon">${innovDiag[k].icon}</div><div class="diag-card-q">${innovDiag[k].q}</div><div class="diag-card-ans">${innovDiag[k].ans}</div><div class="diag-card-sub">${innovDiag[k].sub}</div><div class="diag-card-badge ${innovDiag[k].badge}">${innovDiag[k].label}</div></div>`).join('')}</div>
     </div>
 
     <div class="sec-separator"></div>
 
+    <!-- ══ 05 · EXPERTISE FOCO ══ -->
     <div id="sec-5" class="sec-block">
       <div class="sec-label">05 · Expertise Foco</div>
       <div class="sec-heading">¿En qué se especializa cada agencia?</div>
       <div class="sec-bar"></div>
     </div>
-    <div class="section-narrative">Cada agencia tiene un área donde concentra su fortaleza comercial. Esta sección muestra esa especialización dentro de la arena CC, permitiendo identificar si hay superposición entre agencias o si cada una tiene un rol diferenciado dentro del grupo.</div>
-    <div class="charts-grid">
-      <div class="chart-card wide"><div class="chart-title">Expertise Foco por Agencia</div><div class="chart-subtitle">Distribución CC normalizada — sub-arena dominante = foco</div><div class="chart-wrap"><canvas id="cFoco"></canvas></div></div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
+      <div class="sec-step-body">Identifica la <strong>sub-arena dominante</strong> dentro del Content Creation (CC) de cada agencia — aquella en la que más factura. Esto muestra la fortaleza diferencial de cada agencia y permite detectar si hay superposición de roles dentro del grupo (dos o más agencias compitiendo en el mismo servicio).</div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
+      <div class="sec-step-body"><div class="step-formula">
+        <div class="step-formula-row"><div class="step-formula-label">Expertise</div><div class="step-formula-val">La sub-arena CC con <em>mayor facturación</em> = expertise foco de la agencia</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Sub-arenas CC</div><div class="step-formula-val">Creatividad · Social Media · PR/Influencer · Activación · Branding · Estrategias · Otras Innov. · Asesorías</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Gráfico</div><div class="step-formula-val">Barras al 100% — cada color es una sub-arena. La barra más larga por agencia = su foco</div></div>
+      </div></div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">3</div><div class="sec-step-title">Gráficos principales</div></div>
+      <div class="charts-grid">
+        <div class="chart-card wide">
+          <div class="chart-title">Expertise Foco por Agencia<span class="chart-help">?<span class="chart-help-tip">Distribución al 100% de las sub-arenas CC por agencia. La sección más larga de cada barra es el expertise foco de esa agencia. Idealmente cada agencia tiene un color dominante diferente al resto.</span></span></div>
+          <div class="chart-subtitle">Distribución CC normalizada al 100% — sub-arena dominante = foco</div>
+          <div class="chart-wrap"><canvas id="cFoco"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">Foco = sub-arena CC con mayor facturación en el período</div>
+            <div class="ci-row"><span class="ci-label">Expertises únicos</span><span class="ci-val">${focosUnicos.length} especialidades distintas para ${ag.length} agencias</span></div>
+            <div class="ci-row"><span class="ci-label">Solapamiento</span><span class="ci-val">${focoDuplicados.length>0?focoDuplicados.join(', ')+' — más de una agencia compite en este servicio':'Sin solapamientos — cada agencia tiene un foco único'}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">4</div><div class="sec-step-title">Lectura de resultados</div></div>
+      <div class="sec-step-body">El grupo Texo cubre <strong>${focosUnicos.length} especialidades</strong> distintas dentro de CC, lo que indica un portfolio diverso. ${focoDuplicados.length>0?`Sin embargo, se detecta superposición en <strong>${focoDuplicados.join(', ')}</strong> — más de una agencia compite en ese servicio.`:'Cada agencia tiene un expertise diferenciado, lo que minimiza la competencia interna.'}
+        <table class="rent-table" style="margin-top:16px">
+          <thead><tr><th>Agencia</th><th>Expertise Foco</th><th>% dentro del CC</th><th>Concentración</th></tr></thead>
+          <tbody>${ag.map((a,i)=>{const fi=focoInfo[i]||{name:'—',pct:0};const pct=(fi.pct*100).toFixed(1);const cls=fi.pct>=0.7?'val-neg':fi.pct>=0.5?'val-warn':'val-pos';const bdg=fi.pct>=0.7?'background:rgba(212,43,79,.12);color:#b91c1c':fi.pct>=0.5?'background:rgba(212,144,10,.12);color:#b45309':'background:rgba(22,163,74,.12);color:#15803d';return `<tr><td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span><strong>${a.nombre}</strong></td><td>${fi.name}</td><td class="${cls}">${pct}%</td><td><span class="rent-badge" style="${bdg}">${fi.pct>=0.7?'Alta (riesgo)':fi.pct>=0.5?'Moderada':'Saludable'}</span></td></tr>`;}).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">5</div><div class="sec-step-title">Diagnóstico · Expertise Foco</div></div>
+      <div class="diag-grid">${['diferenciacion','mayor','riesgo','accion'].map(k=>`<div class="diag-card"><div class="diag-card-icon">${focoDiag[k].icon}</div><div class="diag-card-q">${focoDiag[k].q}</div><div class="diag-card-ans">${focoDiag[k].ans}</div><div class="diag-card-sub">${focoDiag[k].sub}</div><div class="diag-card-badge ${focoDiag[k].badge}">${focoDiag[k].label}</div></div>`).join('')}</div>
     </div>
 
     <div class="sec-separator"></div>
 
+    <!-- ══ 06 · CONCENTRACIÓN DE FEE ══ -->
     <div id="sec-6" class="sec-block">
       <div class="sec-label">06 · Concentración de Fee</div>
       <div class="sec-heading">¿Cuán vulnerables somos?</div>
       <div class="sec-bar"></div>
     </div>
-    <div class="section-narrative">${concNarr}</div>
-    <div class="charts-grid">
-      <div class="chart-card wide"><div class="chart-title">Concentración de Fee por Agencia</div><div class="chart-subtitle">% sub-arena CC dominante sobre total CC — verde &lt;50% · amarillo 50–70% · rojo ≥70%</div><div class="chart-wrap"><canvas id="cConc"></canvas></div></div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
+      <div class="sec-step-body">Mide el <strong>riesgo de dependencia</strong>: qué porcentaje del Content Creation de cada agencia viene de un solo tipo de servicio. Una concentración alta significa que si ese servicio cae (pérdida de clientes, cambio de mercado), arrastra la mayor parte del CC. Es un indicador de <em>vulnerabilidad estructural</em>.</div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
+      <div class="sec-step-body"><div class="step-formula">
+        <div class="step-formula-row"><div class="step-formula-label">Concentración</div><div class="step-formula-val">Sub-arena dominante ÷ Total CC × 100%</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Verde &lt;50%</div><div class="step-formula-val">Cartera diversificada — <em>saludable</em></div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Amarillo 50-70%</div><div class="step-formula-val">Concentración moderada — <em>monitorear</em></div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Rojo ≥70%</div><div class="step-formula-val">Dependencia crítica — <em>acción requerida</em></div></div>
+      </div></div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">3</div><div class="sec-step-title">Gráficos principales</div></div>
+      <div class="charts-grid">
+        <div class="chart-card wide">
+          <div class="chart-title">Concentración de Fee por Agencia<span class="chart-help">?<span class="chart-help-tip">Barras que muestran el % de concentración en la sub-arena dominante. Verde &lt;50% = diversificado. Amarillo 50-70% = atención. Rojo ≥70% = dependencia crítica que requiere acción inmediata.</span></span></div>
+          <div class="chart-subtitle">% sub-arena CC dominante sobre total CC</div>
+          <div class="chart-wrap"><canvas id="cConc"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">Concentración = sub-arena dominante ÷ Total CC × 100%</div>
+            <div class="ci-row"><span class="ci-label">Mayor riesgo</span><span class="ci-val"><strong>${agMayorConc.nombre}</strong> — ${concPctVal.toFixed(0)}% en ${focoInfo[concIdx].name} ${concPctVal>=70?'🔴 Crítico':concPctVal>=50?'🟡 Moderado':'🟢 Saludable'}</span></div>
+            <div class="ci-row"><span class="ci-label">En zona segura</span><span class="ci-val">${agSana6.length} de ${ag.length} agencias con concentración menor al 50%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">4</div><div class="sec-step-title">Lectura de resultados</div></div>
+      <div class="sec-step-body">${concNarr}
+        <table class="rent-table" style="margin-top:16px">
+          <thead><tr><th>Agencia</th><th>Sub-arena dominante</th><th>Concentración %</th><th>Nivel de riesgo</th></tr></thead>
+          <tbody>${ag.map((a,i)=>{const fi=focoInfo[i]||{name:'—',pct:0};const pct=(fi.pct*100).toFixed(1);const nivel=fi.pct>=0.7?'Crítico (≥70%)':fi.pct>=0.5?'Moderado (50-70%)':'Saludable (<50%)';const bdg=fi.pct>=0.7?'background:rgba(212,43,79,.12);color:#b91c1c':fi.pct>=0.5?'background:rgba(212,144,10,.12);color:#b45309':'background:rgba(22,163,74,.12);color:#15803d';const cls=fi.pct>=0.7?'val-neg':fi.pct>=0.5?'val-warn':'val-pos';return `<tr><td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span><strong>${a.nombre}</strong></td><td>${fi.name}</td><td class="${cls}">${pct}%</td><td><span class="rent-badge" style="${bdg}">${nivel}</span></td></tr>`;}).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">5</div><div class="sec-step-title">Diagnóstico · Concentración de Fee</div></div>
+      <div class="diag-grid">${['estado','mayor','umbral','accion'].map(k=>`<div class="diag-card"><div class="diag-card-icon">${concDiag[k].icon}</div><div class="diag-card-q">${concDiag[k].q}</div><div class="diag-card-ans">${concDiag[k].ans}</div><div class="diag-card-sub">${concDiag[k].sub}</div><div class="diag-card-badge ${concDiag[k].badge}">${concDiag[k].label}</div></div>`).join('')}</div>
     </div>
 
     <div id="sec-comp" class="sec-block">
