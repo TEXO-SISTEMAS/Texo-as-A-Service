@@ -552,10 +552,11 @@ body.fullscreen .main { padding-top:64px; }
   border:1px solid rgba(255,255,255,.07);
   border-radius:14px;padding:24px 20px;
   display:flex;flex-direction:column;gap:10px;
-  transition:border-color .15s, background .15s;
-  cursor:default;
+  transition:border-color .15s, background .15s, transform .15s;
+  cursor:pointer;
 }
-.intro-dim:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14)}
+.intro-dim:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18);transform:translateY(-2px)}
+.intro-dim:active{transform:translateY(0)}
 .intro-dim-num{
   font-size:12px;font-weight:700;letter-spacing:.1em;
   color:rgba(255,255,255,.25);
@@ -913,37 +914,37 @@ function renderDashboard(data){
     <div class="intro-title">Puntos que tomamos en cuenta para <span>analizar</span></div>
     <div class="intro-sub">6 puntos clave que determinan la salud real de cada agencia del holding.</div>
     <div class="intro-grid">
-      <div class="intro-dim">
+      <div class="intro-dim" onclick="openSection('sec-1')">
         <div class="intro-dim-dot" style="background:#6c3fc5"></div>
         <div class="intro-dim-num">01</div>
         <div class="intro-dim-name">Rentabilidad de las 2 arenas</div>
         <div class="intro-dim-sub">EBITDA y margen en Content Creation y Digital Commerce</div>
       </div>
-      <div class="intro-dim">
+      <div class="intro-dim" onclick="openSection('sec-2')">
         <div class="intro-dim-dot" style="background:#e85d26"></div>
         <div class="intro-dim-num">02</div>
         <div class="intro-dim-name">Sin 3709</div>
         <div class="intro-dim-sub">Rentabilidad real excluyendo el crédito fiscal</div>
       </div>
-      <div class="intro-dim">
+      <div class="intro-dim" onclick="openSection('sec-3')">
         <div class="intro-dim-dot" style="background:#0ea5b0"></div>
         <div class="intro-dim-num">03</div>
         <div class="intro-dim-name">Eficiencia</div>
         <div class="intro-dim-sub">Rendimiento de inversión y aporte per cápita por agencia</div>
       </div>
-      <div class="intro-dim">
+      <div class="intro-dim" onclick="openSection('sec-4')">
         <div class="intro-dim-dot" style="background:#4ade80"></div>
         <div class="intro-dim-num">04</div>
         <div class="intro-dim-name">Aporte de innovación</div>
         <div class="intro-dim-sub">Lo que escala rápido: Social Media, PR, Otras Innovaciones</div>
       </div>
-      <div class="intro-dim">
+      <div class="intro-dim" onclick="openSection('sec-5')">
         <div class="intro-dim-dot" style="background:#f0f040"></div>
         <div class="intro-dim-num">05</div>
         <div class="intro-dim-name">Expertise foco</div>
         <div class="intro-dim-sub">La sub-arena dominante: fortaleza diferencial de cada agencia</div>
       </div>
-      <div class="intro-dim">
+      <div class="intro-dim" onclick="openSection('sec-6')">
         <div class="intro-dim-dot" style="background:#f87171"></div>
         <div class="intro-dim-num">06</div>
         <div class="intro-dim-name">Concentración de fee</div>
@@ -1439,6 +1440,12 @@ function renderDashboard(data){
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{ await loadUploads(); await loadLatest(); });
+
+// ── OPEN SECTION ─────────────────────────────────────────────────────────────
+function openSection(id) {
+  if (!detailsOpen) toggleDetails();
+  setTimeout(() => document.getElementById(id)?.scrollIntoView({behavior:'smooth'}), 100);
+}
 
 // ── DETALLES ────────────────────────────────────────────────────────────────
 let detailsOpen = false;
