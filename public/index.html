@@ -1250,7 +1250,9 @@ function renderDashboard(data){
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
       <div class="sec-step-body">
-        Mide si las agencias generan <strong>ganancias reales</strong>. Analizamos las dos arenas de negocio por separado: <strong>Content Creation (CC)</strong> y <strong>Digital Commerce (DC)</strong>, porque cada una tiene una estructura de costos diferente. El objetivo es identificar quién gana, quién pierde, y dónde está la rentabilidad genuina del grupo.
+        El <strong>EBITDA</strong> es la ganancia que le queda a una agencia después de pagar todos sus costos operativos — salarios, gastos comerciales y administrativos — antes de impuestos y depreciaciones. Es el indicador más honesto de si un negocio genera valor real.<br><br>
+        Analizamos las dos arenas por separado porque tienen estructuras de costo distintas: el <strong>Content Creation (CC)</strong> incluye creatividad, social media, PR, branding y estrategias; el <strong>Digital Commerce (DC)</strong> cubre distribución de contenido, performance y medios digitales. Una agencia puede ser rentable en CC y perder en DC — por eso no alcanza con ver el total.<br><br>
+        <strong>¿Qué buscamos?</strong> Que todas las agencias tengan EBITDA positivo en ambas arenas, con un margen superior al 10%. Por debajo de eso, la rentabilidad existe pero es frágil ante cualquier cambio de contexto.
       </div>
     </div>
 
@@ -1410,7 +1412,9 @@ function renderDashboard(data){
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
-      <div class="sec-step-body">El crédito fiscal <strong>3709</strong> es un beneficio tributario que algunas agencias reciben y que infla su EBITDA contable. Esta sección separa la rentabilidad <em>con</em> y <em>sin</em> ese beneficio para revelar si la ganancia es genuina o depende de un subsidio fiscal que puede cambiar en cualquier momento.</div>
+      <div class="sec-step-body">El artículo <strong>3709</strong> es un crédito fiscal del sistema tributario paraguayo que permite a las empresas declarar ciertos gastos (como inversiones en innovación o capacitación) como un beneficio impositivo, lo que aumenta el EBITDA contable. Dicho de forma simple: el Estado "devuelve" parte del gasto como ganancia.<br><br>
+        El problema es que ese beneficio <strong>puede cambiar en cualquier momento</strong> con una decisión legislativa o regulatoria. Una agencia que solo es rentable gracias al 3709 tiene su ganancia construida sobre una base que no controla. Si ese crédito se reduce o desaparece, entra en pérdida de forma automática y sin margen de reacción.<br><br>
+        <strong>¿Qué buscamos?</strong> Que cada agencia sea rentable con su actividad comercial real, independientemente del 3709. Si necesita ese crédito para sobrevivir, hay un problema estructural que resolver.</div>
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
@@ -1459,7 +1463,10 @@ function renderDashboard(data){
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
-      <div class="sec-step-body">Mide la <strong>productividad real</strong> de cada agencia: cuánto EBITDA genera por cada peso invertido en costos (rendimiento de inversión) y cuánto genera por cada persona (per cápita). Una agencia puede ser rentable pero ineficiente si necesita demasiados recursos para conseguir esa ganancia.</div>
+      <div class="sec-step-body">Dos agencias pueden tener el mismo EBITDA y ser completamente distintas en eficiencia. Una puede necesitar 50 personas y 10M en gastos para generar 1M de ganancia, mientras otra logra lo mismo con 20 personas y 4M. Esa diferencia es la <strong>eficiencia operativa</strong> — y define qué tan sólido es el modelo de negocio.<br><br>
+        El <strong>rendimiento de inversión</strong> responde: "por cada 100 Gs. que gasto en operar mi agencia, ¿cuánto me queda de ganancia?". Es la métrica favorita de los inversores porque mide directamente la calidad del modelo, no solo el volumen.<br><br>
+        El <strong>per cápita</strong> responde: "¿cuánto genera la agencia por cada persona en nómina?". Permite detectar sobredotación — cuando hay demasiada gente para el revenue que se genera — o al contrario, identificar qué agencias hacen más con menos.<br><br>
+        <strong>¿Qué buscamos?</strong> Rendimiento de inversión superior al 15% y per cápita creciente. Una agencia que mejora estos indicadores año a año está construyendo un negocio más sostenible.</div>
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
@@ -1528,7 +1535,10 @@ function renderDashboard(data){
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
-      <div class="sec-step-body">Mide cuánto factura cada agencia en los servicios de <strong>alto crecimiento</strong>: Social Media, PR/Influencer y Otras Innovaciones. Estos servicios escalan más rápido que los tradicionales y definen quién está construyendo el negocio del futuro. Una agencia con alto aporte de innovación tiene mejor posicionamiento ante cambios del mercado.</div>
+      <div class="sec-step-body">El mercado publicitario está en transición: los servicios tradicionales (creatividad en medios masivos, planificación clásica) crecen lento o se estancan, mientras que Social Media, PR digital e innovaciones crecen a doble dígito año a año. Una agencia que hoy factura principalmente en servicios tradicionales puede ser rentable ahora, pero está construyendo sobre una base que el mercado está dejando atrás.<br><br>
+        Por eso medimos el <strong>aporte de innovación</strong>: qué porcentaje de los ingresos viene de los servicios donde el mercado está creciendo. No se trata solo de estar en tendencia — estos servicios tienen <strong>márgenes mejores, clientes más jóvenes y mayor potencial de escala</strong>.<br><br>
+        Los tres servicios que medimos son: <strong>Social Media</strong> (gestión de redes y contenido digital), <strong>PR/Influencer</strong> (relaciones públicas, vocerías y marketing de influencia) y <strong>Otras Innovaciones</strong> (nuevos formatos, tecnologías o modelos de servicio que el mercado aún no tiene clasificados).<br><br>
+        <strong>¿Qué buscamos?</strong> Que el aporte grupal supere el 12% de la facturación total. Una agencia con +20% está bien posicionada para el crecimiento de los próximos años.</div>
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
@@ -1577,7 +1587,10 @@ function renderDashboard(data){
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
-      <div class="sec-step-body">Identifica la <strong>sub-arena dominante</strong> dentro del Content Creation (CC) de cada agencia — aquella en la que más factura. Esto muestra la fortaleza diferencial de cada agencia y permite detectar si hay superposición de roles dentro del grupo (dos o más agencias compitiendo en el mismo servicio).</div>
+      <div class="sec-step-body">Dentro del Content Creation, cada agencia debería tener una especialidad clara: la que mejor hace, en la que más invierte, y por la que los clientes la eligen. Esa especialidad es su <strong>expertise foco</strong> — y es lo que la hace única dentro del grupo Texo.<br><br>
+        El riesgo del <strong>solapamiento</strong>: si dos agencias del grupo tienen el mismo foco (por ejemplo, ambas son fuertes en Creatividad), compiten por los mismos clientes y proyectos de forma interna, lo que diluye el valor del grupo. Lo ideal es que cada agencia tenga un rol diferenciado para que juntas cubran todo el espectro del mercado sin pisarse.<br><br>
+        Este análisis es clave para el directorio porque responde: <em>¿Nuestras agencias se complementan o compiten entre sí?</em> Un portfolio bien diferenciado permite que Texo ofrezca una solución integral a sus clientes sin canibalización interna, y que cada agencia desarrolle una reputación especializada en su categoría.<br><br>
+        <strong>¿Qué buscamos?</strong> Que cada agencia tenga un expertise único y que el grupo en su conjunto cubra la mayor cantidad de especialidades posibles.</div>
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
@@ -1626,7 +1639,10 @@ function renderDashboard(data){
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
-      <div class="sec-step-body">Mide el <strong>riesgo de dependencia</strong>: qué porcentaje del Content Creation de cada agencia viene de un solo tipo de servicio. Una concentración alta significa que si ese servicio cae (pérdida de clientes, cambio de mercado), arrastra la mayor parte del CC. Es un indicador de <em>vulnerabilidad estructural</em>.</div>
+      <div class="sec-step-body">Imaginá que el 80% de lo que factura una agencia en CC viene de un solo servicio — por ejemplo, Creatividad. Si ese mercado se contrae, si pierde los 2 o 3 clientes clave en esa área, o si entra un competidor más barato, esa agencia pierde el 80% de su CC de un golpe. Eso es <strong>concentración de fee</strong>.<br><br>
+        La diversificación es un <strong>seguro contra el riesgo</strong>, no solo una estrategia de crecimiento. Una agencia con fee distribuido en varios servicios puede perder uno y seguir operando con normalidad. Una agencia concentrada no tiene ese colchón.<br><br>
+        Este indicador complementa al Expertise Foco de la sección anterior: mientras el foco mide la <em>fortaleza</em> de una agencia, la concentración mide el <em>riesgo</em> que esa fortaleza genera si es demasiado dominante. Tener un foco claro es bueno; depender de ese único foco para sobrevivir es peligroso.<br><br>
+        <strong>¿Qué buscamos?</strong> Que ninguna agencia supere el 70% de concentración en un solo servicio. Entre 50-70% es zona de atención. Por debajo del 50% es saludable.</div>
     </div>
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
