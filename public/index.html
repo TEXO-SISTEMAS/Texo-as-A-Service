@@ -1189,6 +1189,7 @@ function renderDashboard(data){
     <div class="snav-item" data-sec="sec-5" onclick="openSection('sec-5')">05 · Expertise</div>
     <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
     <div class="snav-item" data-sec="sec-resumen" onclick="openSection('sec-resumen')">Resumen ejecutivo</div>
+    <div class="snav-item" data-sec="sec-comp" onclick="openSection('sec-comp')">Datos de soporte</div>
   </div>
 
   <!-- INTRO DIMENSIONES -->
@@ -1682,29 +1683,8 @@ function renderDashboard(data){
       <div class="diag-grid">${['estado','mayor','umbral','accion'].map(k=>`<div class="diag-card"><div class="diag-card-icon">${concDiag[k].icon}</div><div class="diag-card-q">${concDiag[k].q}</div><div class="diag-card-ans">${concDiag[k].ans}</div><div class="diag-card-sub">${concDiag[k].sub}</div><div class="diag-card-badge ${concDiag[k].badge}">${concDiag[k].label}</div></div>`).join('')}</div>
     </div>
 
-    <div id="sec-comp" class="sec-block">
-      <div class="sec-label">Análisis complementario</div>
-      <div class="sec-heading">Datos de soporte</div>
-      <div class="sec-bar"></div>
-    </div>
-    <div class="charts-grid">
-      <div class="chart-card"><div class="chart-title">Facturación por Agencia</div><div class="chart-subtitle">Con 3709 incluido · Miles de Gs.</div><div class="chart-wrap"><canvas id="cFact"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Revenue por Agencia</div><div class="chart-subtitle">Miles de Gs.</div><div class="chart-wrap"><canvas id="cRev"></canvas></div></div>
-    </div>
-    <div class="charts-grid triple" style="margin-top:0">
-      <div class="chart-card"><div class="chart-title">Mix CC / DC</div><div class="chart-subtitle">Distribución consolidada</div><div class="chart-wrap"><canvas id="cCCDC"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Sub-Arenas CC</div><div class="chart-subtitle">Por agencia · apilado</div><div class="chart-wrap"><canvas id="cCC"></canvas></div></div>
-      <div class="chart-card"><div class="chart-title">Sub-Arenas DC</div><div class="chart-subtitle">OFF · ON · Performance</div><div class="chart-wrap"><canvas id="cDC"></canvas></div></div>
-    </div>
-    <div class="charts-grid" style="margin-top:0">
-      <div class="chart-card wide"><div class="chart-title">Egresos por Agencia</div><div class="chart-subtitle">RRHH · Comerciales · Administrativos · Miles de Gs.</div><div class="chart-wrap"><canvas id="cEgr"></canvas></div></div>
-    </div>
+  </div>
 
-    <div class="sec-block" style="margin-top:8px">
-      <div class="sec-label">Tabla detallada</div>
-      <div class="sec-heading">Detalle por Agencia</div>
-      <div class="sec-bar"></div>
-    </div>
     <div class="table-wrap"><table>
       <thead><tr>
         <th>Agencia</th><th>Facturación</th><th>Revenue</th>
@@ -1779,7 +1759,6 @@ function renderDashboard(data){
         </div>`;}).join('')}
     </div>
     <div style="height:32px"></div>
-  </div>
 
   <!-- RESUMEN EJECUTIVO (al final) -->
   <div class="hero-section" id="sec-resumen">
@@ -1847,6 +1826,27 @@ function renderDashboard(data){
       </div>
     </div>
   </div>
+
+  <!-- ANÁLISIS COMPLEMENTARIO (datos de soporte) -->
+  <div class="sec-separator"></div>
+  <div id="sec-comp" class="sec-block">
+    <div class="sec-label">Análisis complementario</div>
+    <div class="sec-heading">Datos de soporte</div>
+    <div class="sec-bar"></div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card"><div class="chart-title">Facturación por Agencia</div><div class="chart-subtitle">Con 3709 incluido · Miles de Gs.</div><div class="chart-wrap"><canvas id="cFact"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Revenue por Agencia</div><div class="chart-subtitle">Miles de Gs.</div><div class="chart-wrap"><canvas id="cRev"></canvas></div></div>
+  </div>
+  <div class="charts-grid triple" style="margin-top:0">
+    <div class="chart-card"><div class="chart-title">Mix CC / DC</div><div class="chart-subtitle">Distribución consolidada</div><div class="chart-wrap"><canvas id="cCCDC"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Sub-Arenas CC</div><div class="chart-subtitle">Por agencia · apilado</div><div class="chart-wrap"><canvas id="cCC"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Sub-Arenas DC</div><div class="chart-subtitle">OFF · ON · Performance</div><div class="chart-wrap"><canvas id="cDC"></canvas></div></div>
+  </div>
+  <div class="charts-grid" style="margin-top:0">
+    <div class="chart-card wide"><div class="chart-title">Egresos por Agencia</div><div class="chart-subtitle">RRHH · Comerciales · Administrativos · Miles de Gs.</div><div class="chart-wrap"><canvas id="cEgr"></canvas></div></div>
+  </div>
+  <div style="height:32px"></div>
   `;
 
   // ── CHARTS ──
