@@ -35,9 +35,10 @@ body::before{
 /* ── HERO ── */
 .hero{
   position:relative;z-index:1;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;
-  padding:80px 24px 64px;
+  display:flex;flex-direction:column;align-items:flex-start;
+  text-align:left;
+  max-width:900px;margin:0 auto;
+  padding:80px 24px 48px;
 }
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
@@ -56,7 +57,7 @@ body::before{
 .hero-title .hl{color:#f0f040}
 .hero-desc{
   font-size:17px;color:rgba(255,255,255,.5);line-height:1.8;
-  max-width:680px;margin:0 auto 48px;font-weight:400;
+  max-width:100%;margin:0 0 48px;font-weight:400;
 }
 
 /* ── MÓDULOS ── */
@@ -65,6 +66,7 @@ body::before{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
   gap:20px;max-width:900px;margin:0 auto;
   padding:0 24px 80px;
+  justify-items:stretch;
 }
 .mod-card{
   background:rgba(255,255,255,.04);
@@ -165,22 +167,6 @@ body::before{
     TAS es el cerebro digital que lo cambia. Integra las 5 capas de información del holding: Redes y Cultura Organizacional, AdLens (Macro Mercado), Tool X (Micro Mercado), Facturación y Posicionamiento, y Aprendizajes — en una sola plataforma operativa con IA que analiza, alerta y responde.<br><br>
     No estamos haciendo un dashboard. Estamos construyendo la memoria viva del holding.
   </p>
-</div>
-
-<!-- Stats -->
-<div class="stats">
-  <div class="stat-item">
-    <div class="stat-num">8</div>
-    <div class="stat-label">Agencias del grupo</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">4</div>
-    <div class="stat-label">Redes globales</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">US$135M</div>
-    <div class="stat-label">Mercado PY 2024</div>
-  </div>
 </div>
 
 <!-- Módulos -->
