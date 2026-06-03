@@ -488,10 +488,22 @@ body.fullscreen .main { padding-top:64px; }
 .hero-score-denom{font-size:20px;font-weight:400;opacity:.45;vertical-align:super;margin-left:3px}
 .hero-score-label{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;opacity:.4;margin-top:4px}
 
+/* ── SCORE BREAKDOWN ── */
+.score-breakdown{
+  font-size:10px;color:rgba(255,255,255,.3);margin-top:8px;line-height:1.8;text-align:right;
+}
+.score-breakdown strong{color:rgba(255,255,255,.5);font-weight:600}
+.score-how{
+  font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.2);margin-top:4px;cursor:help;
+  border-bottom:1px dashed rgba(255,255,255,.15);display:inline-block;
+}
+
 /* ── VEREDICTO ── */
 .hero-veredicto{
-  font-size:14px;color:rgba(255,255,255,.62);line-height:1.75;
-  max-width:600px;margin-bottom:28px;
+  font-size:16px;color:rgba(255,255,255,.85);line-height:1.75;font-weight:500;
+  max-width:680px;margin-bottom:28px;
+  border-left:3px solid rgba(255,255,255,.2);padding-left:16px;
   border-left:3px solid rgba(255,255,255,.18);padding-left:18px;
 }
 
@@ -545,6 +557,18 @@ body.fullscreen .main { padding-top:64px; }
 }
 .snav-item:hover{color:rgba(255,255,255,.75)}
 .snav-item.snav-active{color:#f0f040;border-bottom-color:#f0f040}
+.snav-toggle{
+  margin-left:auto;flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+  padding:5px 14px;border-radius:6px;
+  background:rgba(240,240,64,.1);
+  border:1px solid rgba(240,240,64,.22);
+  color:#f0f040;font-size:11px;font-weight:700;
+  letter-spacing:.06em;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.snav-toggle:hover{background:rgba(240,240,64,.2);border-color:rgba(240,240,64,.45);}
+.snav-toggle.open{background:rgba(240,240,64,.15);border-color:rgba(240,240,64,.35);}
 
 /* ── INTRO DIMENSIONES ── */
 .intro-section{
@@ -1227,15 +1251,24 @@ function renderDashboard(data){
     <div class="snav-item" data-sec="sec-4" onclick="openSection('sec-4')">04 · Innovación</div>
     <div class="snav-item" data-sec="sec-5" onclick="openSection('sec-5')">05 · Expertise</div>
     <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
-    <div class="snav-item" data-sec="sec-resumen" onclick="openSection('sec-resumen')">Resumen ejecutivo</div>
-    <div class="snav-item" data-sec="sec-comp" onclick="openSection('sec-comp')">Datos de soporte</div>
+    <div class="snav-toggle" id="btnResumen" onclick="toggleResumen()">↓ Ver Resumen</div>
   </div>
 
   <!-- INTRO DIMENSIONES -->
   <div class="intro-section">
-    <div class="intro-eyebrow">Texo as a Service · Salud Financiera</div>
+    <div class="intro-eyebrow">Texo as a Service · Salud Financiera · ${data.fecha_corte || 'Período actual'}</div>
     <div class="intro-title">Puntos que tomamos en cuenta para <span>analizar</span></div>
     <div class="intro-sub">6 puntos clave que determinan la salud real de cada agencia del holding.</div>
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:32px;padding:14px 18px;background:rgba(255,255,255,.05);border-radius:10px;border:1px solid rgba(255,255,255,.08)">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.3)">Estado actual:</span>
+      <span style="font-size:13px;font-weight:700;color:${scoreColor}">● Score ${scoreGrupal}/10</span>
+      <span style="font-size:13px;font-weight:600;color:${agEBITDANeg.length===0?'#4ade80':'#f87171'}">${agEBITDANeg.length===0?'✓ Todas rentables':'✗ '+agEBITDANeg.length+' en pérdida'}</span>
+      ${agDep3709.length>0?`<span style="font-size:13px;font-weight:600;color:#fbbf24">⚠ ${agDep3709.length} dep. 3709</span>`:''}
+      <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.5)">${ag.length} agencias · ${Math.round(totalPers)} personas</span>
+      <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,.25);font-style:italic">Clic en cada punto para ver el análisis →</span>
+    </div>
+
     <div class="intro-grid">
       <div class="intro-dim" onclick="openSection('sec-1')">
         <div class="intro-dim-dot" style="background:#6c3fc5"></div>
@@ -1742,6 +1775,9 @@ function renderDashboard(data){
 
   </div>
 
+  <!-- RESUMEN + SOPORTE (oculto por defecto) -->
+  <div id="resumenGroup" style="display:none">
+
     <div class="table-wrap"><table>
       <thead><tr>
         <th>Agencia</th><th>Facturación</th><th>Revenue</th>
@@ -1829,6 +1865,13 @@ function renderDashboard(data){
       <div class="hero-score-block">
         <div class="hero-score-num" style="color:${scoreColor}">${scoreGrupal}<span class="hero-score-denom">/10</span></div>
         <div class="hero-score-label">Score grupal · 2025</div>
+        <div class="score-breakdown">
+          <strong>Cómo se calcula:</strong><br>
+          Base margen (${(margen*100).toFixed(1)}% ÷ 2) = ${Math.min(5,(margen*100/2)).toFixed(1)} pts<br>
+          ${agEBITDANeg.length===0?'Todas positivas: +1 pt':'Agencias en pérdida: '+(-agEBITDANeg.length*1.5).toFixed(1)+' pts'}<br>
+          ${agDep3709.length>0?'Dep. 3709 (×'+agDep3709.length+'): −'+( agDep3709.length*0.5).toFixed(1)+' pts':'Sin penalización 3709'}<br>
+          <strong>= ${scoreGrupal} / 10</strong>
+        </div>
         <div style="margin-top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:7px">
           <span class="hero-pill ${saludPill}">${saludLabel}</span>
           ${agDep3709.length>0?`<span class="hero-pill pill-yellow">⚠ ${agDep3709.length} dep. 3709</span>`:''}
@@ -2054,6 +2097,7 @@ function renderDashboard(data){
       </div>`;}).join('')}
   </div>
   <div style="height:32px"></div>
+  </div><!-- /resumenGroup -->
   `;
 
   // ── CHARTS ──
@@ -2247,7 +2291,7 @@ function openSection(id) {
 function initScrollSpy() {
   const mainEl = document.getElementById('main');
   if (!mainEl) return;
-  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','sec-resumen'];
+  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6'];
   mainEl.addEventListener('scroll', () => {
     let current = 'sec-1';
     for (const id of secIds) {
@@ -2258,6 +2302,26 @@ function initScrollSpy() {
     const active = document.querySelector(`.snav-item[data-sec="${current}"]`);
     if (active) active.classList.add('snav-active');
   }, { passive: true });
+}
+
+// ── RESUMEN + SOPORTE ────────────────────────────────────────────────────────
+let resumenOpen = false;
+function toggleResumen() {
+  resumenOpen = !resumenOpen;
+  const group = document.getElementById('resumenGroup');
+  const btn   = document.getElementById('btnResumen');
+  if (!group) return;
+  group.style.display = resumenOpen ? '' : 'none';
+  if (btn) {
+    btn.textContent = resumenOpen ? '↑ Ocultar Resumen' : '↓ Ver Resumen';
+    btn.classList.toggle('open', resumenOpen);
+  }
+  if (resumenOpen) {
+    setTimeout(() => {
+      document.getElementById('sec-resumen')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+    setTimeout(() => { Object.values(charts).forEach(c => { try { c.resize(); } catch(e){} }); }, 150);
+  }
 }
 
 // ── DETALLES ────────────────────────────────────────────────────────────────
