@@ -598,6 +598,36 @@ body.fullscreen .main { padding-top:64px; }
 .diag-card-sub{font-size:12px;color:rgba(0,0,0,.45);line-height:1.5}
 .diag-card-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-top:4px;width:fit-content}
 
+/* ── CHART HELP TOOLTIP ── */
+.chart-help{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.1);
+  font-size:9px;font-weight:800;color:rgba(0,0,0,.4);
+  cursor:help;margin-left:7px;vertical-align:middle;flex-shrink:0;
+  transition:background .12s;
+}
+.chart-help:hover{background:rgba(26,26,46,.15);color:#1a1a2e}
+.chart-help-tip{
+  position:absolute;bottom:calc(100% + 8px);left:50%;
+  transform:translateX(-50%);
+  background:#1a1a2e;color:rgba(255,255,255,.85);
+  font-size:12px;line-height:1.6;padding:10px 14px;
+  border-radius:8px;width:230px;
+  opacity:0;visibility:hidden;
+  transition:opacity .15s,visibility .15s;
+  z-index:200;pointer-events:none;
+  font-weight:400;letter-spacing:0;text-transform:none;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+}
+.chart-help-tip::after{
+  content:'';position:absolute;top:100%;left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:#1a1a2e;
+}
+.chart-help:hover .chart-help-tip{opacity:1;visibility:visible}
+.chart-title{display:flex;align-items:center}
+
 /* Tabla agencias paso 4 */
 .rent-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px}
 .rent-table th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.3);padding:8px 12px;border-bottom:2px solid rgba(0,0,0,.08)}
@@ -1151,9 +1181,27 @@ function renderDashboard(data){
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">3</div><div class="sec-step-title">Gráficos principales</div></div>
       <div class="charts-grid triple">
-        <div class="chart-card"><div class="chart-title">EBITDA DC vs CC</div><div class="chart-subtitle">Resultado operativo por arena y agencia</div><div class="chart-wrap"><canvas id="cEbitdaDCCC"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Margen EBITDA %</div><div class="chart-subtitle">EBITDA / Facturación total</div><div class="chart-wrap"><canvas id="cMargen"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Revenue vs EBITDA</div><div class="chart-subtitle">Lo que se factura vs lo que queda</div><div class="chart-wrap"><canvas id="cRevEbitda"></canvas></div></div>
+        <div class="chart-card">
+          <div class="chart-title">EBITDA DC vs CC
+            <span class="chart-help">?<span class="chart-help-tip">Compara la ganancia operativa por arena. Morado = Digital Commerce, naranja = Content Creation. Barras negativas = pérdida en esa arena. Buscamos todas en positivo.</span></span>
+          </div>
+          <div class="chart-subtitle">Resultado operativo por arena y agencia</div>
+          <div class="chart-wrap"><canvas id="cEbitdaDCCC"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Margen EBITDA %
+            <span class="chart-help">?<span class="chart-help-tip">Porcentaje de lo facturado que se convierte en ganancia real. Referencia: +10% = sólido · 5-10% = ajustado · &lt;5% = riesgo. Cuanto más alto, más eficiente es la agencia.</span></span>
+          </div>
+          <div class="chart-subtitle">EBITDA / Facturación total</div>
+          <div class="chart-wrap"><canvas id="cMargen"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Revenue vs EBITDA
+            <span class="chart-help">?<span class="chart-help-tip">Muestra la brecha entre lo que ingresa (Revenue, morado) y lo que queda como ganancia (EBITDA, verde/rojo). Cuanto más cerca estén las barras, más eficiente es la agencia en controlar costos.</span></span>
+          </div>
+          <div class="chart-subtitle">Lo que ingresa vs lo que queda</div>
+          <div class="chart-wrap"><canvas id="cRevEbitda"></canvas></div>
+        </div>
       </div>
     </div>
 
