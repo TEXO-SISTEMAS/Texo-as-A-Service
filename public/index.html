@@ -628,6 +628,25 @@ body.fullscreen .main { padding-top:64px; }
 .chart-help:hover .chart-help-tip{opacity:1;visibility:visible}
 .chart-title{display:flex;align-items:center}
 
+/* ── CHART INSIGHT (descripción debajo del gráfico) ── */
+.chart-insight{
+  border-top:1px solid rgba(0,0,0,.07);
+  margin-top:12px;padding-top:12px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.ci-row{display:flex;align-items:baseline;gap:8px;font-size:12px;line-height:1.5}
+.ci-label{
+  font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(0,0,0,.3);white-space:nowrap;min-width:70px;
+}
+.ci-val{color:rgba(0,0,0,.65)}
+.ci-val strong{color:#0f1117;font-weight:700}
+.ci-formula{
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:rgba(0,0,0,.45);background:rgba(0,0,0,.04);
+  border-radius:5px;padding:4px 8px;margin-top:2px;
+}
+
 /* Tabla agencias paso 4 */
 .rent-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px}
 .rent-table th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.3);padding:8px 12px;border-bottom:2px solid rgba(0,0,0,.08)}
@@ -1016,6 +1035,16 @@ function renderDashboard(data){
     : 'El grupo mantiene una distribución de servicios saludable. Ninguna agencia tiene dependencia crítica en un solo tipo de ingreso.';
 
   // ── DIAGNÓSTICO ESPECÍFICO SEC-1: RENTABILIDAD ──────────────────────────────
+  // Datos para chart insights
+  const rentMejorDC = ag.reduce((b,a)=>parseFloat(a.ebitda_dc||0)>parseFloat(b.ebitda_dc||0)?a:b,ag[0]);
+  const rentMejorCC = ag.reduce((b,a)=>parseFloat(a.ebitda_cc||0)>parseFloat(b.ebitda_cc||0)?a:b,ag[0]);
+  const rentPeorMargen = ag.reduce((b,a)=>{
+    const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);
+    const fb=parseFloat(b.facturacion_total||0),eb=parseFloat(b.ebitda||0);
+    return (f>0?e/f:0)<(fb>0?eb/fb:0)?a:b;
+  },ag[0]);
+  const rentPeorMargenPct=((()=>{const f=parseFloat(rentPeorMargen.facturacion_total||0),e=parseFloat(rentPeorMargen.ebitda||0);return f>0?(e/f*100).toFixed(1):0})());
+
   const rentEbitdaCC = ag.reduce((s,a)=>s+parseFloat(a.ebitda_cc||0),0);
   const rentEbitdaDC = ag.reduce((s,a)=>s+parseFloat(a.ebitda_dc||0),0);
   const arenaLiderNombre = rentEbitdaCC >= rentEbitdaDC ? 'Content Creation' : 'Digital Commerce';
@@ -1187,6 +1216,12 @@ function renderDashboard(data){
           </div>
           <div class="chart-subtitle">Resultado operativo por arena y agencia</div>
           <div class="chart-wrap"><canvas id="cEbitdaDCCC"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">EBITDA = Revenue − (RRHH + Gastos Comerciales + Admin)</div>
+            <div class="ci-row"><span class="ci-label">Líder DC</span><span class="ci-val"><strong>${rentMejorDC.nombre}</strong> · ${fmt(parseFloat(rentMejorDC.ebitda_dc||0))} Miles Gs.</span></div>
+            <div class="ci-row"><span class="ci-label">Líder CC</span><span class="ci-val"><strong>${rentMejorCC.nombre}</strong> · ${fmt(parseFloat(rentMejorCC.ebitda_cc||0))} Miles Gs.</span></div>
+            <div class="ci-row"><span class="ci-label">Arenas neg.</span><span class="ci-val">${ag.filter(a=>parseFloat(a.ebitda_dc||0)<0||parseFloat(a.ebitda_cc||0)<0).map(a=>a.nombre).join(', ')||'Ninguna — todas positivas'}</span></div>
+          </div>
         </div>
         <div class="chart-card">
           <div class="chart-title">Margen EBITDA %
@@ -1194,6 +1229,12 @@ function renderDashboard(data){
           </div>
           <div class="chart-subtitle">EBITDA / Facturación total</div>
           <div class="chart-wrap"><canvas id="cMargen"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">Margen = EBITDA ÷ Facturación Total × 100%</div>
+            <div class="ci-row"><span class="ci-label">Mejor</span><span class="ci-val"><strong>${agMejorMargen.nombre}</strong> · ${mejorMargenPct}% <span style="color:${parseFloat(mejorMargenPct)>=10?'#15803d':parseFloat(mejorMargenPct)>=5?'#b45309':'#b91c1c'}">${parseFloat(mejorMargenPct)>=10?'✓ Sólido':parseFloat(mejorMargenPct)>=5?'Ajustado':'Bajo'}</span></span></div>
+            <div class="ci-row"><span class="ci-label">Menor</span><span class="ci-val"><strong>${rentPeorMargen.nombre}</strong> · ${rentPeorMargenPct}% — ${parseFloat(rentPeorMargenPct)<5?'requiere atención':'dentro del rango'}</span></div>
+            <div class="ci-row"><span class="ci-label">Referencia</span><span class="ci-val">+10% sólido · 5–10% ajustado · &lt;5% riesgo</span></div>
+          </div>
         </div>
         <div class="chart-card">
           <div class="chart-title">Revenue vs EBITDA
@@ -1201,6 +1242,11 @@ function renderDashboard(data){
           </div>
           <div class="chart-subtitle">Lo que ingresa vs lo que queda</div>
           <div class="chart-wrap"><canvas id="cRevEbitda"></canvas></div>
+          <div class="chart-insight">
+            <div class="ci-formula">Brecha = Revenue − EBITDA = Total Egresos (RRHH + Comercial + Admin)</div>
+            <div class="ci-row"><span class="ci-label">Consolidado</span><span class="ci-val">Revenue <strong>${fmt(totalRev)}</strong> → EBITDA <strong>${fmt(totalEBITDA)}</strong> (margen ${fmtPct(margen)})</span></div>
+            <div class="ci-row"><span class="ci-label">Más eficiente</span><span class="ci-val"><strong>${agMejorMargen.nombre}</strong> convierte ${mejorMargenPct}% de revenue en EBITDA</span></div>
+          </div>
         </div>
       </div>
     </div>
