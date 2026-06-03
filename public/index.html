@@ -932,13 +932,13 @@ function renderDashboard(data){
   document.getElementById('dashboard').innerHTML = `
   <!-- STICKY NAV -->
   <div class="section-nav" id="sectionNav">
-    <div class="snav-item snav-active" data-sec="sec-resumen" onclick="openSection('sec-resumen')">Resumen</div>
-    <div class="snav-item" data-sec="sec-1" onclick="openSection('sec-1')">01 · Rentabilidad</div>
+    <div class="snav-item snav-active" data-sec="sec-1" onclick="openSection('sec-1')">01 · Rentabilidad</div>
     <div class="snav-item" data-sec="sec-2" onclick="openSection('sec-2')">02 · Sin 3709</div>
     <div class="snav-item" data-sec="sec-3" onclick="openSection('sec-3')">03 · Eficiencia</div>
     <div class="snav-item" data-sec="sec-4" onclick="openSection('sec-4')">04 · Innovación</div>
     <div class="snav-item" data-sec="sec-5" onclick="openSection('sec-5')">05 · Expertise</div>
     <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
+    <div class="snav-item" data-sec="sec-resumen" onclick="openSection('sec-resumen')">Resumen ejecutivo</div>
   </div>
 
   <!-- INTRO DIMENSIONES -->
@@ -986,95 +986,7 @@ function renderDashboard(data){
     </div>
   </div>
 
-  <!-- HERO -->
-  <div class="hero-section" id="sec-resumen">
-    <div class="hero-main">
-      <div class="hero-title-block">
-        <div class="hero-company">Texo as a Service</div>
-        <div class="hero-product">Salud</div>
-        <div class="hero-product-sub">Financiera</div>
-        <div class="hero-tagline">${ag.length} agencias · ${Math.round(totalPers)} personas · ${fmt(totalFact)} Miles de Gs.</div>
-      </div>
-      <div class="hero-score-block">
-        <div class="hero-score-num" style="color:${scoreColor}">${scoreGrupal}<span class="hero-score-denom">/10</span></div>
-        <div class="hero-score-label">Score grupal · 2025</div>
-        <div style="margin-top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:7px">
-          <span class="hero-pill ${saludPill}">${saludLabel}</span>
-          ${agDep3709.length>0?`<span class="hero-pill pill-yellow">⚠ ${agDep3709.length} dep. 3709</span>`:''}
-          ${agEBITDANeg.length>0?`<span class="hero-pill pill-red">✗ ${agEBITDANeg.length} en pérdida</span>`:''}
-        </div>
-      </div>
-    </div>
-    <div class="hero-veredicto">${veredicto}</div>
-    <div class="hero-journey">
-      <div class="hero-journey-step" onclick="document.getElementById('sec-preguntas').scrollIntoView({behavior:'smooth'})">
-        <div class="hero-journey-num jn-1">1</div>
-        <div class="hero-journey-kw" style="color:#fbbf24">Estado</div>
-        <div class="hero-journey-q">¿Estamos sanos?</div>
-      </div>
-      <div class="hero-journey-step" onclick="document.getElementById('sec-insights').scrollIntoView({behavior:'smooth'})">
-        <div class="hero-journey-num jn-2">2</div>
-        <div class="hero-journey-kw" style="color:#f87171">Riesgo</div>
-        <div class="hero-journey-q">¿Dónde está la amenaza?</div>
-      </div>
-      <div class="hero-journey-step" onclick="document.getElementById('sec-consolidado').scrollIntoView({behavior:'smooth'})">
-        <div class="hero-journey-num jn-3">3</div>
-        <div class="hero-journey-kw" style="color:#4ade80">Potencial</div>
-        <div class="hero-journey-q">¿Quién tiene mejor margen?</div>
-      </div>
-      <div class="hero-journey-step" onclick="toggleDetails();setTimeout(()=>document.getElementById('sec-1').scrollIntoView({behavior:'smooth'}),80)">
-        <div class="hero-journey-num jn-4">4</div>
-        <div class="hero-journey-kw" style="color:#60a5fa">Actuar</div>
-        <div class="hero-journey-q">Ver análisis completo</div>
-      </div>
-    </div>
-    <div class="hero-agencies">${ag.map(a=>{
-      const eb=parseFloat(a.ebitda||0);
-      const isPos=eb>=0;
-      const isDep=parseFloat(a.ebitda_sin3709||0)<0&&isPos;
-      const sc=!isPos?'#f87171':isDep?'#fbbf24':'#4ade80';
-      const sl=!isPos?'pérdida':isDep?'dep. 3709':'✓ sana';
-      const bg=!isPos?'rgba(212,43,79,.18)':isDep?'rgba(212,144,10,.18)':'rgba(22,163,74,.18)';
-      return `<div class="hero-agency-chip">
-        <div class="chip-dot" style="background:${agColor(a.nombre)}"></div>
-        <span class="chip-name">${a.nombre}</span>
-        <span class="chip-ebitda" style="color:${sc}">${fmt(eb)}</span>
-        <span class="chip-status" style="background:${bg};color:${sc}">${sl}</span>
-      </div>`;
-    }).join('')}</div>
-    <div class="hero-questions-label">Cuatro preguntas que el directorio necesita responder</div>
-    <div class="hero-questions" id="sec-preguntas">
-      <div class="hero-q hero-q-${qSalud.badge==='badge-green'?'green':qSalud.badge==='badge-red'?'red':'yellow'}">
-        <div class="hero-q-icon">💚</div>
-        <div class="hero-q-label">¿Estamos sanos?</div>
-        <div class="hero-q-answer">${qSalud.ans}</div>
-        <div class="hero-q-sub">${qSalud.sub}</div>
-        <div class="hero-q-badge ${qSalud.badge}">${qSalud.label}</div>
-      </div>
-      <div class="hero-q hero-q-${qRiesgo.badge==='badge-green'?'green':qRiesgo.badge==='badge-red'?'red':'yellow'}">
-        <div class="hero-q-icon">⚠️</div>
-        <div class="hero-q-label">¿Dónde está el riesgo?</div>
-        <div class="hero-q-answer">${qRiesgo.ans}</div>
-        <div class="hero-q-sub">${qRiesgo.sub}</div>
-        <div class="hero-q-badge ${qRiesgo.badge}">${qRiesgo.label}</div>
-      </div>
-      <div class="hero-q hero-q-green">
-        <div class="hero-q-icon">🚀</div>
-        <div class="hero-q-label">¿Dónde está el potencial?</div>
-        <div class="hero-q-answer">${qPotencial.ans}</div>
-        <div class="hero-q-sub">${qPotencial.sub}</div>
-        <div class="hero-q-badge ${qPotencial.badge}">${qPotencial.label}</div>
-      </div>
-      <div class="hero-q hero-q-${qIntervencion.badge==='badge-green'?'green':qIntervencion.badge==='badge-red'?'red':'yellow'}">
-        <div class="hero-q-icon">🎯</div>
-        <div class="hero-q-label">¿Dónde intervenir?</div>
-        <div class="hero-q-answer">${qIntervencion.ans}</div>
-        <div class="hero-q-sub">${qIntervencion.sub}</div>
-        <div class="hero-q-badge ${qIntervencion.badge}">${qIntervencion.label}</div>
-      </div>
-    </div>
-  </div>
-  <div class="post-hero">
+  <!-- ANÁLISIS DETALLADO -->
 
   <!-- INSIGHTS -->
   <div class="insights-header" id="sec-insights">Tensiones · Insights · Prioridades</div>
@@ -1312,6 +1224,72 @@ function renderDashboard(data){
     </div>
     <div style="height:32px"></div>
   </div>
+
+  <!-- RESUMEN EJECUTIVO (al final) -->
+  <div class="hero-section" id="sec-resumen">
+    <div class="hero-main">
+      <div class="hero-title-block">
+        <div class="hero-company">Texo as a Service</div>
+        <div class="hero-product">Salud</div>
+        <div class="hero-product-sub">Financiera</div>
+        <div class="hero-tagline">${ag.length} agencias · ${Math.round(totalPers)} personas · ${fmt(totalFact)} Miles de Gs.</div>
+      </div>
+      <div class="hero-score-block">
+        <div class="hero-score-num" style="color:${scoreColor}">${scoreGrupal}<span class="hero-score-denom">/10</span></div>
+        <div class="hero-score-label">Score grupal · 2025</div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:7px">
+          <span class="hero-pill ${saludPill}">${saludLabel}</span>
+          ${agDep3709.length>0?`<span class="hero-pill pill-yellow">⚠ ${agDep3709.length} dep. 3709</span>`:''}
+          ${agEBITDANeg.length>0?`<span class="hero-pill pill-red">✗ ${agEBITDANeg.length} en pérdida</span>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="hero-veredicto">${veredicto}</div>
+    <div class="hero-agencies">${ag.map(a=>{
+      const eb=parseFloat(a.ebitda||0);
+      const isPos=eb>=0;
+      const isDep=parseFloat(a.ebitda_sin3709||0)<0&&isPos;
+      const sc=!isPos?'#f87171':isDep?'#fbbf24':'#4ade80';
+      const sl=!isPos?'pérdida':isDep?'dep. 3709':'✓ sana';
+      const bg=!isPos?'rgba(212,43,79,.18)':isDep?'rgba(212,144,10,.18)':'rgba(22,163,74,.18)';
+      return `<div class="hero-agency-chip">
+        <div class="chip-dot" style="background:${agColor(a.nombre)}"></div>
+        <span class="chip-name">${a.nombre}</span>
+        <span class="chip-ebitda" style="color:${sc}">${fmt(eb)}</span>
+        <span class="chip-status" style="background:${bg};color:${sc}">${sl}</span>
+      </div>`;
+    }).join('')}</div>
+    <div class="hero-questions-label">Cuatro preguntas que el directorio necesita responder</div>
+    <div class="hero-questions" id="sec-preguntas">
+      <div class="hero-q hero-q-${qSalud.badge==='badge-green'?'green':qSalud.badge==='badge-red'?'red':'yellow'}">
+        <div class="hero-q-icon">💚</div>
+        <div class="hero-q-label">¿Estamos sanos?</div>
+        <div class="hero-q-answer">${qSalud.ans}</div>
+        <div class="hero-q-sub">${qSalud.sub}</div>
+        <div class="hero-q-badge ${qSalud.badge}">${qSalud.label}</div>
+      </div>
+      <div class="hero-q hero-q-${qRiesgo.badge==='badge-green'?'green':qRiesgo.badge==='badge-red'?'red':'yellow'}">
+        <div class="hero-q-icon">⚠️</div>
+        <div class="hero-q-label">¿Dónde está el riesgo?</div>
+        <div class="hero-q-answer">${qRiesgo.ans}</div>
+        <div class="hero-q-sub">${qRiesgo.sub}</div>
+        <div class="hero-q-badge ${qRiesgo.badge}">${qRiesgo.label}</div>
+      </div>
+      <div class="hero-q hero-q-green">
+        <div class="hero-q-icon">🚀</div>
+        <div class="hero-q-label">¿Dónde está el potencial?</div>
+        <div class="hero-q-answer">${qPotencial.ans}</div>
+        <div class="hero-q-sub">${qPotencial.sub}</div>
+        <div class="hero-q-badge ${qPotencial.badge}">${qPotencial.label}</div>
+      </div>
+      <div class="hero-q hero-q-${qIntervencion.badge==='badge-green'?'green':qIntervencion.badge==='badge-red'?'red':'yellow'}">
+        <div class="hero-q-icon">🎯</div>
+        <div class="hero-q-label">¿Dónde intervenir?</div>
+        <div class="hero-q-answer">${qIntervencion.ans}</div>
+        <div class="hero-q-sub">${qIntervencion.sub}</div>
+        <div class="hero-q-badge ${qIntervencion.badge}">${qIntervencion.label}</div>
+      </div>
+    </div>
   </div>
   `;
 
