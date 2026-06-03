@@ -1144,6 +1144,25 @@ function renderDashboard(data){
     }
   };
 
+  // ── DIAGNÓSTICO SEC-COMP: DATOS DE SOPORTE ─────────────────────────────────
+  const compMayorFact = ag.reduce((b,a)=>parseFloat(a.facturacion_total||0)>parseFloat(b.facturacion_total||0)?a:b,ag[0]);
+  const compMayorRev  = ag.reduce((b,a)=>parseFloat(a.revenue_total||0)>parseFloat(b.revenue_total||0)?a:b,ag[0]);
+  const totalCC3 = ag.reduce((s,a)=>s+parseFloat(a.facturacion_cc||0),0);
+  const totalDC3 = ag.reduce((s,a)=>s+parseFloat(a.facturacion_dc||0),0);
+  const pctCC3 = totalFact>0?(totalCC3/totalFact*100).toFixed(1):0;
+  const pctDC3 = totalFact>0?(totalDC3/totalFact*100).toFixed(1):0;
+  const totalRRHH3 = ag.reduce((s,a)=>s+parseFloat(a.gastos_rrhh||0),0);
+  const totalCom3  = ag.reduce((s,a)=>s+parseFloat(a.gastos_comerciales||0),0);
+  const totalAdm3  = ag.reduce((s,a)=>s+parseFloat(a.gastos_admin||0),0);
+  const totalEgr3  = totalRRHH3+totalCom3+totalAdm3;
+  const pctRRHH3   = totalEgr3>0?(totalRRHH3/totalEgr3*100).toFixed(1):0;
+  const compDiag = {
+    facturacion:{icon:'📊',q:'¿Quién factura más?',ans:`${compMayorFact.nombre} lidera con ${fmt(parseFloat(compMayorFact.facturacion_total||0))} Miles Gs.`,sub:`${totalFact>0?(parseFloat(compMayorFact.facturacion_total||0)/totalFact*100).toFixed(1):0}% de la facturación total del grupo`,badge:'badge-green',label:'Líder de facturación'},
+    mix:{icon:'⚖️',q:'¿Cómo se distribuye el mix CC/DC?',ans:`CC: ${pctCC3}% — DC: ${pctDC3}% de la facturación total`,sub:parseFloat(pctDC3)>parseFloat(pctCC3)?'El grupo tiene mayor peso en distribución de contenido':'El grupo tiene mayor peso en creación de contenido',badge:Math.abs(parseFloat(pctCC3)-parseFloat(pctDC3))<20?'badge-green':'badge-yellow',label:Math.abs(parseFloat(pctCC3)-parseFloat(pctDC3))<20?'Mix equilibrado':'Mix concentrado'},
+    costos:{icon:'💼',q:'¿Dónde está el mayor costo?',ans:`RRHH representa el ${pctRRHH3}% del total de egresos`,sub:`RRHH: ${fmt(totalRRHH3)} · Comercial: ${fmt(totalCom3)} · Admin: ${fmt(totalAdm3)}`,badge:parseFloat(pctRRHH3)>70?'badge-yellow':'badge-green',label:parseFloat(pctRRHH3)>70?'RRHH dominante':'Estructura balanceada'},
+    revenue:{icon:'💡',q:'¿Cuál es la brecha revenue/facturación?',ans:`Revenue total: ${fmt(totalRev)} vs Facturación: ${fmt(totalFact)}`,sub:`Brecha: ${fmt(totalFact-totalRev)} Miles Gs. — costos directos de terceros (medios, producción)`,badge:'badge-green',label:'Datos estructurales'}
+  };
+
   // ── DIAGNÓSTICO SEC-02: SIN 3709 ───────────────────────────────────────────
   const totalMonto3709 = ag.reduce((s,a)=>s+parseFloat(a.monto3709||0),0);
   const pctEbitdaDep = totalEBITDA>0?(totalMonto3709/totalEBITDA*100).toFixed(1):0;
@@ -1872,17 +1891,167 @@ function renderDashboard(data){
     <div class="sec-heading">Datos de soporte</div>
     <div class="sec-bar"></div>
   </div>
-  <div class="charts-grid">
-    <div class="chart-card"><div class="chart-title">Facturación por Agencia</div><div class="chart-subtitle">Con 3709 incluido · Miles de Gs.</div><div class="chart-wrap"><canvas id="cFact"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Revenue por Agencia</div><div class="chart-subtitle">Miles de Gs.</div><div class="chart-wrap"><canvas id="cRev"></canvas></div></div>
+
+  <div class="sec-step">
+    <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué analiza este punto?</div></div>
+    <div class="sec-step-body">
+      Esta sección es el <strong>contexto estructural</strong> del grupo — los datos base que sustentan todos los análisis anteriores. Mientras las secciones 01-06 responden preguntas específicas (¿somos rentables? ¿somos eficientes?), esta sección muestra <em>cómo está construido</em> el negocio: cuánto factura cada agencia, cómo se distribuye entre CC y DC, qué servicios componen cada arena, y cómo está estructurado el costo.<br><br>
+      Es la radiografía completa del holding — útil para entender el contexto de cualquier número que aparezca en el resto del análisis y para responder preguntas como: ¿Por qué BRICK tiene tanto EBITDA? (porque domina en DC). ¿Por qué OMD es eficiente? (porque su estructura de costos es lean). Esta sección da las respuestas estructurales.
+    </div>
   </div>
-  <div class="charts-grid triple" style="margin-top:0">
-    <div class="chart-card"><div class="chart-title">Mix CC / DC</div><div class="chart-subtitle">Distribución consolidada</div><div class="chart-wrap"><canvas id="cCCDC"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Sub-Arenas CC</div><div class="chart-subtitle">Por agencia · apilado</div><div class="chart-wrap"><canvas id="cCC"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Sub-Arenas DC</div><div class="chart-subtitle">OFF · ON · Performance</div><div class="chart-wrap"><canvas id="cDC"></canvas></div></div>
+
+  <div class="sec-step">
+    <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Qué mide cada gráfico?</div></div>
+    <div class="sec-step-body"><div class="step-formula">
+      <div class="step-formula-row"><div class="step-formula-label">Facturación</div><div class="step-formula-val">Lo que se le cobra al cliente (bruto). Incluye todo — honorarios, medios comprados y producción externa. Es el número más grande pero no el más relevante.</div></div>
+      <div class="step-formula-row"><div class="step-formula-label">Revenue</div><div class="step-formula-val"><em>Facturación</em> − costos directos de terceros. Es el ingreso real que queda en la agencia para cubrir sus costos y generar EBITDA.</div></div>
+      <div class="step-formula-row"><div class="step-formula-label">Mix CC/DC</div><div class="step-formula-val">Proporción de la facturación que viene de cada arena. Muestra si el grupo es más de <em>creación</em> (CC) o de <em>distribución</em> (DC) de contenido.</div></div>
+      <div class="step-formula-row"><div class="step-formula-label">Sub-arenas</div><div class="step-formula-val">Desglose de CC (Creatividad, Social Media, PR, etc.) y DC (OFF, ON, Performance) por agencia. Muestra qué servicios específicos generan el negocio.</div></div>
+      <div class="step-formula-row"><div class="step-formula-label">Egresos</div><div class="step-formula-val">Estructura de costos: <em>RRHH</em> (salarios y cargas), <em>Comerciales</em> (ventas, comisiones, marketing) y <em>Administrativos</em> (alquiler, tecnología, servicios). La suma es el Total Egresos.</div></div>
+    </div></div>
   </div>
-  <div class="charts-grid" style="margin-top:0">
-    <div class="chart-card wide"><div class="chart-title">Egresos por Agencia</div><div class="chart-subtitle">RRHH · Comerciales · Administrativos · Miles de Gs.</div><div class="chart-wrap"><canvas id="cEgr"></canvas></div></div>
+
+  <div class="sec-step">
+    <div class="sec-step-header"><div class="sec-step-num">3</div><div class="sec-step-title">Gráficos principales</div></div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Facturación por Agencia<span class="chart-help">?<span class="chart-help-tip">Facturación bruta total de cada agencia. Incluye lo que se paga a terceros (medios, producción). Es el número más alto pero no el más relevante para medir rentabilidad — para eso usar Revenue.</span></span></div>
+        <div class="chart-subtitle">Incluye 3709 · Miles de Gs.</div>
+        <div class="chart-wrap"><canvas id="cFact"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">Facturación = Honorarios + Medios comprados + Producción externa</div>
+          <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${compMayorFact.nombre}</strong> — ${fmt(parseFloat(compMayorFact.facturacion_total||0))} Miles Gs. (${totalFact>0?(parseFloat(compMayorFact.facturacion_total||0)/totalFact*100).toFixed(1):0}% del grupo)</span></div>
+          <div class="ci-row"><span class="ci-label">Total grupo</span><span class="ci-val">${fmt(totalFact)} Miles Gs.</span></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Revenue por Agencia<span class="chart-help">?<span class="chart-help-tip">Revenue neto — lo que queda en la agencia después de descontar lo que pagó a terceros. Es el punto de partida real para calcular EBITDA. Cuanto más cercano a la facturación, menos se paga a terceros.</span></span></div>
+        <div class="chart-subtitle">Miles de Gs.</div>
+        <div class="chart-wrap"><canvas id="cRev"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">Revenue = Facturación − Costos directos de terceros</div>
+          <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${compMayorRev.nombre}</strong> — ${fmt(parseFloat(compMayorRev.revenue_total||0))} Miles Gs.</span></div>
+          <div class="ci-row"><span class="ci-label">Total grupo</span><span class="ci-val">${fmt(totalRev)} Miles Gs. (${totalFact>0?(totalRev/totalFact*100).toFixed(1):0}% de la facturación)</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="charts-grid triple" style="margin-top:12px">
+      <div class="chart-card">
+        <div class="chart-title">Mix CC / DC<span class="chart-help">?<span class="chart-help-tip">Distribución de la facturación total entre Content Creation (CC, naranja) y Digital Commerce (DC, violeta). Muestra si el grupo es más de creación o distribución de contenido.</span></span></div>
+        <div class="chart-subtitle">Distribución consolidada del grupo</div>
+        <div class="chart-wrap"><canvas id="cCCDC"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-row"><span class="ci-label">CC</span><span class="ci-val">${fmt(totalCC3)} Miles Gs. = ${pctCC3}%</span></div>
+          <div class="ci-row"><span class="ci-label">DC</span><span class="ci-val">${fmt(totalDC3)} Miles Gs. = ${pctDC3}%</span></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Sub-Arenas CC<span class="chart-help">?<span class="chart-help-tip">Desglose de Content Creation por tipo de servicio y agencia. Cada color es una sub-arena: Creatividad, Social Media, PR/Influencer, Activación y Otras Innovaciones. Muestra qué servicios de CC generan más ingreso.</span></span></div>
+        <div class="chart-subtitle">Por agencia · apilado · Miles de Gs.</div>
+        <div class="chart-wrap"><canvas id="cCC"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Sub-Arenas DC<span class="chart-help">?<span class="chart-help-tip">Desglose de Digital Commerce en sus tres componentes: OFF (medios tradicionales), ON (medios digitales) y Performance (campañas de resultados medibles). Muestra la estructura de distribución de cada agencia.</span></span></div>
+        <div class="chart-subtitle">OFF · ON · Performance · Miles de Gs.</div>
+        <div class="chart-wrap"><canvas id="cDC"></canvas></div>
+      </div>
+    </div>
+    <div class="charts-grid" style="margin-top:12px">
+      <div class="chart-card wide">
+        <div class="chart-title">Egresos por Agencia<span class="chart-help">?<span class="chart-help-tip">Estructura de costos de cada agencia dividida en tres categorías: RRHH (salarios y cargas sociales), Comerciales (ventas, comisiones) y Administrativos (alquiler, tecnología, servicios). El RRHH suele ser el mayor costo en agencias de servicios.</span></span></div>
+        <div class="chart-subtitle">RRHH · Comerciales · Administrativos · Miles de Gs.</div>
+        <div class="chart-wrap"><canvas id="cEgr"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">Total Egresos = RRHH + Gastos Comerciales + Gastos Administrativos</div>
+          <div class="ci-row"><span class="ci-label">RRHH grupo</span><span class="ci-val">${fmt(totalRRHH3)} Miles Gs. = ${pctRRHH3}% del total de egresos</span></div>
+          <div class="ci-row"><span class="ci-label">Total egresos</span><span class="ci-val">${fmt(totalEgr3)} Miles Gs. — RRHH + Comercial + Admin</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-step">
+    <div class="sec-step-header"><div class="sec-step-num">4</div><div class="sec-step-title">Tabla completa por agencia</div></div>
+    <div class="sec-step-body">
+      Resumen de todos los indicadores estructurales por agencia en una sola vista.
+      <div class="table-wrap" style="margin-top:16px"><table>
+        <thead><tr>
+          <th>Agencia</th><th>Facturación</th><th>Revenue</th>
+          <th>EBITDA c/3709</th><th>EBITDA s/3709</th><th>EBITDA DC</th><th>EBITDA CC</th>
+          <th>Rend. Inv.</th><th>Innovación</th><th>% CC</th><th>% DC</th>
+          <th>Personas</th><th>Per Cápita</th>
+        </tr></thead>
+        <tbody>${ag.map(a=>{
+          const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);
+          const eg=parseFloat(a.total_egresos||0);
+          const ri=eg>0?e/eg:0;
+          const edc=parseFloat(a.ebitda_dc||0), ecc=parseFloat(a.ebitda_cc||0);
+          return `<tr>
+            <td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span>${a.nombre}</td>
+            <td>${fmt(a.facturacion_total)}</td><td>${fmt(a.revenue_total)}</td>
+            <td class="${e>=0?'val-pos':'val-neg'}">${fmt(a.ebitda)}</td>
+            <td class="${parseFloat(a.ebitda_sin3709||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_sin3709)}</td>
+            <td class="${edc>=0?'val-pos':'val-neg'}">${fmt(edc)}</td>
+            <td class="${ecc>=0?'val-pos':'val-neg'}">${fmt(ecc)}</td>
+            <td class="${ri>=0?'val-pos':'val-neg'}">${(ri*100).toFixed(1)}%</td>
+            <td>${fmt(a.aporte_innovacion)}</td>
+            <td>${fmtPct(a.facturacion_pct_cc)}</td><td>${fmtPct(a.facturacion_pct_dc)}</td>
+            <td>${parseFloat(a.cantidad_personas||0).toFixed(1)}</td>
+            <td class="${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${Math.round(parseFloat(a.percapita_ebitda||0)/1e3)}M</td>
+          </tr>`;}).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="sec-step">
+    <div class="sec-step-header"><div class="sec-step-num">5</div><div class="sec-step-title">Diagnóstico · Estructura del grupo</div></div>
+    <div class="diag-grid">${['facturacion','mix','costos','revenue'].map(k=>`<div class="diag-card"><div class="diag-card-icon">${compDiag[k].icon}</div><div class="diag-card-q">${compDiag[k].q}</div><div class="diag-card-ans">${compDiag[k].ans}</div><div class="diag-card-sub">${compDiag[k].sub}</div><div class="diag-card-badge ${compDiag[k].badge}">${compDiag[k].label}</div></div>`).join('')}</div>
+  </div>
+
+  <div class="sec-block" style="margin-top:32px">
+    <div class="sec-label">Vista individual</div>
+    <div class="sec-heading">Por Agencia</div>
+    <div class="sec-bar"></div>
+  </div>
+  <div class="agencia-cards">
+    ${ag.map((a,idx)=>{
+      const e=parseFloat(a.ebitda||0),f=parseFloat(a.facturacion_total||0);
+      const m=f>0?e/f:0,pcc=parseFloat(a.facturacion_pct_cc||0);
+      const col=agColor(a.nombre);
+      const fi=focoInfo[idx];
+      const concColor=fi.pct>=0.7?'#d42b4f':fi.pct>=0.5?'#d4900a':'#16a34a';
+      return `<div class="agencia-card" style="border-top:3px solid ${col}">
+        <div class="agencia-card-head">
+          <div class="dot" style="background:${col}"></div>
+          <h4>${a.nombre}</h4>
+          <span class="ebitda-badge" style="background:${e>=0?'#dcfce7':'#fee2e2'};color:${e>=0?'#15803d':'#b91c1c'}">${fmt(a.ebitda)}</span>
+        </div>
+        <div class="agencia-card-body">
+          <div class="agencia-row"><span class="agencia-row-label">Facturación</span><span class="agencia-row-val">${fmt(a.facturacion_total)}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">Revenue</span><span class="agencia-row-val">${fmt(a.revenue_total)}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">EBITDA sin 3709</span><span class="agencia-row-val ${parseFloat(a.ebitda_sin3709||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_sin3709)}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">EBITDA DC</span><span class="agencia-row-val ${parseFloat(a.ebitda_dc||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_dc)}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">EBITDA CC</span><span class="agencia-row-val ${parseFloat(a.ebitda_cc||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_cc)}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">Rend. Inversión</span><span class="agencia-row-val ${(parseFloat(a.total_egresos||0)>0?parseFloat(a.ebitda||0)/parseFloat(a.total_egresos||0):0)>=0?'val-pos':'val-neg'}">${parseFloat(a.total_egresos||0)>0?((parseFloat(a.ebitda||0)/parseFloat(a.total_egresos||0))*100).toFixed(1)+'%':'—'}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">Aporte Innovación</span><span class="agencia-row-val">${fmt(a.aporte_innovacion)}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">Expertise Foco</span><span class="agencia-row-val" style="color:${col}">${fi.name}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">Concentración Fee</span><span class="agencia-row-val" style="color:${concColor}">${(fi.pct*100).toFixed(1)}%</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">Margen</span><span class="agencia-row-val ${m>=0?'val-pos':'val-neg'}">${fmtPct(m)}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">RRHH</span><span class="agencia-row-val">${fmt(a.gastos_rrhh)}</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">Per Cápita</span><span class="agencia-row-val ${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${Math.round(parseFloat(a.percapita_ebitda||0)/1e3)}M</span></div>
+          <div class="agencia-row"><span class="agencia-row-label">Personas</span><span class="agencia-row-val">${parseFloat(a.cantidad_personas||0).toFixed(1)}</span></div>
+          <div class="agencia-row" style="display:block">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span class="agencia-row-label">CC ${fmtPct(pcc)}</span>
+              <span class="agencia-row-label">DC ${fmtPct(parseFloat(a.facturacion_pct_dc||0))}</span>
+            </div>
+            <div class="bar-mini">
+              <div class="bar-mini-fill" style="width:${(pcc*100).toFixed(1)}%;background:${col}"></div>
+            </div>
+          </div>
+        </div>
+      </div>`;}).join('')}
   </div>
   <div style="height:32px"></div>
   `;
