@@ -523,6 +523,29 @@ body.fullscreen .main { padding-top:64px; }
 .hero-journey-kw{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
 .hero-journey-q{font-size:11px;color:rgba(255,255,255,.38);line-height:1.4}
 
+/* ── SECTION NAV (sticky) ── */
+.section-nav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(10,12,18,.96);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  display:flex;gap:0;
+  overflow-x:auto;scrollbar-width:none;
+  padding:0 44px;margin:0 -44px;
+  flex-shrink:0;
+}
+.section-nav::-webkit-scrollbar{display:none}
+.snav-item{
+  padding:13px 18px;
+  font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:rgba(255,255,255,.35);cursor:pointer;white-space:nowrap;
+  border-bottom:2px solid transparent;
+  transition:color .15s, border-color .15s;
+  user-select:none;
+}
+.snav-item:hover{color:rgba(255,255,255,.75)}
+.snav-item.snav-active{color:#f0f040;border-bottom-color:#f0f040}
+
 /* ── INTRO DIMENSIONES ── */
 .intro-section{
   background:#0f1117;
@@ -597,7 +620,6 @@ body.fullscreen .main { padding-top:64px; }
   <div class="topbar-right">
 
     <button class="btn btn-ai" id="btnChat" onclick="toggleChat()">✦ Asistente IA</button>
-    <button class="btn btn-outline" id="btnDetails" onclick="toggleDetails()">☰ Detalles</button>
     <button class="btn btn-outline" onclick="triggerUpload()">↑ Cargar Excel</button>
     <button class="btn btn-primary" onclick="refreshData()" id="btnRefresh">⟳ Actualizar</button>
     <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileSelect(event)" style="display:none">
@@ -908,6 +930,17 @@ function renderDashboard(data){
     : 'El grupo mantiene una distribución de servicios saludable. Ninguna agencia tiene dependencia crítica en un solo tipo de ingreso.';
 
   document.getElementById('dashboard').innerHTML = `
+  <!-- STICKY NAV -->
+  <div class="section-nav" id="sectionNav">
+    <div class="snav-item snav-active" data-sec="sec-resumen" onclick="openSection('sec-resumen')">Resumen</div>
+    <div class="snav-item" data-sec="sec-1" onclick="openSection('sec-1')">01 · Rentabilidad</div>
+    <div class="snav-item" data-sec="sec-2" onclick="openSection('sec-2')">02 · Sin 3709</div>
+    <div class="snav-item" data-sec="sec-3" onclick="openSection('sec-3')">03 · Eficiencia</div>
+    <div class="snav-item" data-sec="sec-4" onclick="openSection('sec-4')">04 · Innovación</div>
+    <div class="snav-item" data-sec="sec-5" onclick="openSection('sec-5')">05 · Expertise</div>
+    <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
+  </div>
+
   <!-- INTRO DIMENSIONES -->
   <div class="intro-section">
     <div class="intro-eyebrow">Texo as a Service · Salud Financiera</div>
@@ -954,7 +987,7 @@ function renderDashboard(data){
   </div>
 
   <!-- HERO -->
-  <div class="hero-section">
+  <div class="hero-section" id="sec-resumen">
     <div class="hero-main">
       <div class="hero-title-block">
         <div class="hero-company">Texo as a Service</div>
@@ -1117,7 +1150,7 @@ function renderDashboard(data){
       </div>
     </div>
 
-  <div id="detailsPanel" style="display:none">
+  <div id="detailsPanel">
     <div id="sec-1" class="sec-block">
       <div class="sec-label">01 · Rentabilidad</div>
       <div class="sec-heading">¿Quién gana y quién pierde?</div>
@@ -1437,26 +1470,52 @@ function renderDashboard(data){
       plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
         tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
   });
+
+  // Scroll to top and init scroll spy
+  const mainEl = document.getElementById('main');
+  if (mainEl) mainEl.scrollTop = 0;
+  initScrollSpy();
 }
 
 window.addEventListener('DOMContentLoaded',async()=>{ await loadUploads(); await loadLatest(); });
 
 // ── OPEN SECTION ─────────────────────────────────────────────────────────────
 function openSection(id) {
-  if (!detailsOpen) toggleDetails();
-  setTimeout(() => document.getElementById(id)?.scrollIntoView({behavior:'smooth'}), 100);
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  // update nav active
+  document.querySelectorAll('.snav-item').forEach(i => i.classList.remove('snav-active'));
+  const navItem = document.querySelector(`.snav-item[data-sec="${id}"]`);
+  if (navItem) navItem.classList.add('snav-active');
+}
+
+// ── SCROLL SPY ────────────────────────────────────────────────────────────────
+function initScrollSpy() {
+  const mainEl = document.getElementById('main');
+  if (!mainEl) return;
+  const secIds = ['sec-resumen','sec-1','sec-2','sec-3','sec-4','sec-5','sec-6'];
+  mainEl.addEventListener('scroll', () => {
+    let current = 'sec-resumen';
+    for (const id of secIds) {
+      const el = document.getElementById(id);
+      if (el && el.getBoundingClientRect().top <= 80) current = id;
+    }
+    document.querySelectorAll('.snav-item').forEach(i => i.classList.remove('snav-active'));
+    const active = document.querySelector(`.snav-item[data-sec="${current}"]`);
+    if (active) active.classList.add('snav-active');
+  }, { passive: true });
 }
 
 // ── DETALLES ────────────────────────────────────────────────────────────────
-let detailsOpen = false;
+let detailsOpen = true;
 function toggleDetails() {
   detailsOpen = !detailsOpen;
   const panel = document.getElementById('detailsPanel');
   const btn   = document.getElementById('btnDetails');
   if (!panel) return;
   panel.style.display = detailsOpen ? 'block' : 'none';
-  btn.classList.toggle('active', detailsOpen);
-  btn.textContent = detailsOpen ? '✕ Cerrar detalles' : '☰ Detalles';
+  if(btn){ btn.classList.toggle('active', detailsOpen);
+  btn.textContent = detailsOpen ? '✕ Cerrar detalles' : '☰ Detalles'; }
   if (detailsOpen) {
     setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     setTimeout(() => { Object.values(charts).forEach(c => { try { c.resize(); } catch(e){} }); }, 100);
