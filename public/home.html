@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texo as a Service</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#0f1117;color:#fff}
+
+/* Grid background */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(240,240,64,.035) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(240,240,64,.035) 1px,transparent 1px);
+  background-size:56px 56px;
+  pointer-events:none;z-index:0;
+}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:relative;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:64px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+  background:rgba(15,17,23,.85);
+  backdrop-filter:blur(12px);
+}
+.logo{font-size:22px;font-weight:800;letter-spacing:.01em;color:#fff}
+.logo span{color:#f0f040;font-weight:300}
+.tagline-top{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);font-weight:500}
+
+/* ── HERO ── */
+.hero{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;
+  padding:80px 24px 64px;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 16px;border-radius:20px;
+  background:rgba(240,240,64,.08);
+  border:1px solid rgba(240,240,64,.2);
+  font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:#f0f040;margin-bottom:28px;
+}
+.hero-badge span{width:6px;height:6px;border-radius:50%;background:#f0f040;display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-title{
+  font-size:clamp(42px,6vw,72px);font-weight:900;line-height:1.05;
+  letter-spacing:-.03em;margin-bottom:24px;
+}
+.hero-title .hl{color:#f0f040}
+.hero-desc{
+  font-size:17px;color:rgba(255,255,255,.5);line-height:1.8;
+  max-width:560px;margin:0 auto 48px;font-weight:400;
+}
+
+/* ── MÓDULOS ── */
+.modules{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:20px;max-width:900px;margin:0 auto;
+  padding:0 24px 80px;
+}
+.mod-card{
+  background:rgba(255,255,255,.04);
+  border:1.5px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:32px;
+  text-decoration:none;color:#fff;
+  transition:all .2s ease;
+  display:flex;flex-direction:column;gap:16px;
+  position:relative;overflow:hidden;
+}
+.mod-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--card-color,.3) 0%,transparent 60%);
+  opacity:0;transition:opacity .2s;
+}
+.mod-card:hover{
+  border-color:rgba(255,255,255,.18);
+  transform:translateY(-3px);
+  box-shadow:0 16px 48px rgba(0,0,0,.4);
+}
+.mod-card:hover::before{opacity:1}
+.mod-card:active{transform:translateY(-1px)}
+
+.mod-icon{
+  width:48px;height:48px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;
+}
+.mod-header{display:flex;align-items:center;gap:14px}
+.mod-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;opacity:.5;margin-bottom:2px}
+.mod-name{font-size:20px;font-weight:700;line-height:1.2}
+.mod-desc{font-size:14px;color:rgba(255,255,255,.45);line-height:1.7}
+.mod-features{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.feat-tag{
+  font-size:11px;font-weight:600;letter-spacing:.04em;
+  padding:4px 10px;border-radius:20px;
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.5);
+}
+.mod-cta{
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:600;color:rgba(255,255,255,.6);
+  margin-top:auto;padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.mod-cta svg{transition:transform .15s}
+.mod-card:hover .mod-cta{color:#f0f040}
+.mod-card:hover .mod-cta svg{transform:translateX(4px)}
+
+/* Card colors */
+.card-salud{ --card-color: rgba(108,63,197,.15) }
+.card-salud .mod-icon{ background:rgba(108,63,197,.2); }
+.card-marketing{ --card-color: rgba(232,93,38,.12) }
+.card-marketing .mod-icon{ background:rgba(232,93,38,.18); }
+
+/* ── STATS BAR ── */
+.stats{
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:center;gap:0;
+  max-width:600px;margin:0 auto;
+  padding:0 24px 60px;
+}
+.stat-item{
+  flex:1;text-align:center;padding:20px;
+}
+.stat-item+.stat-item{border-left:1px solid rgba(255,255,255,.07)}
+.stat-num{font-size:28px;font-weight:800;color:#f0f040;line-height:1}
+.stat-label{font-size:12px;color:rgba(255,255,255,.35);margin-top:4px;font-weight:500}
+
+/* ── FOOTER ── */
+.footer{
+  position:relative;z-index:1;
+  text-align:center;padding:24px;
+  border-top:1px solid rgba(255,255,255,.05);
+  font-size:12px;color:rgba(255,255,255,.2);
+}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="logo">texo<span>as</span></div>
+  <div class="tagline-top">Intelligence Platform</div>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-badge">
+    <span></span>
+    Plataforma activa
+  </div>
+  <h1 class="hero-title">
+    Inteligencia<br>para <span class="hl">Texo</span>
+  </h1>
+  <p class="hero-desc">
+    Una plataforma centralizada de datos e inteligencia artificial diseñada exclusivamente para el Holding Texo. Salud financiera de agencias, inteligencia de mercado y análisis competitivo en tiempo real.
+  </p>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-item">
+    <div class="stat-num">8</div>
+    <div class="stat-label">Agencias del grupo</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">4</div>
+    <div class="stat-label">Redes globales</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">US$135M</div>
+    <div class="stat-label">Mercado PY 2024</div>
+  </div>
+</div>
+
+<!-- Módulos -->
+<div class="modules">
+
+  <!-- Salud Financiera -->
+  <a href="/index.html" class="mod-card card-salud">
+    <div class="mod-header">
+      <div class="mod-icon">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="rgba(108,63,197,1)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="mod-label">Módulo 01</div>
+        <div class="mod-name">Salud Financiera</div>
+      </div>
+    </div>
+    <p class="mod-desc">
+      Dashboard ejecutivo con métricas financieras de cada agencia del grupo. EBITDA, márgenes, eficiencia, aporte de innovación y análisis por sub-arena.
+    </p>
+    <div class="mod-features">
+      <span class="feat-tag">EBITDA por agencia</span>
+      <span class="feat-tag">Análisis con IA</span>
+      <span class="feat-tag">Score grupal</span>
+      <span class="feat-tag">Exportar PDF</span>
+    </div>
+    <div class="mod-cta">
+      Abrir módulo
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+      </svg>
+    </div>
+  </a>
+
+  <!-- Inteligencia de Marketing -->
+  <a href="/marketing.html" class="mod-card card-marketing">
+    <div class="mod-header">
+      <div class="mod-icon">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="rgba(232,93,38,1)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="mod-label">Módulo 02</div>
+        <div class="mod-name">Inteligencia de Marketing</div>
+      </div>
+    </div>
+    <p class="mod-desc">
+      Análisis competitivo del holding, briefing de redes globales, alertas estratégicas generadas por IA y feed de noticias de la industria publicitaria.
+    </p>
+    <div class="mod-features">
+      <span class="feat-tag">Alertas IA</span>
+      <span class="feat-tag">WPP · Publicis · Omnicom</span>
+      <span class="feat-tag">Noticias PY</span>
+      <span class="feat-tag">Asistente IA</span>
+    </div>
+    <div class="mod-cta">
+      Abrir módulo
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+      </svg>
+    </div>
+  </a>
+
+</div>
+
+<div class="footer">
+  Texo as a Service · Uso interno exclusivo del Holding Texo · Paraguay
+</div>
+
+<script src="/auth-bar.js"></script>
+</body>
+</html>

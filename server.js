@@ -130,7 +130,7 @@ app.get('/auth/google/callback', async (req, res) => {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
-    const redirectTo = (state && state.startsWith('/')) ? state : '/';
+    const redirectTo = (state && state.startsWith('/') && state !== '/login') ? state : '/home.html';
     res.redirect(redirectTo);
   } catch(e) {
     console.error('OAuth callback error:', e);
@@ -148,6 +148,9 @@ app.use(requireAuth);
 
 // ── ARCHIVOS ESTÁTICOS (protegidos) ───────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ── HOME REDIRECT ─────────────────────────────────────────────────────────────
+app.get('/', (req, res) => res.redirect('/home.html'));
 
 // ── ME ─────────────────────────────────────────────────────────────────────────
 app.get('/api/me', (req, res) => res.json(req.user));
