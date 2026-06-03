@@ -597,6 +597,17 @@ body.fullscreen .main { padding-top:64px; }
 .diag-card-ans{font-size:13px;font-weight:700;color:#0f1117;line-height:1.4}
 .diag-card-sub{font-size:12px;color:rgba(0,0,0,.45);line-height:1.5}
 .diag-card-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-top:4px;width:fit-content}
+
+/* Tabla agencias paso 4 */
+.rent-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px}
+.rent-table th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,0,0,.3);padding:8px 12px;border-bottom:2px solid rgba(0,0,0,.08)}
+.rent-table td{padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);color:rgba(0,0,0,.7);vertical-align:middle}
+.rent-table tr:last-child td{border-bottom:none}
+.rent-table .ag-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:8px;vertical-align:middle}
+.rent-table .val-pos{color:#15803d;font-weight:700}
+.rent-table .val-neg{color:#b91c1c;font-weight:700}
+.rent-table .val-warn{color:#b45309;font-weight:700}
+.rent-badge{display:inline-flex;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
 .intro-eyebrow{
   font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   color:rgba(255,255,255,.3);margin-bottom:16px;
@@ -974,6 +985,68 @@ function renderDashboard(data){
     ? `<span class="narrative-yellow narrative-accent">${agMayorConc.nombre}</span> muestra concentración moderada (${concPctVal}% en ${focoInfo[concIdx].name}). Se recomienda diversificar para reducir el riesgo de dependencia.`
     : 'El grupo mantiene una distribución de servicios saludable. Ninguna agencia tiene dependencia crítica en un solo tipo de ingreso.';
 
+  // ── DIAGNÓSTICO ESPECÍFICO SEC-1: RENTABILIDAD ──────────────────────────────
+  const totalEbitdaCC = ag.reduce((s,a)=>s+parseFloat(a.ebitda_cc||0),0);
+  const totalEbitdaDC = ag.reduce((s,a)=>s+parseFloat(a.ebitda_dc||0),0);
+  const arenaLiderNombre = totalEbitdaCC >= totalEbitdaDC ? 'Content Creation' : 'Digital Commerce';
+  const arenaLiderVal = Math.max(totalEbitdaCC, totalEbitdaDC);
+  const arenaDebil = totalEbitdaCC < totalEbitdaDC ? 'CC' : 'DC';
+  const arenaDebilVal = Math.min(totalEbitdaCC, totalEbitdaDC);
+
+  const agEnPerdida = ag.filter(a=>parseFloat(a.ebitda||0)<0);
+  const agSanasRent = ag.filter(a=>parseFloat(a.ebitda||0)>=0);
+  const agMejorMargen = ag.reduce((b,a)=>{
+    const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);
+    const fb=parseFloat(b.facturacion_total||0),eb=parseFloat(b.ebitda||0);
+    return (f>0?e/f:0)>(fb>0?eb/fb:0)?a:b;
+  },ag[0]);
+  const mejorMargenPct = (parseFloat(agMejorMargen.facturacion_total||0)>0
+    ? parseFloat(agMejorMargen.ebitda||0)/parseFloat(agMejorMargen.facturacion_total||0)*100
+    : 0).toFixed(1);
+
+  const rentDiag = {
+    arenas: {
+      icon: totalEbitdaCC>0&&totalEbitdaDC>0?'✅':'⚠️',
+      q: '¿Las 2 arenas son rentables?',
+      ans: totalEbitdaCC>0&&totalEbitdaDC>0
+        ? `Sí. ${arenaLiderNombre} lidera con ${fmt(arenaLiderVal)} Miles de Gs.`
+        : `No. ${arenaDebil} tiene EBITDA negativo (${fmt(arenaDebilVal)})`,
+      sub: `CC: ${fmt(totalEbitdaCC)} · DC: ${fmt(totalEbitdaDC)}`,
+      badge: totalEbitdaCC>0&&totalEbitdaDC>0?'badge-green':'badge-red',
+      label: totalEbitdaCC>0&&totalEbitdaDC>0?'Ambas positivas':'Una en riesgo'
+    },
+    mejorMargen: {
+      icon: '🏆',
+      q: '¿Quién tiene el mejor margen?',
+      ans: `${agMejorMargen.nombre} con ${mejorMargenPct}% de margen EBITDA`,
+      sub: 'Mayor eficiencia en conversión de revenue a ganancia',
+      badge: parseFloat(mejorMargenPct)>=10?'badge-green':parseFloat(mejorMargenPct)>=5?'badge-yellow':'badge-red',
+      label: parseFloat(mejorMargenPct)>=10?'Margen sólido':parseFloat(mejorMargenPct)>=5?'Margen ajustado':'Margen bajo'
+    },
+    perdidas: {
+      icon: agEnPerdida.length===0?'💚':'🔴',
+      q: '¿Hay agencias en pérdida?',
+      ans: agEnPerdida.length===0
+        ? 'No. Todas las agencias generan EBITDA positivo'
+        : `${agEnPerdida.map(a=>a.nombre).join(' y ')} opera${agEnPerdida.length>1?'n':''} en pérdida`,
+      sub: `${agSanasRent.length} de ${ag.length} agencias con EBITDA positivo`,
+      badge: agEnPerdida.length===0?'badge-green':'badge-red',
+      label: agEnPerdida.length===0?'Sin pérdidas':'Requiere atención'
+    },
+    intervencion: {
+      icon: '🎯',
+      q: '¿Dónde intervenir?',
+      ans: agEnPerdida.length>0
+        ? `Prioridad: revertir pérdida en ${agEnPerdida.map(a=>a.nombre).join(' y ')}`
+        : parseFloat(mejorMargenPct)<5
+          ? `Mejorar margen en ${agMejorMargen.nombre} — por debajo del umbral saludable (10%)`
+          : `Extender el modelo de ${agMejorMargen.nombre} al resto del grupo`,
+      sub: agDep3709.length>0?`Atención: ${agDep3709.map(a=>a.nombre).join(' y ')} dependen del 3709`:'Sin dependencias críticas',
+      badge: agEnPerdida.length>0?'badge-red':parseFloat(mejorMargenPct)<5?'badge-yellow':'badge-green',
+      label: agEnPerdida.length>0?'Acción urgente':parseFloat(mejorMargenPct)<5?'Acción preventiva':'Optimizar'
+    }
+  };
+
   document.getElementById('dashboard').innerHTML = `
   <!-- STICKY NAV -->
   <div class="section-nav" id="sectionNav">
@@ -1077,16 +1150,42 @@ function renderDashboard(data){
     <!-- PASO 3: Gráficos -->
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">3</div><div class="sec-step-title">Gráficos principales</div></div>
-      <div class="charts-grid">
+      <div class="charts-grid triple">
         <div class="chart-card"><div class="chart-title">EBITDA DC vs CC</div><div class="chart-subtitle">Resultado operativo por arena y agencia</div><div class="chart-wrap"><canvas id="cEbitdaDCCC"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">Margen EBITDA %</div><div class="chart-subtitle">EBITDA / Facturación</div><div class="chart-wrap"><canvas id="cMargen"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Margen EBITDA %</div><div class="chart-subtitle">EBITDA / Facturación total</div><div class="chart-wrap"><canvas id="cMargen"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Revenue vs EBITDA</div><div class="chart-subtitle">Lo que se factura vs lo que queda</div><div class="chart-wrap"><canvas id="cRevEbitda"></canvas></div></div>
       </div>
     </div>
 
     <!-- PASO 4: Lectura de resultados -->
     <div class="sec-step">
       <div class="sec-step-header"><div class="sec-step-num">4</div><div class="sec-step-title">Lectura de resultados</div></div>
-      <div class="sec-step-body">${rentNarr}</div>
+      <div class="sec-step-body">
+        ${rentNarr}
+        <table class="rent-table">
+          <thead><tr><th>Agencia</th><th>Revenue</th><th>EBITDA</th><th>Margen %</th><th>Arena líder</th><th>Estado</th></tr></thead>
+          <tbody>
+            ${ag.map(a=>{
+              const e=parseFloat(a.ebitda||0),f=parseFloat(a.facturacion_total||0),r=parseFloat(a.revenue_total||0);
+              const m=f>0?(e/f*100).toFixed(1):'—';
+              const ccV=parseFloat(a.facturacion_cc||0),dcV=parseFloat(a.facturacion_dc||0);
+              const arena=ccV>=dcV?'CC':'DC';
+              const dep=parseFloat(a.ebitda_sin3709||0)<0&&e>=0;
+              const cls=e<0?'val-neg':dep?'val-warn':'val-pos';
+              const badgeCls=e<0?'background:rgba(212,43,79,.12);color:#b91c1c':dep?'background:rgba(212,144,10,.12);color:#b45309':'background:rgba(22,163,74,.12);color:#15803d';
+              const label=e<0?'Pérdida':dep?'Dep. 3709':'Sana';
+              return `<tr>
+                <td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span><strong>${a.nombre}</strong></td>
+                <td>${fmt(r)}</td>
+                <td class="${cls}">${fmt(e)}</td>
+                <td class="${cls}">${m}%</td>
+                <td>${arena}</td>
+                <td><span class="rent-badge" style="${badgeCls}">${label}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- PASO 5: Diagnóstico -->
@@ -1094,32 +1193,32 @@ function renderDashboard(data){
       <div class="sec-step-header"><div class="sec-step-num">5</div><div class="sec-step-title">Diagnóstico · Rentabilidad</div></div>
       <div class="diag-grid">
         <div class="diag-card">
-          <div class="diag-card-icon">💚</div>
-          <div class="diag-card-q">¿Estamos sanos?</div>
-          <div class="diag-card-ans">${qSalud.ans}</div>
-          <div class="diag-card-sub">${qSalud.sub}</div>
-          <div class="diag-card-badge ${qSalud.badge}">${qSalud.label}</div>
+          <div class="diag-card-icon">${rentDiag.arenas.icon}</div>
+          <div class="diag-card-q">${rentDiag.arenas.q}</div>
+          <div class="diag-card-ans">${rentDiag.arenas.ans}</div>
+          <div class="diag-card-sub">${rentDiag.arenas.sub}</div>
+          <div class="diag-card-badge ${rentDiag.arenas.badge}">${rentDiag.arenas.label}</div>
         </div>
         <div class="diag-card">
-          <div class="diag-card-icon">⚠️</div>
-          <div class="diag-card-q">¿Dónde está el riesgo?</div>
-          <div class="diag-card-ans">${qRiesgo.ans}</div>
-          <div class="diag-card-sub">${qRiesgo.sub}</div>
-          <div class="diag-card-badge ${qRiesgo.badge}">${qRiesgo.label}</div>
+          <div class="diag-card-icon">${rentDiag.mejorMargen.icon}</div>
+          <div class="diag-card-q">${rentDiag.mejorMargen.q}</div>
+          <div class="diag-card-ans">${rentDiag.mejorMargen.ans}</div>
+          <div class="diag-card-sub">${rentDiag.mejorMargen.sub}</div>
+          <div class="diag-card-badge ${rentDiag.mejorMargen.badge}">${rentDiag.mejorMargen.label}</div>
         </div>
         <div class="diag-card">
-          <div class="diag-card-icon">🚀</div>
-          <div class="diag-card-q">¿Dónde está el potencial?</div>
-          <div class="diag-card-ans">${qPotencial.ans}</div>
-          <div class="diag-card-sub">${qPotencial.sub}</div>
-          <div class="diag-card-badge ${qPotencial.badge}">${qPotencial.label}</div>
+          <div class="diag-card-icon">${rentDiag.perdidas.icon}</div>
+          <div class="diag-card-q">${rentDiag.perdidas.q}</div>
+          <div class="diag-card-ans">${rentDiag.perdidas.ans}</div>
+          <div class="diag-card-sub">${rentDiag.perdidas.sub}</div>
+          <div class="diag-card-badge ${rentDiag.perdidas.badge}">${rentDiag.perdidas.label}</div>
         </div>
         <div class="diag-card">
-          <div class="diag-card-icon">🎯</div>
-          <div class="diag-card-q">¿Dónde intervenir?</div>
-          <div class="diag-card-ans">${qIntervencion.ans}</div>
-          <div class="diag-card-sub">${qIntervencion.sub}</div>
-          <div class="diag-card-badge ${qIntervencion.badge}">${qIntervencion.label}</div>
+          <div class="diag-card-icon">${rentDiag.intervencion.icon}</div>
+          <div class="diag-card-q">${rentDiag.intervencion.q}</div>
+          <div class="diag-card-ans">${rentDiag.intervencion.ans}</div>
+          <div class="diag-card-sub">${rentDiag.intervencion.sub}</div>
+          <div class="diag-card-badge ${rentDiag.intervencion.badge}">${rentDiag.intervencion.label}</div>
         </div>
       </div>
     </div>
@@ -1373,6 +1472,16 @@ function renderDashboard(data){
       backgroundColor:margenes.map(m=>m>=0?'#16a34a':'#d42b4f'),
       borderRadius:5,borderSkipped:false}]},
     options:{...baseOpts(true),plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}}}
+  });
+
+  // Revenue vs EBITDA — sec-1 paso 3
+  charts.revEbitda = new Chart(document.getElementById('cRevEbitda'),{type:'bar',
+    data:{labels:names,datasets:[
+      {label:'Revenue',data:ag.map(a=>parseFloat(a.revenue_total||0)),backgroundColor:'rgba(108,63,197,.5)',borderRadius:4,borderSkipped:false},
+      {label:'EBITDA',data:ag.map(a=>parseFloat(a.ebitda||0)),backgroundColor:ag.map(a=>parseFloat(a.ebitda||0)>=0?'#16a34a':'#d42b4f'),borderRadius:4,borderSkipped:false}
+    ]},
+    options:{...o,plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:12,boxWidth:10,boxHeight:10}},
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
   });
 
   const totalCC2=ag.reduce((s,a)=>s+parseFloat(a.facturacion_cc||0),0);
