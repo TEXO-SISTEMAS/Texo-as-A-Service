@@ -597,6 +597,24 @@ body.fullscreen .main { padding-top:64px; }
 .diag-card-ans{font-size:13px;font-weight:700;color:#0f1117;line-height:1.4}
 .diag-card-sub{font-size:12px;color:rgba(0,0,0,.45);line-height:1.5}
 .diag-card-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-top:4px;width:fit-content}
+/* Override badge colors for light-bg diag cards */
+.diag-card .badge-green{background:rgba(22,163,74,.12);color:#15803d}
+.diag-card .badge-yellow{background:rgba(212,144,10,.12);color:#b45309}
+.diag-card .badge-red{background:rgba(212,43,79,.12);color:#b91c1c}
+
+/* Separador entre secciones */
+.sec-separator{
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,0,0,.1) 15%,rgba(0,0,0,.1) 85%,transparent);
+  margin:56px 0 52px;
+  position:relative;
+}
+.sec-separator::before{
+  content:'';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(0,0,0,.12);
+}
 
 /* ── CHART HELP TOOLTIP ── */
 .chart-help{
@@ -1191,6 +1209,14 @@ function renderDashboard(data){
             <div class="step-formula-val">Excel de Salud Financiera — hoja individual de cada agencia (corte ${data.fecha_corte || 'período actual'})</div>
           </div>
           <div class="step-formula-row">
+            <div class="step-formula-label">Facturación</div>
+            <div class="step-formula-val">Lo que se le cobra al cliente (bruto) — incluye honorarios, medios y producción</div>
+          </div>
+          <div class="step-formula-row">
+            <div class="step-formula-label">Revenue</div>
+            <div class="step-formula-val"><em>Facturación</em> − costos directos de terceros (compra de medios, producción externa). Es el ingreso neto real de la agencia.</div>
+          </div>
+          <div class="step-formula-row">
             <div class="step-formula-label">EBITDA</div>
             <div class="step-formula-val"><em>Revenue</em> − (RRHH + Gastos Comerciales + Gastos Admin)</div>
           </div>
@@ -1257,23 +1283,25 @@ function renderDashboard(data){
       <div class="sec-step-body">
         ${rentNarr}
         <table class="rent-table">
-          <thead><tr><th>Agencia</th><th>Revenue</th><th>EBITDA</th><th>Margen %</th><th>Arena líder</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Agencia</th><th>Revenue</th><th>EBITDA Total</th><th>EBITDA CC</th><th>EBITDA DC</th><th>Margen %</th><th>Estado</th></tr></thead>
           <tbody>
             ${ag.map(a=>{
               const e=parseFloat(a.ebitda||0),f=parseFloat(a.facturacion_total||0),r=parseFloat(a.revenue_total||0);
+              const ecc=parseFloat(a.ebitda_cc||0),edc=parseFloat(a.ebitda_dc||0);
               const m=f>0?(e/f*100).toFixed(1):'—';
-              const ccV=parseFloat(a.facturacion_cc||0),dcV=parseFloat(a.facturacion_dc||0);
-              const arena=ccV>=dcV?'CC':'DC';
               const dep=parseFloat(a.ebitda_sin3709||0)<0&&e>=0;
               const cls=e<0?'val-neg':dep?'val-warn':'val-pos';
+              const clsCC=ecc<0?'val-neg':'val-pos';
+              const clsDC=edc<0?'val-neg':'val-pos';
               const badgeCls=e<0?'background:rgba(212,43,79,.12);color:#b91c1c':dep?'background:rgba(212,144,10,.12);color:#b45309':'background:rgba(22,163,74,.12);color:#15803d';
               const label=e<0?'Pérdida':dep?'Dep. 3709':'Sana';
               return `<tr>
                 <td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span><strong>${a.nombre}</strong></td>
                 <td>${fmt(r)}</td>
                 <td class="${cls}">${fmt(e)}</td>
+                <td class="${clsCC}">${fmt(ecc)}</td>
+                <td class="${clsDC}">${fmt(edc)}</td>
                 <td class="${cls}">${m}%</td>
-                <td>${arena}</td>
                 <td><span class="rent-badge" style="${badgeCls}">${label}</span></td>
               </tr>`;
             }).join('')}
@@ -1317,6 +1345,8 @@ function renderDashboard(data){
       </div>
     </div>
 
+    <div class="sec-separator"></div>
+
     <div id="sec-2" class="sec-block">
       <div class="sec-label">02 · Sin 3709</div>
       <div class="sec-heading">¿La rentabilidad es real?</div>
@@ -1326,6 +1356,8 @@ function renderDashboard(data){
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">EBITDA — Con vs Sin 3709</div><div class="chart-subtitle">Impacto del cliente 3709 por agencia</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
     </div>
+
+    <div class="sec-separator"></div>
 
     <div id="sec-3" class="sec-block">
       <div class="sec-label">03 · Eficiencia</div>
@@ -1339,6 +1371,8 @@ function renderDashboard(data){
       <div class="chart-card"><div class="chart-title">Dotación por Agencia</div><div class="chart-subtitle">Personas promedio</div><div class="chart-wrap"><canvas id="cPers"></canvas></div></div>
     </div>
 
+    <div class="sec-separator"></div>
+
     <div id="sec-4" class="sec-block">
       <div class="sec-label">04 · Innovación</div>
       <div class="sec-heading">¿Quién construye el negocio del futuro?</div>
@@ -1349,6 +1383,8 @@ function renderDashboard(data){
       <div class="chart-card wide"><div class="chart-title">Innovación por Agencia</div><div class="chart-subtitle">Otras Innov. · PR/Influencer · Social Media</div><div class="chart-wrap"><canvas id="cInnov"></canvas></div></div>
     </div>
 
+    <div class="sec-separator"></div>
+
     <div id="sec-5" class="sec-block">
       <div class="sec-label">05 · Expertise Foco</div>
       <div class="sec-heading">¿En qué se especializa cada agencia?</div>
@@ -1358,6 +1394,8 @@ function renderDashboard(data){
     <div class="charts-grid">
       <div class="chart-card wide"><div class="chart-title">Expertise Foco por Agencia</div><div class="chart-subtitle">Distribución CC normalizada — sub-arena dominante = foco</div><div class="chart-wrap"><canvas id="cFoco"></canvas></div></div>
     </div>
+
+    <div class="sec-separator"></div>
 
     <div id="sec-6" class="sec-block">
       <div class="sec-label">06 · Concentración de Fee</div>
