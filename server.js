@@ -146,11 +146,11 @@ app.get('/auth/logout', (req, res) => {
 // ── PROTECCIÓN GLOBAL ─────────────────────────────────────────────────────────
 app.use(requireAuth);
 
+// ── HOME REDIRECT (antes de static para que no lo intercepte index.html) ──────
+app.get('/', (req, res) => res.redirect('/home.html'));
+
 // ── ARCHIVOS ESTÁTICOS (protegidos) ───────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
-
-// ── HOME REDIRECT ─────────────────────────────────────────────────────────────
-app.get('/', (req, res) => res.redirect('/home.html'));
 
 // ── ME ─────────────────────────────────────────────────────────────────────────
 app.get('/api/me', (req, res) => res.json(req.user));
