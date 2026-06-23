@@ -706,6 +706,9 @@ body.fullscreen .main { padding-top:64px; }
 .rent-table .val-pos{color:#15803d;font-weight:700}
 .rent-table .val-neg{color:#b91c1c;font-weight:700}
 .rent-table .val-warn{color:#b45309;font-weight:700}
+/* Texto a la izquierda (1ra col), números alineados a la derecha y tabulares */
+.rent-table th:first-child,.rent-table td:first-child{text-align:left}
+.rent-table th:not(:first-child),.rent-table td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
 .rent-badge{display:inline-flex;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
 .intro-eyebrow{
   font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
