@@ -771,6 +771,151 @@ body.fullscreen .main { padding-top:64px; }
 .intro-dim-dot{
   width:28px;height:3px;border-radius:2px;margin-bottom:6px;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE (<768px)
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  body{font-size:15px}
+
+  /* Topbar */
+  .topbar{padding:0 16px;height:52px;gap:8px}
+  .logo{font-size:15px}
+  .topbar-right{gap:6px}
+  .btn{padding:6px 10px;font-size:12px;gap:4px}
+
+  /* Layout + Main */
+  .main{padding:0 16px;padding-bottom:0}
+
+  /* Section nav — scroll horizontal, más compacto */
+  .section-nav{padding:0 16px;margin:0 -16px}
+  .snav-item{padding:10px 12px;font-size:10px;letter-spacing:.04em}
+
+  /* Intro section */
+  .intro-section{padding:32px 16px 36px;margin:0 -16px}
+  .intro-title{font-size:24px}
+  .intro-sub{font-size:13px}
+  .intro-grid{grid-template-columns:1fr 1fr !important;gap:10px}
+  .intro-dim{padding:14px 14px}
+  .intro-dim-name{font-size:14px}
+  .intro-dim-sub{font-size:11px}
+  .intro-dim-detail{font-size:10px}
+
+  /* Details panel */
+  #detailsPanel{padding-top:32px}
+
+  /* Section headings */
+  .sec-heading{font-size:22px}
+  .sec-block{scroll-margin-top:44px}
+
+  /* Steps */
+  .sec-step-body{padding:14px 16px;font-size:13px}
+  .step-formula-row{flex-direction:column;gap:4px}
+  .step-formula-label{min-width:unset}
+
+  /* Charts — single column */
+  .charts-grid{grid-template-columns:1fr !important;gap:12px}
+  .charts-grid.triple{grid-template-columns:1fr !important}
+  .chart-card{padding:16px 14px}
+  .chart-card.wide{grid-column:span 1}
+  .chart-wrap{height:220px}
+  .chart-title{font-size:14px;flex-wrap:wrap}
+  .chart-insight .ci-row{flex-direction:column;gap:2px}
+  .ci-label{min-width:unset}
+
+  /* Diagnóstico cards */
+  .diag-grid{grid-template-columns:1fr !important}
+
+  /* Rent tables — scroll horizontal */
+  .sec-step-body{overflow-x:auto}
+  .rent-table{min-width:500px}
+  .rent-table th,.rent-table td{padding:8px 8px;font-size:12px}
+
+  /* General tables */
+  .table-wrap{overflow-x:auto}
+  table{min-width:600px}
+  thead th{padding:10px 10px;font-size:11px}
+  tbody td{padding:10px 10px;font-size:14px}
+
+  /* Hero section */
+  .hero-section{margin:0 -16px;padding:32px 16px 28px}
+  .hero-main{flex-direction:column;gap:20px}
+  .hero-product{font-size:36px}
+  .hero-product-sub{font-size:28px}
+  .hero-score-block{text-align:left;min-width:unset;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .hero-score-num{font-size:48px}
+  .hero-score-label{margin-top:0}
+  .score-breakdown{text-align:left}
+  .hero-veredicto{font-size:14px}
+
+  /* Agency chips — stack en 1 columna */
+  .hero-agencies{flex-direction:column;gap:8px}
+  .hero-agency-chip{min-width:unset}
+
+  /* CEO questions — 1 columna */
+  .hero-questions{grid-template-columns:1fr !important;gap:10px}
+  .hero-q{padding:16px 14px}
+
+  /* KPIs */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .kpi{padding:16px 14px}
+  .kpi-value{font-size:28px}
+  .kpi-label{font-size:9px;margin-bottom:8px}
+
+  /* Divider band */
+  .divider-band{margin:24px -16px;padding:24px 16px;flex-direction:column;align-items:flex-start;gap:12px}
+  .post-hero{padding:32px 16px;margin:0 -16px}
+  .divider-band-title{font-size:20px}
+  .divider-band-stat-val{font-size:24px}
+
+  /* Agency cards */
+  .agencia-cards{grid-template-columns:1fr}
+
+  /* CTA resumen */
+  .resumen-cta{padding:20px 18px;gap:14px;margin:32px 0 0}
+  .resumen-cta-title{font-size:16px}
+  .resumen-cta-arrow{font-size:22px}
+
+  /* Separators */
+  .sec-separator{margin:36px 0 32px}
+
+  /* Chat sidebar — fullscreen overlay */
+  .chat-sidebar.open{
+    position:fixed !important;top:0;left:0;right:0;bottom:0;
+    width:100% !important;z-index:200;
+    border-left:none;
+  }
+  .chat-resize-handle{display:none}
+
+  /* Footer */
+  .footer{padding:10px 16px;font-size:12px;flex-direction:column;gap:4px;text-align:center}
+
+  /* Fullscreen mode */
+  body.fullscreen .main{padding:0 16px;padding-top:56px}
+
+  /* Toast */
+  .toast{right:16px;left:16px;bottom:60px;max-width:unset}
+
+  /* No data */
+  .no-data{padding:60px 16px}
+
+  /* Insights */
+  .insights-grid{grid-template-columns:1fr}
+
+  /* Section narrative */
+  .section-narrative{font-size:13px;padding:12px 16px}
+}
+
+/* ══ SMALL PHONES (<480px) ══ */
+@media(max-width:480px){
+  .intro-grid{grid-template-columns:1fr !important}
+  .kpi-grid{grid-template-columns:1fr}
+  .hero-product{font-size:28px}
+  .hero-product-sub{font-size:22px}
+  .hero-score-num{font-size:40px}
+  .btn{padding:5px 8px;font-size:11px}
+  .topbar{height:48px}
+}
 </style>
 </head>
 <body>
