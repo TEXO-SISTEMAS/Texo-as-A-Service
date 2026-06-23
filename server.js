@@ -312,9 +312,7 @@ ESTRUCTURA DEL HOLDING TEXO (el grupo que te consulta):
 - LUPE → Independiente. Agencia creativa ("HeartWork"). Clientes: Babysec, Chevrolet, Pepsi, Pilsen, Mirinda, Grolsch.
 - OMD (15 años) → Omnicom Media Group. Planificación y compra de medios. +15 marcas.
 - ROGER (14 años) → Initiative / IPG Mediabrands. Medios 360°. Clientes: Unilever, Diageo, La Consolidada, Softys.
-- SWITCH (4 años) → DAN. Consultoría digital y tecnología.
 - AMPLIFY (18 años) → Independiente. Vía pública/OOH. 30% del mercado rutero paraguayo tras adquirir Big Bang. +1.000 soportes.
-- WILD FI → Independiente. Marketing digital y social.
 
 CONTEXTO DEL MERCADO:
 - Mercado publicitario Paraguay 2024: US$135.5M (+6.5% vs 2023)
@@ -494,21 +492,11 @@ const HOLDING_DATA = [
     servicios:['Medios integrados','Planificación','Cross-media'],
     clientes:['Unilever','Diageo','La Consolidada','Softys','U. Columbia'],
     dato:'Unilever Latam renovó contrato con Initiative — alianza de más de 25 años en la región.' },
-  { nombre:'SWITCH',  red:'DAN',               color:'#16a34a', anos:4,
-    especialidad:'Consultoría digital y tecnología',
-    servicios:['Transformación digital','Consultoría','Desarrollo tech','Automatización'],
-    clientes:[],
-    dato:'Fundada por Texo en 2021. Integra consultoría de negocio, creatividad y tecnología.' },
   { nombre:'AMPLIFY', red:'Independiente',     color:'#8b5cf6', anos:18,
     especialidad:'Vía pública · OOH',
     servicios:['Cartelería','Pantallas digitales','OOH','Vía pública'],
     clientes:[],
     dato:'Adquirió Big Bang: 30% del mercado rutero paraguayo. +1.000 soportes. Pantalla más grande del país.' },
-  { nombre:'WILD FI', red:'Independiente',     color:'#64748b', anos:null,
-    especialidad:'Marketing digital y social',
-    servicios:['Marketing digital','Social media','Performance'],
-    clientes:[],
-    dato:'' },
 ];
 
 const MERCADO_DATA = {
@@ -624,9 +612,7 @@ const TEXO_CONTEXT = `HOLDING TEXO (Paraguay):
 - LUPE → Independiente. Clientes: Chevrolet, Babysec, Pepsi, Pilsen.
 - OMD (15a) → Omnicom. Planificación y compra de medios. +15 marcas.
 - ROGER (14a) → Initiative/IPG. Clientes: Unilever, Diageo, La Consolidada.
-- SWITCH (4a) → DAN. Consultoría digital.
 - AMPLIFY (18a) → OOH. 30% mercado rutero Paraguay (+1.000 soportes).
-- WILD FI → Marketing digital.
 Mercado PY 2024: US$135.5M (+6.5%). Fusión Omnicom+IPG 2025 (US$13.5B): OMD y ROGER = mismo holding global.`;
 
 const PROMPTS = {
