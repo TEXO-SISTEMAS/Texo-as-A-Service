@@ -933,18 +933,13 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   const _pc1Key  = _pc1Keys.find(k => _allKeys.includes(k)) || _allKeys[_allKeys.length - 2] || null;
   const _pc2Key  = _pc2Keys.find(k => _allKeys.includes(k)) || _allKeys[_allKeys.length - 1] || null;
 
-  // Detectar columna facturacion en el adlens base (búsqueda flexible)
-  const _facKeyBase = _allKeys.find(k => k.toLowerCase().replace(/[^a-z]/g,'').includes('factura')) || null;
-  console.log('[AdLens] facturacion key en adlens base:', _facKeyBase, '| keys base:', _allKeys);
-
   const empresaMap = {};
-  let totalPuntaje = 0, countPuntaje = 0, totalFacturacionBase = 0;
+  let totalPuntaje = 0, countPuntaje = 0;
   for (const row of adlensRows) {
     const nombre = normStr(row['anunciante']);
     if (!nombre) continue;
     const puntaje = safeParse(row['puntaje total']);
     if (puntaje > 0) { totalPuntaje += puntaje; countPuntaje++; }
-    if (_facKeyBase) totalFacturacionBase += safeParse(row[_facKeyBase]);
     const pc1 = _pc1Key ? safeParse(row[_pc1Key]) : null;
     const pc2 = _pc2Key ? safeParse(row[_pc2Key]) : null;
     // Inversión total: columna "RANGO DE INVERSIÓN" — búsqueda flexible por nombre parcial
@@ -988,11 +983,10 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   const medios={}, grupos={}, agencias={}, sectores={}, meses={};
   const mediosAnunciantes = new Set();
   let totalMediosRaw = 0, totalFacturacion = 0;
-  // Detectar columna facturacion (búsqueda flexible por nombre parcial)
+  // Facturación = columna "(GS)" (guaraníes) del medios file = "facturacion" en el Looker
   const _facKey = mediosRows.length > 0
-    ? (Object.keys(mediosRows[0]).find(k => k.toLowerCase().replace(/[^a-z]/g,'').includes('factura')) || null)
+    ? (Object.keys(mediosRows[0]).find(k => k.replace(/[^A-Za-z]/g,'').toUpperCase() === 'GS') || null)
     : null;
-  console.log('[AdLens] facturacion key en medios:', _facKey, '| keys medios:', mediosRows.length ? Object.keys(mediosRows[0]) : []);
   for (const row of mediosRows) {
     const usd = safeParse(row['(US$)']);
     if (!usd) continue;
@@ -1103,7 +1097,7 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   return {
     resumen: {
       total_inversion_usd: Math.round(totalInversion),
-      total_facturacion: Math.round(totalFacturacion > 0 ? totalFacturacion : totalFacturacionBase),
+      total_facturacion: Math.round(totalFacturacion),
       total_anunciantes: mediosAnunciantes.size > 0
         ? Object.keys(anunciantes).filter(n => mediosAnunciantes.has(n)).length
         : Object.keys(anunciantes).length,
