@@ -958,6 +958,15 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   const mediosWb = XLSX.read(mediosBuf, { type:'array', cellDates: true });
   const sheetName = mediosWb.SheetNames.includes('2024') ? '2024' : mediosWb.SheetNames[0];
   const mediosRows = XLSX.utils.sheet_to_json(mediosWb.Sheets[sheetName], { defval: null });
+  // DIAGNÓSTICO: ver nombres de columnas y primeros valores
+  if (mediosRows.length > 0) {
+    const firstRow = mediosRows[0];
+    console.log('[AdLens] Hojas medios:', mediosWb.SheetNames);
+    console.log('[AdLens] Columnas medios (primera fila):', Object.keys(firstRow));
+    console.log('[AdLens] Primer registro medios:', firstRow);
+    console.log('[AdLens] Hojas adlens:', adlensWb.SheetNames);
+    console.log('[AdLens] Columnas adlens (primera fila):', adlensRows.length > 0 ? Object.keys(adlensRows[0]) : []);
+  }
 
   let totalInversion = 0;
   const anunciantes={}, medios={}, grupos={}, agencias={}, sectores={}, meses={};
