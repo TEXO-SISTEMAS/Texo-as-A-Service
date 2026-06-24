@@ -960,12 +960,16 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   const mediosRows = XLSX.utils.sheet_to_json(mediosWb.Sheets[sheetName], { defval: null });
   // DIAGNÓSTICO: ver nombres de columnas y primeros valores
   if (mediosRows.length > 0) {
-    const firstRow = mediosRows[0];
-    console.log('[AdLens] Hojas medios:', mediosWb.SheetNames);
-    console.log('[AdLens] Columnas medios (primera fila):', Object.keys(firstRow));
-    console.log('[AdLens] Primer registro medios:', firstRow);
-    console.log('[AdLens] Hojas adlens:', adlensWb.SheetNames);
-    console.log('[AdLens] Columnas adlens (primera fila):', adlensRows.length > 0 ? Object.keys(adlensRows[0]) : []);
+    console.log('[AdLens] Total filas medios:', mediosRows.length);
+    // Muestra las primeras 5 filas con anunciante + (US$) + (GS)
+    mediosRows.slice(0, 5).forEach((r, i) => {
+      console.log(`[AdLens] Fila ${i}: anunciante="${r['anunciante']}" (US$)=${r['(US$)']} (GS)=${r['(GS)']} MES=${r['MES']}`);
+    });
+    // Muestra el total real de la columna (US$)
+    const totalUSDBruto = mediosRows.reduce((s, r) => s + (parseFloat(r['(US$)']) || 0), 0);
+    const totalGSBruto  = mediosRows.reduce((s, r) => s + (parseFloat(r['(GS)'])  || 0), 0);
+    console.log('[AdLens] Suma bruta (US$):', totalUSDBruto, '| Suma bruta (GS):', totalGSBruto);
+    console.log('[AdLens] Filas con (US$) > 0:', mediosRows.filter(r => parseFloat(r['(US$)']) > 0).length);
   }
 
   let totalInversion = 0;
