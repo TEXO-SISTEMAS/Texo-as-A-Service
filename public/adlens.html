@@ -937,7 +937,15 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     const pc1 = _pc1Key ? safeParse(row[_pc1Key]) : null;
     const pc2 = _pc2Key ? safeParse(row[_pc2Key]) : null;
     // "inversión en medios" está en miles USD → convertir a USD
-    const inversionMilesUSD = safeParse(row['inversión en medios']);
+    // Buscar la columna con distintas variantes del nombre (acento, espacios)
+    const _invKeys = ['inversión en medios','inversion en medios','Inversión en medios','Inversion en medios',
+                      'INVERSIÓN EN MEDIOS','inversión  en medios','inversión en medios '];
+    const _invKey = _invKeys.find(k => row[k] != null) || null;
+    const inversionMilesUSD = _invKey ? safeParse(row[_invKey]) : 0;
+    if (!_invKey && Object.keys(empresaMap).length === 0) {
+      // Log the first row keys so we can see the exact column names
+      console.warn('[AdLens] inversión en medios key NOT found. Row keys:', Object.keys(row));
+    }
     empresaMap[nombre] = {
       rubro: row['rubro principal'] || '',
       cluster: row['Cluster'] != null ? parseInt(row['Cluster']) : null,
@@ -960,12 +968,15 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   // Inversión por empresa: viene del adlens base (miles USD × 1000 = USD)
   const anunciantes = {};
   let totalInversion = 0;
+  const _sampleEntries = Object.entries(empresaMap).slice(0, 5);
+  console.log('[AdLens] Sample inversion_usd (primeros 5):', _sampleEntries.map(([n,e])=>({n, raw: e.inversion_usd})));
   for (const [nombre, emp] of Object.entries(empresaMap)) {
     if (emp.inversion_usd > 0) {
       anunciantes[nombre] = emp.inversion_usd;
       totalInversion += emp.inversion_usd;
     }
   }
+  console.log('[AdLens] totalInversion USD:', totalInversion, '| empresas con inversión:', Object.keys(anunciantes).length);
 
   // ── MEDIOS FILE: solo para proporciones de media mix ─────────────────────────
   // (US$) per-inserción son valores pequeños; usamos sus proporciones y escalamos al total real
