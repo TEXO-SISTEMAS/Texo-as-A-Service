@@ -987,7 +987,13 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   const _facKey = mediosRows.length > 0
     ? (Object.keys(mediosRows[0]).find(k => k.replace(/[^A-Za-z]/g,'').toUpperCase() === 'GS') || null)
     : null;
+  // Detectar columna AÑO para filtrar solo 2024 (igual que el Looker)
+  const _anoKey = mediosRows.length > 0
+    ? (Object.keys(mediosRows[0]).find(k => k.replace(/[^A-Za-z]/gi,'').toUpperCase() === 'AO' || k.toUpperCase().includes('AÑO') || k.toUpperCase() === 'ANO') || null)
+    : null;
   for (const row of mediosRows) {
+    // Filtrar solo 2024 (igual que el Looker)
+    if (_anoKey) { const _ano = safeParse(row[_anoKey]); if (_ano && _ano !== 2024) continue; }
     const usd = safeParse(row['(US$)']);
     if (!usd) continue;
     const medio   = normStr(row['Medio']);
