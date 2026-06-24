@@ -259,7 +259,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
         </div>
       </div>
       <div class="hero-stats">
-        <div class="hs" style="border-top:3px solid #a78bfa">
+        <!-- Card Facturación oculta: la columna "facturacion" del Looker no está en los Excels que sube el dashboard (pendiente de fuente). -->
+        <div class="hs" id="heroFacturacionCard" style="border-top:3px solid #a78bfa; display:none">
           <div class="hs-label">Facturación</div>
           <div class="hs-value" id="heroFacturacion">--</div>
           <div class="hs-sub">total mercado</div>
@@ -987,13 +988,11 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   const _facKey = mediosRows.length > 0
     ? (Object.keys(mediosRows[0]).find(k => k.replace(/[^A-Za-z]/g,'').toUpperCase() === 'GS') || null)
     : null;
-  // Detectar columna AÑO para filtrar solo 2024 (igual que el Looker)
-  const _anoKey = mediosRows.length > 0
-    ? (Object.keys(mediosRows[0]).find(k => k.replace(/[^A-Za-z]/gi,'').toUpperCase() === 'AO' || k.toUpperCase().includes('AÑO') || k.toUpperCase() === 'ANO') || null)
-    : null;
+  // El Looker usa la "tabla combinada p. medios" = INNER JOIN medios ∩ adlens base por anunciante.
+  // Solo cuentan las filas del medios cuyo anunciante existe en el adlens base.
   for (const row of mediosRows) {
-    // Filtrar solo 2024 (igual que el Looker)
-    if (_anoKey) { const _ano = safeParse(row[_anoKey]); if (_ano && _ano !== 2024) continue; }
+    const _anunRaw = normStr(row['anunciante'] || row['Anunciante'] || row['ANUNCIANTE'] || '');
+    if (!empresaMap[_anunRaw]) continue; // inner join
     const usd = safeParse(row['(US$)']);
     if (!usd) continue;
     const medio   = normStr(row['Medio']);
