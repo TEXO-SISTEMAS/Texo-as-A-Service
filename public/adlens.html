@@ -36,77 +36,127 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .main{flex:1;overflow-y:auto}
 
 /* HERO */
-.hero{background:linear-gradient(135deg,#0b0f1a 0%,#1a1a2e 55%,#0d1535 100%);padding:52px 44px 44px;color:#fff;position:relative;overflow:hidden}
+.hero{background:linear-gradient(135deg,#0b0f1a 0%,#1a1a2e 55%,#0d1535 100%);padding:40px 44px 36px;color:#fff;position:relative;overflow:hidden;flex-shrink:0}
 .hero::before{content:'';position:absolute;top:-80px;right:-40px;width:380px;height:380px;background:radial-gradient(circle,rgba(240,240,64,.06) 0%,transparent 60%);pointer-events:none}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:100px;padding:7px 18px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:24px}
-.hero-row{display:flex;align-items:flex-start;justify-content:space-between;gap:32px;margin-bottom:32px}
-.hero-title{font-size:58px;font-weight:900;letter-spacing:-.04em;line-height:.95;color:#fff}
-.hero-title-sub{font-size:44px;font-weight:300;letter-spacing:-.02em;color:#f0f040;line-height:1}
-.hero-tagline{font-size:11px;color:rgba(255,255,255,.35);margin-top:14px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:100px;padding:6px 16px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:20px}
+.hero-row{display:flex;align-items:flex-start;justify-content:space-between;gap:32px;margin-bottom:28px}
+.hero-title{font-size:48px;font-weight:900;letter-spacing:-.04em;line-height:.95;color:#fff}
+.hero-title-sub{font-size:36px;font-weight:300;letter-spacing:-.02em;color:#f0f040;line-height:1}
+.hero-tagline{font-size:11px;color:rgba(255,255,255,.35);margin-top:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
 .hero-upload-block{display:flex;flex-direction:column;align-items:flex-end;gap:10px;padding-top:6px}
 .hero-upload-label{font-size:11px;color:rgba(255,255,255,.35);text-align:right;line-height:1.5}
-.hero-stats{display:flex;gap:12px;flex-wrap:wrap;padding-top:24px;border-top:1px solid rgba(255,255,255,.1)}
-.hs{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;flex:1;min-width:130px}
+.hero-stats{display:flex;gap:10px;flex-wrap:wrap;padding-top:20px;border-top:1px solid rgba(255,255,255,.1)}
+.hs{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 18px;flex:1;min-width:110px}
 .hs-green{border-top:3px solid #4ade80}
 .hs-yellow{border-top:3px solid #fbbf24}
 .hs-blue{border-top:3px solid #60a5fa}
 .hs-purple{border-top:3px solid #a78bfa}
-.hs-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:5px}
-.hs-value{font-size:24px;font-weight:900;color:#fff;letter-spacing:-.02em;line-height:1.1}
-.hs-sub{font-size:11px;color:rgba(255,255,255,.35);margin-top:3px}
+.hs-teal{border-top:3px solid #0ea5b0}
+.hs-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:4px}
+.hs-value{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.02em;line-height:1.1}
+.hs-sub{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px}
+
+/* TABS */
+.tabs-wrap{background:var(--accent);border-bottom:1px solid rgba(255,255,255,.12);flex-shrink:0}
+.tabs{display:flex;padding:0 32px;gap:4px;overflow-x:auto}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{padding:14px 20px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'Inter',sans-serif}
+.tab-btn:hover{color:rgba(255,255,255,.7)}
+.tab-btn.active{color:#f0f040;border-bottom-color:#f0f040}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
 
 /* SECTIONS */
-.sec{padding:36px 44px}
+.sec{padding:32px 44px}
 .sec.alt{background:#f4f5f8}
 .sec-label{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px}
-.sec-heading{font-size:28px;font-weight:900;letter-spacing:-.03em;color:var(--text);margin-bottom:8px}
-.sec-bar{width:36px;height:3px;background:var(--accent);border-radius:2px;margin-bottom:20px}
-.sec-desc{font-size:13px;color:var(--muted);line-height:1.6;max-width:680px;margin-bottom:24px}
-
-/* BAR CHARTS */
-.bar-list{display:flex;flex-direction:column;gap:10px}
-.bar-item{display:flex;align-items:center;gap:12px}
-.bar-label{font-size:12px;font-weight:600;color:var(--text);min-width:130px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar-track{flex:1;height:28px;background:#e8eaf0;border-radius:6px;overflow:hidden;position:relative}
-.bar-fill{height:100%;border-radius:6px;transition:width .6s ease;display:flex;align-items:center;padding-left:10px;min-width:32px}
-.bar-fill-label{font-size:11px;font-weight:700;color:#fff;white-space:nowrap}
-.bar-val{font-size:12px;font-weight:700;color:var(--muted);min-width:60px;text-align:right;font-variant-numeric:tabular-nums}
-
-/* TWO COLUMN GRID */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.sec-heading{font-size:26px;font-weight:900;letter-spacing:-.03em;color:var(--text);margin-bottom:8px}
+.sec-bar{width:36px;height:3px;background:var(--accent);border-radius:2px;margin-bottom:18px}
+.sec-desc{font-size:13px;color:var(--muted);line-height:1.6;max-width:680px;margin-bottom:20px}
 
 /* CARDS */
 .card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:22px 24px}
-.card-title{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
 
-/* CLUSTERS */
-.cluster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
-.cluster-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 20px;border-top-width:4px}
-.cc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.cc-id{font-size:28px;font-weight:900;color:var(--text);opacity:.12;line-height:1}
-.cc-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:.06em;text-transform:uppercase}
-.cc-nombre{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.3}
-.cc-cantidad{font-size:12px;color:var(--muted);margin-bottom:10px}
-.cc-inv{font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-.01em}
-.cc-share{font-size:12px;color:var(--muted);margin-top:2px}
-.cc-scores{display:flex;flex-direction:column;gap:5px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
-.cc-score-row{display:flex;align-items:center;gap:8px}
-.cc-score-label{font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;min-width:80px}
-.cc-score-bar{flex:1;height:5px;background:#e8eaf0;border-radius:3px;overflow:hidden}
-.cc-score-fill{height:100%;border-radius:3px}
-.cc-score-val{font-size:10px;font-weight:700;color:var(--muted);min-width:30px;text-align:right}
+/* TWO/THREE COLUMN GRIDS */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.overview-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:20px;align-items:start}
 
-/* RADAR / WHEEL */
+/* SCATTER PLOT */
+.scatter-wrap{position:relative}
+.scatter-wrap svg{width:100%;display:block}
+.scatter-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.sl-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted)}
+.sl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* DONUT */
+.donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.donut-legend{display:flex;flex-direction:column;gap:6px;flex:1;min-width:120px}
+.dl-item{display:flex;align-items:center;gap:8px;font-size:11px}
+.dl-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.dl-label{flex:1;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.dl-pct{font-weight:700;color:var(--text);margin-left:auto}
+
+/* BAR CHARTS */
+.bar-list{display:flex;flex-direction:column;gap:8px}
+.bar-item{display:flex;align-items:center;gap:10px}
+.bar-label{font-size:11px;font-weight:600;color:var(--text);min-width:120px;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:26px;background:#e8eaf0;border-radius:5px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:5px;transition:width .6s ease;display:flex;align-items:center;padding-left:8px;min-width:28px}
+.bar-fill-label{font-size:10px;font-weight:700;color:#fff;white-space:nowrap}
+.bar-val{font-size:11px;font-weight:700;color:var(--muted);min-width:56px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* CLUSTER RADAR GRID */
+.cluster-radar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.crc{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px 16px;border-top-width:4px;display:flex;flex-direction:column;gap:10px}
+.crc-id{font-size:32px;font-weight:900;opacity:.1;line-height:1;margin-bottom:2px}
+.crc-name{font-size:13px;font-weight:800;color:var(--text);line-height:1.25}
+.crc-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.crc-mmi-wrap{margin:4px 0}
+.crc-mmi-label{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);margin-bottom:3px}
+.crc-mmi-bar{height:4px;background:#e8eaf0;border-radius:2px;overflow:hidden;margin-bottom:2px}
+.crc-mmi-fill{height:100%;border-radius:2px;transition:width .6s}
+.crc-mmi-val{font-size:18px;font-weight:900;line-height:1}
+.crc-radar{display:flex;justify-content:center;margin:6px 0}
+.crc-inv{font-size:14px;font-weight:800;color:var(--accent)}
+.crc-inv-share{font-size:10px;color:var(--muted);margin-top:1px}
+.crc-desc{font-size:10px;color:var(--muted);line-height:1.55;padding-top:8px;border-top:1px solid var(--border)}
+
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);padding:9px 11px;border-bottom:2px solid var(--border);text-align:left;white-space:nowrap}
+.data-table td{padding:9px 11px;border-bottom:1px solid var(--border);color:var(--text)}
+.data-table th:not(:first-child),.data-table td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:#f8f9fb}
+.cluster-chip{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.04em}
+
+/* ESTACIONALIDAD */
+.est-grid{display:flex;gap:5px;align-items:flex-end;height:110px;padding-bottom:22px;position:relative}
+.est-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;position:relative}
+.est-bar{width:100%;border-radius:4px 4px 0 0;background:var(--accent);transition:height .6s ease;min-height:4px;cursor:default}
+.est-bar:hover{opacity:.75}
+.est-label{font-size:8px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;position:absolute;bottom:-18px}
+
+/* GLOBAL RADAR */
 .wheel-wrap{display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap}
 .wheel-svg{flex-shrink:0}
 .wheel-legend{display:flex;flex-direction:column;gap:14px}
-.wl-item{display:flex;align-items:center;gap:10px}
+.wl-item{display:flex;flex-direction:column;gap:4px}
+.wl-row1{display:flex;align-items:center;gap:8px;width:100%}
 .wl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .wl-label{font-size:13px;font-weight:600;color:var(--text)}
-.wl-val{font-size:20px;font-weight:900;color:var(--accent);margin-left:auto}
-.wl-bar{width:100px;height:6px;background:#e8eaf0;border-radius:3px;overflow:hidden;margin-top:4px}
-.wl-bar-fill{height:100%;border-radius:3px;background:var(--accent)}
+.wl-val{font-size:18px;font-weight:900;color:var(--accent);margin-left:auto}
+.wl-bar{width:180px;height:6px;background:#e8eaf0;border-radius:3px;overflow:hidden}
+.wl-bar-fill{height:100%;border-radius:3px}
+
+/* SEGMENTADOR TABLE */
+.seg-table{font-size:11px}
+.seg-table th{font-size:9px}
+.seg-score-cell{position:relative;padding:0 11px}
+.score-bg{position:absolute;left:0;top:0;bottom:0;opacity:.15;border-radius:2px}
+.score-text{position:relative;font-weight:700}
 
 /* UPLOAD */
 .upload-section{background:var(--white);border:2px dashed var(--border2);border-radius:16px;padding:48px 40px;text-align:center;max-width:640px;margin:0 auto}
@@ -118,22 +168,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .upload-field input[type=file]{width:100%;font-size:12px;color:var(--muted);background:#f4f5f8;border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer}
 .upload-field input[type=file]::file-selector-button{display:none}
 .upload-progress{font-size:13px;color:var(--muted);margin-top:12px;display:none}
-
-/* TABLE */
-.data-table{width:100%;border-collapse:collapse;font-size:13px}
-.data-table th{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);padding:10px 12px;border-bottom:2px solid var(--border);text-align:left;white-space:nowrap}
-.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text)}
-.data-table th:not(:first-child),.data-table td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
-.data-table tr:last-child td{border-bottom:none}
-.data-table tr:hover td{background:#f8f9fb}
-.cluster-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.04em}
-
-/* ESTACIONALIDAD */
-.est-grid{display:flex;gap:6px;align-items:flex-end;height:120px;padding-bottom:24px;position:relative}
-.est-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;position:relative}
-.est-bar{width:100%;border-radius:4px 4px 0 0;background:var(--accent);transition:height .6s ease;min-height:4px;cursor:default}
-.est-bar:hover{opacity:.75}
-.est-label{font-size:9px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;position:absolute;bottom:-18px}
 
 /* FOOTER */
 .footer{background:var(--accent);color:rgba(255,255,255,.45);font-size:13px;font-weight:500;padding:12px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
@@ -149,14 +183,18 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;gap:14px;color:var(--muted)}
 .spinner-dark{width:28px;height:28px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 
+@media(max-width:1100px){
+  .cluster-radar-grid{grid-template-columns:repeat(3,1fr)}
+}
 @media(max-width:768px){
-  .hero{padding:32px 20px 28px}
-  .hero-title{font-size:38px}
-  .hero-title-sub{font-size:28px}
-  .hero-row{flex-direction:column;gap:16px}
+  .hero{padding:28px 20px}
+  .hero-title{font-size:34px}
+  .hero-title-sub{font-size:26px}
+  .hero-row{flex-direction:column;gap:12px}
   .hero-upload-block{align-items:flex-start}
   .sec{padding:24px 20px}
-  .two-col,.three-col{grid-template-columns:1fr}
+  .two-col,.three-col,.overview-grid{grid-template-columns:1fr}
+  .cluster-radar-grid{grid-template-columns:repeat(2,1fr)}
   .upload-fields{grid-template-columns:1fr}
   .bar-label{min-width:80px;max-width:100px}
 }
@@ -169,19 +207,20 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <div class="logo">Texo as a Service <span>/ AdLens</span></div>
     <a href="/" class="btn btn-outline" style="font-size:12px">← Inicio</a>
   </div>
-  <div class="topbar-right" id="topbarRight">
-    <button class="btn btn-primary" id="btnUpload" onclick="document.getElementById('uploadModal').style.display='flex'">↑ Cargar datos</button>
+  <div class="topbar-right">
+    <button class="btn btn-primary" onclick="document.getElementById('uploadModal').style.display='flex'">↑ Cargar datos</button>
   </div>
 </div>
 
 <div class="main" id="main">
-  <!-- Estado inicial: cargando -->
+
+  <!-- LOADING -->
   <div class="loading-wrap" id="loadingWrap">
     <div class="spinner-dark"></div>
     <span>Cargando datos AdLens...</span>
   </div>
 
-  <!-- Estado vacío: sin datos -->
+  <!-- EMPTY -->
   <div style="display:none;padding:60px 44px" id="emptyWrap">
     <div class="upload-section">
       <div class="upload-icon">📊</div>
@@ -198,11 +237,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
         </div>
       </div>
       <button class="btn btn-primary" onclick="uploadFromEmpty()" style="font-size:14px;padding:12px 28px">Procesar y generar dashboard</button>
-      <div class="upload-progress" id="uploadProgressEmpty">Procesando archivos, puede tardar unos segundos...</div>
+      <div class="upload-progress" id="uploadProgressEmpty">Procesando archivos Excel en el browser...</div>
     </div>
   </div>
 
-  <!-- Dashboard -->
+  <!-- DASHBOARD -->
   <div style="display:none" id="dashboard">
 
     <!-- HERO -->
@@ -230,12 +269,22 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <div class="hs-value" id="heroAnunciantes">--</div>
           <div class="hs-sub">empresas que invierten</div>
         </div>
+        <div class="hs hs-teal">
+          <div class="hs-label">Inversión Promedio</div>
+          <div class="hs-value" id="heroAvg">--</div>
+          <div class="hs-sub">por anunciante</div>
+        </div>
+        <div class="hs hs-purple">
+          <div class="hs-label">Mayor Inversor</div>
+          <div class="hs-value" id="heroMax">--</div>
+          <div class="hs-sub" id="heroMaxName">--</div>
+        </div>
         <div class="hs hs-blue">
           <div class="hs-label">Market Maturity Index</div>
           <div class="hs-value" id="heroMMI">--</div>
-          <div class="hs-sub" id="heroMMISub">promedio del mercado</div>
+          <div class="hs-sub">promedio del mercado</div>
         </div>
-        <div class="hs hs-purple">
+        <div class="hs" style="border-top:3px solid #f472b6">
           <div class="hs-label">Base analizada</div>
           <div class="hs-value" id="heroBase">--</div>
           <div class="hs-sub">empresas segmentadas</div>
@@ -243,98 +292,210 @@ body{display:flex;flex-direction:column;min-height:100vh}
       </div>
     </div>
 
-    <!-- MEDIA MIX + GRUPOS -->
-    <div class="sec">
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">01 · Media Mix</div>
-          <div class="bar-list" id="mediaMixBars"></div>
+    <!-- TABS -->
+    <div class="tabs-wrap">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('overview',this)">Overview</button>
+        <button class="tab-btn" onclick="switchTab('segmentacion',this)">Segmentación</button>
+        <button class="tab-btn" onclick="switchTab('wheel',this)">MKT Wheel</button>
+        <button class="tab-btn" onclick="switchTab('medios',this)">Medios</button>
+        <button class="tab-btn" onclick="switchTab('agencias',this)">Agencias</button>
+        <button class="tab-btn" onclick="switchTab('segmentador',this)">Segmentador</button>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: OVERVIEW ═══ -->
+    <div class="tab-panel active" id="tab-overview">
+      <div class="sec">
+        <div class="overview-grid">
+
+          <!-- SCATTER PLOT -->
+          <div class="card">
+            <div class="card-title">Segmentación de Empresas 2024</div>
+            <div class="scatter-wrap" id="scatterWrap"></div>
+            <div class="scatter-legend" id="scatterLegend"></div>
+          </div>
+
+          <!-- RIGHT: MEDIA MIX + TOP -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-title">Media Mix</div>
+              <div class="donut-wrap" id="donutWrap"></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Top 10 Anunciantes · Share%</div>
+              <div id="topAnunciantesShort"></div>
+            </div>
+          </div>
+
         </div>
-        <div class="card">
-          <div class="card-title">02 · SOI por Grupo de Medios</div>
-          <div class="bar-list" id="grupoBars"></div>
+      </div>
+
+      <!-- ESTACIONALIDAD -->
+      <div class="sec alt">
+        <div class="sec-label">Temporalidad</div>
+        <div class="sec-heading">Estacionalidad de Inversiones</div>
+        <div class="sec-bar"></div>
+        <div class="sec-desc">Distribución mensual de la inversión publicitaria total durante el año.</div>
+        <div class="card" style="padding:24px 24px 40px">
+          <div class="est-grid" id="estGrid"></div>
+        </div>
+      </div>
+
+      <!-- SOI POR GRUPO + SECTOR -->
+      <div class="sec">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">SOI por Grupo de Medios</div>
+            <div class="bar-list" id="grupoBars"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Inversión por Sector</div>
+            <div class="bar-list" id="sectorBars"></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- ESTACIONALIDAD -->
-    <div class="sec alt">
-      <div class="sec-label">03 · Temporalidad</div>
-      <div class="sec-heading">Estacionalidad de Inversiones</div>
-      <div class="sec-bar"></div>
-      <div class="sec-desc">Distribución mensual de la inversión publicitaria total durante el año.</div>
-      <div class="est-grid" id="estGrid"></div>
-    </div>
+    <!-- ═══ TAB: SEGMENTACIÓN ═══ -->
+    <div class="tab-panel" id="tab-segmentacion">
+      <div class="sec">
+        <div class="sec-label">Clusters de Marketing Maturity</div>
+        <div class="sec-heading">5 Segmentos Estratégicos</div>
+        <div class="sec-bar"></div>
+        <div class="sec-desc">Cada empresa fue clasificada en uno de 5 clusters según sus dimensiones de madurez de marketing.</div>
 
-    <!-- AGENCIAS + SECTORES -->
-    <div class="sec">
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">04 · Share por Agencia</div>
-          <div class="bar-list" id="agenciaBars"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">05 · Inversión por Sector</div>
-          <div class="bar-list" id="sectorBars"></div>
+        <!-- 5 cluster radar cards -->
+        <div class="cluster-radar-grid" id="clusterRadarGrid"></div>
+
+        <!-- Cluster investment table -->
+        <div class="card" style="margin-top:24px;overflow:auto">
+          <div class="card-title">Inversión por Cluster</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th style="text-align:left">Cluster</th>
+                <th>Empresas</th>
+                <th>Inversión USD</th>
+                <th>Share%</th>
+                <th style="text-align:left">Estructura</th>
+                <th style="text-align:left">Cultura</th>
+                <th style="text-align:left">Ejecución</th>
+                <th style="text-align:left">Compet.</th>
+                <th style="text-align:left">Inversión</th>
+              </tr>
+            </thead>
+            <tbody id="clusterTbody"></tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <!-- TOP ANUNCIANTES -->
-    <div class="sec alt">
-      <div class="sec-label">06 · Anunciantes</div>
-      <div class="sec-heading">Top 15 Anunciantes</div>
-      <div class="sec-bar"></div>
-      <div class="sec-desc">Empresas con mayor inversión publicitaria, con su segmento de madurez de marketing.</div>
-      <div class="card" style="overflow:auto">
-        <table class="data-table" id="anunciantesTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th style="text-align:left">Anunciante</th>
-              <th style="text-align:left">Rubro</th>
-              <th>Inversión USD</th>
-              <th>Share</th>
-              <th style="text-align:left">Segmento</th>
-            </tr>
-          </thead>
-          <tbody id="anunciantesTbody"></tbody>
-        </table>
+    <!-- ═══ TAB: MKT WHEEL ═══ -->
+    <div class="tab-panel" id="tab-wheel">
+      <div class="sec">
+        <div class="sec-label">Marketing Wheel · Mercado Global</div>
+        <div class="sec-heading">Scores Globales del Mercado</div>
+        <div class="sec-bar"></div>
+        <div class="sec-desc">Promedio de las 5 dimensiones del Marketing Wheel para todas las empresas analizadas.</div>
+        <div class="card">
+          <div class="wheel-wrap">
+            <svg class="wheel-svg" id="wheelSvg" width="260" height="260" viewBox="0 0 260 260"></svg>
+            <div class="wheel-legend" id="wheelLegend"></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- CLUSTERS -->
-    <div class="sec">
-      <div class="sec-label">07 · Segmentación</div>
-      <div class="sec-heading">Clusters de Empresas</div>
-      <div class="sec-bar"></div>
-      <div class="sec-desc">Clasificación de empresas según madurez de marketing en 5 segmentos estratégicos.</div>
-      <div class="cluster-grid" id="clusterGrid"></div>
+    <!-- ═══ TAB: MEDIOS ═══ -->
+    <div class="tab-panel" id="tab-medios">
+      <div class="sec">
+        <div class="two-col" style="margin-bottom:20px">
+          <div class="card">
+            <div class="card-title">Media Mix · Inversión por Medio</div>
+            <div class="bar-list" id="mediaMixBars"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">SOI por Grupo de Medios</div>
+            <div class="bar-list" id="grupoBars2"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top 15 Anunciantes · Inversión y Segmento</div>
+          <div style="overflow:auto">
+            <table class="data-table" id="anunciantesTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th style="text-align:left">Anunciante</th>
+                  <th style="text-align:left">Rubro</th>
+                  <th>Inversión USD</th>
+                  <th>Share%</th>
+                  <th style="text-align:left">Segmento</th>
+                </tr>
+              </thead>
+              <tbody id="anunciantesTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- MARKETING WHEEL -->
-    <div class="sec alt">
-      <div class="sec-label">08 · Marketing Wheel</div>
-      <div class="sec-heading">Scores Globales del Mercado</div>
-      <div class="sec-bar"></div>
-      <div class="sec-desc">Promedio de las 5 dimensiones del Marketing Wheel para todas las empresas analizadas.</div>
-      <div class="card">
-        <div class="wheel-wrap">
-          <svg class="wheel-svg" id="wheelSvg" width="260" height="260" viewBox="0 0 260 260"></svg>
-          <div class="wheel-legend" id="wheelLegend"></div>
+    <!-- ═══ TAB: AGENCIAS ═══ -->
+    <div class="tab-panel" id="tab-agencias">
+      <div class="sec">
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Share por Agencia de Medios</div>
+            <div class="bar-list" id="agenciaBars"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Inversión por Sector</div>
+            <div class="bar-list" id="sectorBars2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: SEGMENTADOR ═══ -->
+    <div class="tab-panel" id="tab-segmentador">
+      <div class="sec">
+        <div class="sec-label">Termómetro de Madurez</div>
+        <div class="sec-heading">Scores por Empresa</div>
+        <div class="sec-bar"></div>
+        <div class="sec-desc">Dimensiones del Marketing Wheel para cada empresa analizada, ordenadas por puntaje total.</div>
+        <div class="card" style="overflow:auto">
+          <table class="data-table seg-table" id="segmentadorTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th style="text-align:left">Empresa</th>
+                <th style="text-align:left">Cluster</th>
+                <th style="text-align:left">Rubro</th>
+                <th>Estructura</th>
+                <th>Cultura</th>
+                <th>Ejecución</th>
+                <th>Compet.</th>
+                <th>Inversión</th>
+                <th>Score Total</th>
+              </tr>
+            </thead>
+            <tbody id="segmentadorTbody"></tbody>
+          </table>
         </div>
       </div>
     </div>
 
     <div style="height:32px"></div>
-  </div>
-</div>
+  </div><!-- /dashboard -->
+</div><!-- /main -->
 
 <!-- UPLOAD MODAL -->
 <div id="uploadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:36px 40px;max-width:520px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.25)">
     <div style="font-size:20px;font-weight:800;margin-bottom:6px">Actualizar datos</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Subí ambos Excel para reprocesar el dashboard.</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Subí ambos Excel para reprocesar el dashboard. El procesamiento ocurre en tu browser.</div>
     <div class="upload-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
       <div class="upload-field">
         <label>Inversión en Medios</label>
@@ -349,7 +510,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <button class="btn btn-outline" style="color:var(--accent);border-color:var(--border)" onclick="document.getElementById('uploadModal').style.display='none'">Cancelar</button>
       <button class="btn btn-primary" id="btnProcesar" onclick="uploadFiles()">Procesar</button>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-top:12px;display:none" id="uploadProgress">⏳ Procesando archivos Excel, puede tomar unos segundos...</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:12px;display:none" id="uploadProgress">⏳ Procesando archivos Excel en el browser...</div>
   </div>
 </div>
 
@@ -367,24 +528,125 @@ function fmtUSD(n) {
   return 'US$' + n.toFixed(0);
 }
 function fmtUSDFull(n) {
-  return 'US$' + n.toLocaleString('es-PY', {minimumFractionDigits:0,maximumFractionDigits:0});
+  return 'US$' + n.toLocaleString('es-PY', {minimumFractionDigits:0, maximumFractionDigits:0});
 }
-
 function showToast(msg, type='success') {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast show ' + type;
   setTimeout(() => t.className = 'toast', 3500);
 }
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
 
-const CLUSTER_COLORS = { 0:'#64748b', 1:'#0ea5b0', 2:'#8b5cf6', 3:'#16a34a', 4:'#d4900a' };
-const WHEEL_COLORS = ['#6c3fc5','#16a34a','#2563eb','#d4900a','#d42b4f'];
-const DIM_LABELS = { Cultura:'Cultura', Ejecucion:'Ejecución', Estructura:'Estructura', Competitividad:'Competitividad', Inversion:'Inversión' };
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+const CLUSTER_COLORS  = { 0:'#64748b', 1:'#0ea5b0', 2:'#8b5cf6', 3:'#16a34a', 4:'#d4900a' };
+const CLUSTER_NAMES   = { 0:'Emergentes o rezagadas', 1:'Operativas con potencial', 2:'Creativas y comprometidas', 3:'Líderes consistentes', 4:'En transición' };
+const CLUSTER_DESC    = {
+  0: 'Bajo puntaje en todas las dimensiones. Probablemente marcas pequeñas o en etapa inicial. Requieren mucha educación y no son foco prioritario. Estrategia de "low effort, high impact" para ganar confianza.',
+  1: 'Buena estructura, pero baja ejecución e inversión. Operan a escala pero sin enfoque creativo o estratégico. Potenciales para evangelizar desde performance o branding.',
+  2: 'Alta cultura y ejecución: valoran la marca y creatividad. Buena estructura e inversión digital. Abiertas a propuestas integrales. Ideales para desarrollar pilotos de branding.',
+  3: 'Altísima estructura y competitividad, con buena cultura e inversión. Empresas grandes y consolidadas con liderazgo de mercado. Ideales para estrategia de marca, performance e innovación disruptiva.',
+  4: 'Estructura y cultura media, con ejecución razonable. Invierten algo pero tienen espacio para crecer. Buen punto de entrada para servicios tácticos o pilotos de posicionamiento.',
+};
+const WHEEL_COLORS    = ['#6c3fc5','#16a34a','#2563eb','#d4900a','#d42b4f'];
+const DIM_LABELS      = { Cultura:'Cultura', Ejecucion:'Ejecución', Estructura:'Estructura', Competitividad:'Competit.', Inversion:'Inversión' };
+const DONUT_COLORS    = ['#1a1a2e','#0ea5b0','#8b5cf6','#16a34a','#d4900a','#d42b4f','#2563eb','#e85d26','#64748b','#f59e0b'];
+const MES_NAMES       = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-// ── RENDER ────────────────────────────────────────────────────────────────────
+// ── RENDER: TABS & SCATTER ────────────────────────────────────────────────────
+function renderScatter(scatterData) {
+  if (!scatterData || !scatterData.length) {
+    document.getElementById('scatterWrap').innerHTML = '<div style="color:var(--muted2);font-size:13px;padding:40px;text-align:center">Sin datos PC1/PC2</div>';
+    return;
+  }
+  const W=340, H=260, PAD=36;
+  const pc1s = scatterData.map(d=>d.pc1), pc2s = scatterData.map(d=>d.pc2);
+  const x0=Math.min(-4, Math.min(...pc1s)), x1=Math.max(4, Math.max(...pc1s));
+  const y0=Math.min(-3, Math.min(...pc2s)), y1=Math.max(3, Math.max(...pc2s));
+  const tw = W + PAD*2, th = H + PAD*2;
+  const mx = v => PAD + (v - x0)/(x1 - x0)*W;
+  const my = v => PAD + (y1 - v)/(y1 - y0)*H;
+
+  let s = `<svg viewBox="0 0 ${tw} ${th}" xmlns="http://www.w3.org/2000/svg" style="max-height:320px">`;
+
+  // Grid
+  for (let v=Math.ceil(x0); v<=Math.floor(x1); v++) {
+    const x=mx(v);
+    s+=`<line x1="${x}" y1="${PAD}" x2="${x}" y2="${PAD+H}" stroke="${v===0?'#c8cdd8':'#e8eaf0'}" stroke-width="${v===0?1.5:.8}"/>`;
+    if(v!==0) s+=`<text x="${x}" y="${PAD+H+12}" text-anchor="middle" font-size="8" fill="#9ca3af">${v}</text>`;
+  }
+  for (let v=Math.ceil(y0); v<=Math.floor(y1); v++) {
+    const y=my(v);
+    s+=`<line x1="${PAD}" y1="${y}" x2="${PAD+W}" y2="${y}" stroke="${v===0?'#c8cdd8':'#e8eaf0'}" stroke-width="${v===0?1.5:.8}"/>`;
+    if(v!==0) s+=`<text x="${PAD-4}" y="${y+3}" text-anchor="end" font-size="8" fill="#9ca3af">${v}</text>`;
+  }
+
+  // Axis labels
+  s+=`<text x="${tw/2}" y="${th-2}" text-anchor="middle" font-size="9" fill="#9ca3af" font-weight="600">+ Madurez del Marketing +</text>`;
+  s+=`<text x="10" y="${th/2}" text-anchor="middle" font-size="9" fill="#9ca3af" font-weight="600" transform="rotate(-90,10,${th/2})">Estratégico / Táctico</text>`;
+
+  // Dots
+  for (const d of scatterData) {
+    const x=mx(d.pc1).toFixed(1), y=my(d.pc2).toFixed(1);
+    const col = CLUSTER_COLORS[d.cluster] ?? '#9ca3af';
+    const r = d.inversion>0 ? Math.min(8, 3+Math.sqrt(d.inversion/80000)) : 4;
+    s+=`<circle cx="${x}" cy="${y}" r="${r.toFixed(1)}" fill="${col}" fill-opacity=".8" stroke="#fff" stroke-width="1"><title>${d.nombre} — Cluster ${d.cluster} · ${fmtUSD(d.inversion)}</title></circle>`;
+  }
+  s+='</svg>';
+  document.getElementById('scatterWrap').innerHTML = s;
+
+  // Legend
+  document.getElementById('scatterLegend').innerHTML = [0,1,2,3,4].map(c =>
+    `<div class="sl-item"><div class="sl-dot" style="background:${CLUSTER_COLORS[c]}"></div>${CLUSTER_NAMES[c]}</div>`
+  ).join('');
+}
+
+function renderDonut(mediaMix) {
+  const top = mediaMix.slice(0, 9);
+  const otrosInv = mediaMix.slice(9).reduce((s,d)=>s+d.inversion, 0);
+  if (otrosInv > 0) top.push({ medio:'Otros', inversion: otrosInv, share: Math.round(otrosInv/(top.reduce((s,d)=>s+d.inversion,0)+otrosInv)*10000)/100 });
+
+  const total = top.reduce((s,d)=>s+d.inversion, 0);
+  const R=58, CX=78, CY=78;
+  const circ = 2*Math.PI*R;
+  let offset = 0;
+  let circles = '';
+
+  for(let i=0;i<top.length;i++) {
+    const pct = top[i].inversion / total;
+    const dash = pct * circ;
+    circles += `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${DONUT_COLORS[i]}" stroke-width="26"
+      stroke-dasharray="${dash.toFixed(2)} ${circ.toFixed(2)}"
+      stroke-dashoffset="${(-offset).toFixed(2)}"
+      transform="rotate(-90 ${CX} ${CY})"><title>${top[i].medio}: ${top[i].share?.toFixed(1)}%</title></circle>`;
+    offset += dash;
+  }
+
+  const svg = `<svg width="156" height="156" viewBox="0 0 156 156" style="flex-shrink:0">
+    <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#f0f0f5" stroke-width="26"/>
+    ${circles}
+    <text x="${CX}" y="${CY-6}" text-anchor="middle" font-size="8" fill="#9ca3af" font-weight="700">TOTAL</text>
+    <text x="${CX}" y="${CY+8}" text-anchor="middle" font-size="11" fill="#0f1117" font-weight="900">${fmtUSD(total)}</text>
+  </svg>`;
+
+  const legend = top.map((d,i) => `
+    <div class="dl-item">
+      <div class="dl-dot" style="background:${DONUT_COLORS[i]}"></div>
+      <div class="dl-label" title="${d.medio}">${d.medio}</div>
+      <div class="dl-pct">${d.share?.toFixed(1)}%</div>
+    </div>`).join('');
+
+  document.getElementById('donutWrap').innerHTML = `${svg}<div class="donut-legend">${legend}</div>`;
+}
+
 function renderBars(containerId, items, labelKey, valKey, color='#1a1a2e') {
-  const max = Math.max(...items.map(i => i[valKey]));
+  const max = Math.max(...items.map(i=>i[valKey]));
   document.getElementById(containerId).innerHTML = items.map(item => {
-    const pct = max > 0 ? (item[valKey]/max*100) : 0;
+    const pct = max>0 ? (item[valKey]/max*100) : 0;
     return `<div class="bar-item">
       <div class="bar-label" title="${item[labelKey]}">${item[labelKey]}</div>
       <div class="bar-track">
@@ -397,10 +659,24 @@ function renderBars(containerId, items, labelKey, valKey, color='#1a1a2e') {
   }).join('');
 }
 
+function renderTopAnunciantesShort(data) {
+  document.getElementById('topAnunciantesShort').innerHTML = data.slice(0,10).map((a, i) => {
+    const c = a.cluster;
+    const col = c!=null ? CLUSTER_COLORS[c] : '#999';
+    const bg  = c!=null ? col+'22' : '#f1f3f8';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px">
+      <div style="color:var(--muted2);font-weight:700;min-width:16px">${i+1}</div>
+      <div style="flex:1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nombre}</div>
+      <div style="font-weight:700">${a.share.toFixed(1)}%</div>
+      <span class="cluster-chip" style="background:${bg};color:${col}">${c!=null?'Seg '+c:'—'}</span>
+    </div>`;
+  }).join('');
+}
+
 function renderEstacionalidad(data) {
-  const max = Math.max(...data.map(d => d.inversion));
+  const max = Math.max(...data.map(d=>d.inversion));
   document.getElementById('estGrid').innerHTML = data.map(d => {
-    const h = max > 0 ? Math.max(8, (d.inversion/max*100)) : 8;
+    const h = max>0 ? Math.max(8, (d.inversion/max*100)) : 8;
     return `<div class="est-bar-wrap" title="${d.nombre}: ${fmtUSD(d.inversion)}">
       <div class="est-bar" style="height:${h}%;background:var(--accent);opacity:${0.4+d.inversion/max*0.6}"></div>
       <div class="est-label">${d.nombre}</div>
@@ -411,116 +687,185 @@ function renderEstacionalidad(data) {
 function renderAnunciantes(data) {
   document.getElementById('anunciantesTbody').innerHTML = data.map((a, i) => {
     const c = a.cluster;
-    const chipColor = c != null ? CLUSTER_COLORS[c] : '#999';
-    const chipBg = c != null ? chipColor+'22' : '#f1f3f8';
-    const chipText = c != null ? `Seg ${c}` : '—';
+    const chipColor = c!=null ? CLUSTER_COLORS[c] : '#999';
+    const chipBg    = c!=null ? chipColor+'22' : '#f1f3f8';
     return `<tr>
       <td style="color:var(--muted2);font-weight:600">${i+1}</td>
-      <td style="font-weight:700">${a.nombre}</td>
-      <td style="color:var(--muted);font-size:12px">${a.rubro || '—'}</td>
+      <td style="font-weight:700;text-align:left">${a.nombre}</td>
+      <td style="color:var(--muted);text-align:left">${a.rubro||'—'}</td>
       <td>${fmtUSDFull(a.inversion)}</td>
       <td>${a.share.toFixed(2)}%</td>
-      <td><span class="cluster-chip" style="background:${chipBg};color:${chipColor}">${chipText}</span> <span style="font-size:11px;color:var(--muted)">${a.tipo_cluster || ''}</span></td>
+      <td style="text-align:left"><span class="cluster-chip" style="background:${chipBg};color:${chipColor}">${c!=null?'Seg '+c:'—'}</span> <span style="font-size:10px;color:var(--muted)">${a.tipo_cluster||''}</span></td>
     </tr>`;
   }).join('');
 }
 
-function renderClusters(clusters) {
-  document.getElementById('clusterGrid').innerHTML = clusters.map(c => {
-    const scoresHtml = Object.entries(c.scores).map(([dim, val]) => `
-      <div class="cc-score-row">
-        <div class="cc-score-label">${DIM_LABELS[dim]||dim}</div>
-        <div class="cc-score-bar"><div class="cc-score-fill" style="width:${val}%;background:${c.color}"></div></div>
-        <div class="cc-score-val">${val.toFixed(0)}%</div>
+// ── CLUSTER RADARS ────────────────────────────────────────────────────────────
+function miniRadarSVG(scores, color, size=110) {
+  const dims = ['Cultura','Ejecucion','Estructura','Competitividad','Inversion'];
+  const vals  = dims.map(d => (scores[d]||0)/100);
+  const cx=size/2, cy=size/2, r=size/2-12;
+  const n=dims.length;
+  let s='';
+
+  // Rings
+  [.25,.5,.75,1].forEach(f => {
+    const rr=r*f;
+    const pts=dims.map((_,i)=>{const a=(i*2*Math.PI/n)-Math.PI/2;return `${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`;}).join(' ');
+    s+=`<polygon points="${pts}" fill="none" stroke="#e8eaf0" stroke-width="1"/>`;
+  });
+  // Axes
+  dims.forEach((_,i)=>{const a=(i*2*Math.PI/n)-Math.PI/2;s+=`<line x1="${cx}" y1="${cy}" x2="${(cx+r*Math.cos(a)).toFixed(1)}" y2="${(cy+r*Math.sin(a)).toFixed(1)}" stroke="#e8eaf0" stroke-width="1"/>`;});
+  // Polygon
+  const pts=vals.map((v,i)=>{const a=(i*2*Math.PI/n)-Math.PI/2,rr=r*v;return`${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`;}).join(' ');
+  s+=`<polygon points="${pts}" fill="${color}22" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+  // Dots
+  vals.forEach((v,i)=>{const a=(i*2*Math.PI/n)-Math.PI/2,rr=r*v;s+=`<circle cx="${(cx+rr*Math.cos(a)).toFixed(1)}" cy="${(cy+rr*Math.sin(a)).toFixed(1)}" r="3" fill="${color}" stroke="#fff" stroke-width="1.5"/>`;});
+
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${s}</svg>`;
+}
+
+function renderClusterRadars(clusters) {
+  document.getElementById('clusterRadarGrid').innerHTML = [0,1,2,3,4].map(cid => {
+    const c = clusters.find(x=>x.id===cid) || {id:cid,nombre:CLUSTER_NAMES[cid],color:CLUSTER_COLORS[cid],cantidad:0,inversion:0,share:0,scores:{}};
+    const dims = ['Cultura','Ejecucion','Estructura','Competitividad','Inversion'];
+    const scoresHtml = dims.map(d=>`
+      <div style="display:flex;align-items:center;gap:5px;font-size:9px">
+        <div style="color:var(--muted2);min-width:60px;font-weight:600">${DIM_LABELS[d]}</div>
+        <div style="flex:1;height:3px;background:#e8eaf0;border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${c.scores[d]||0}%;background:${c.color};border-radius:2px"></div>
+        </div>
+        <div style="font-weight:700;color:var(--text);min-width:28px;text-align:right">${(c.scores[d]||0).toFixed(0)}%</div>
       </div>`).join('');
-    return `<div class="cluster-card" style="border-top-color:${c.color}">
-      <div class="cc-header">
-        <div class="cc-id">${c.id}</div>
-        <span class="cc-badge" style="background:${c.color}22;color:${c.color}">${c.cantidad} empresas</span>
+    return `<div class="crc" style="border-top-color:${c.color}">
+      <div><div class="crc-id">${c.id}</div>
+      <div class="crc-name">${c.nombre}</div>
+      <span class="crc-badge" style="background:${c.color}22;color:${c.color}">${c.cantidad} empresas</span></div>
+      <div class="crc-radar">${miniRadarSVG(c.scores, c.color)}</div>
+      <div style="display:flex;flex-direction:column;gap:4px">${scoresHtml}</div>
+      <div>
+        <div class="crc-inv">${fmtUSD(c.inversion)}</div>
+        <div class="crc-inv-share">${c.share.toFixed(1)}% del mercado</div>
       </div>
-      <div class="cc-nombre">${c.nombre}</div>
-      <div class="cc-inv">${fmtUSD(c.inversion)}</div>
-      <div class="cc-share">${c.share.toFixed(1)}% del mercado</div>
-      <div class="cc-scores">${scoresHtml}</div>
+      <div class="crc-desc">${CLUSTER_DESC[c.id]}</div>
     </div>`;
   }).join('');
 }
 
+function renderClusterTable(clusters) {
+  const dims=['Estructura','Cultura','Ejecucion','Competitividad','Inversion'];
+  document.getElementById('clusterTbody').innerHTML = clusters.sort((a,b)=>b.inversion-a.inversion).map((c,i) =>
+    `<tr>
+      <td><span class="cluster-chip" style="background:${CLUSTER_COLORS[c.id]}22;color:${CLUSTER_COLORS[c.id]}">${c.id}</span></td>
+      <td style="text-align:left;font-weight:600">${c.nombre}</td>
+      <td>${c.cantidad}</td>
+      <td>${fmtUSDFull(c.inversion)}</td>
+      <td>${c.share.toFixed(1)}%</td>
+      ${dims.map(d=>`<td style="text-align:left;font-size:11px"><div style="display:flex;align-items:center;gap:4px"><div style="width:36px;height:4px;background:#e8eaf0;border-radius:2px;overflow:hidden"><div style="width:${c.scores[d]||0}%;height:100%;background:${CLUSTER_COLORS[c.id]}"></div></div>${(c.scores[d]||0).toFixed(0)}%</div></td>`).join('')}
+    </tr>`
+  ).join('');
+}
+
+// ── GLOBAL RADAR ─────────────────────────────────────────────────────────────
 function renderWheel(scores) {
-  const dims = Object.keys(scores);
-  const vals = dims.map(d => scores[d]);
-  const cx = 130, cy = 130, r = 100;
-  const n = dims.length;
-
-  // Concentric circles
-  let svg = '';
-  [20,40,60,80,100].forEach(pct => {
-    const rr = r * pct/100;
-    svg += `<circle cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="#e2e4e9" stroke-width="1"/>`;
-  });
-
-  // Axis lines
-  dims.forEach((_, i) => {
-    const angle = (i * 2 * Math.PI / n) - Math.PI/2;
-    const x2 = cx + r * Math.cos(angle);
-    const y2 = cy + r * Math.sin(angle);
-    svg += `<line x1="${cx}" y1="${cy}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#e2e4e9" stroke-width="1"/>`;
-  });
-
-  // Polygon
-  const points = vals.map((v, i) => {
-    const angle = (i * 2 * Math.PI / n) - Math.PI/2;
-    const rr = r * v/100;
-    return `${(cx + rr*Math.cos(angle)).toFixed(1)},${(cy + rr*Math.sin(angle)).toFixed(1)}`;
-  }).join(' ');
-  svg += `<polygon points="${points}" fill="rgba(26,26,46,0.12)" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>`;
-
-  // Dots
-  vals.forEach((v, i) => {
-    const angle = (i * 2 * Math.PI / n) - Math.PI/2;
-    const rr = r * v/100;
-    const x = (cx + rr*Math.cos(angle)).toFixed(1);
-    const y = (cy + rr*Math.sin(angle)).toFixed(1);
-    svg += `<circle cx="${x}" cy="${y}" r="4" fill="${WHEEL_COLORS[i]}" stroke="#fff" stroke-width="2"/>`;
-  });
-
+  const dims=['Cultura','Ejecucion','Estructura','Competitividad','Inversion'];
+  const vals=dims.map(d=>scores[d]);
+  const cx=130, cy=130, r=100, n=dims.length;
+  let svg='';
+  [20,40,60,80,100].forEach(pct=>{const rr=r*pct/100;svg+=`<circle cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="#e2e4e9" stroke-width="1"/>`;});
+  dims.forEach((_,i)=>{const a=(i*2*Math.PI/n)-Math.PI/2;svg+=`<line x1="${cx}" y1="${cy}" x2="${(cx+r*Math.cos(a)).toFixed(1)}" y2="${(cy+r*Math.sin(a)).toFixed(1)}" stroke="#e2e4e9" stroke-width="1"/>`;});
+  const pts=vals.map((v,i)=>{const a=(i*2*Math.PI/n)-Math.PI/2,rr=r*v/100;return`${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`;}).join(' ');
+  svg+=`<polygon points="${pts}" fill="rgba(26,26,46,.12)" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>`;
+  vals.forEach((v,i)=>{const a=(i*2*Math.PI/n)-Math.PI/2,rr=r*v/100;svg+=`<circle cx="${(cx+rr*Math.cos(a)).toFixed(1)}" cy="${(cy+rr*Math.sin(a)).toFixed(1)}" r="4" fill="${WHEEL_COLORS[i]}" stroke="#fff" stroke-width="2"/>`;});
   document.getElementById('wheelSvg').innerHTML = svg;
 
-  // Legend
-  document.getElementById('wheelLegend').innerHTML = dims.map((dim, i) => `
-    <div class="wl-item" style="flex-direction:column;align-items:flex-start;gap:4px">
-      <div style="display:flex;align-items:center;gap:8px;width:100%">
+  document.getElementById('wheelLegend').innerHTML = dims.map((dim,i)=>`
+    <div class="wl-item">
+      <div class="wl-row1">
         <div class="wl-dot" style="background:${WHEEL_COLORS[i]}"></div>
         <div class="wl-label">${DIM_LABELS[dim]||dim}</div>
-        <div class="wl-val" style="margin-left:auto;font-size:18px">${vals[i].toFixed(1)}%</div>
+        <div class="wl-val">${vals[i].toFixed(1)}%</div>
       </div>
-      <div class="wl-bar" style="width:180px">
-        <div class="wl-bar-fill" style="width:${vals[i]}%;background:${WHEEL_COLORS[i]}"></div>
-      </div>
+      <div class="wl-bar"><div class="wl-bar-fill" style="width:${vals[i]}%;background:${WHEEL_COLORS[i]}"></div></div>
     </div>`).join('');
 }
 
+// ── SEGMENTADOR TABLE ─────────────────────────────────────────────────────────
+function renderSegmentador(empresasList) {
+  if (!empresasList || !empresasList.length) {
+    document.getElementById('segmentadorTbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted2);padding:32px">Sin datos</td></tr>';
+    return;
+  }
+  const sorted = [...empresasList].sort((a,b) => b.puntaje_total - a.puntaje_total);
+  const dims = ['Estructura','Cultura','Ejecucion','Competitividad','Inversion'];
+  document.getElementById('segmentadorTbody').innerHTML = sorted.map((e, i) => {
+    const c = e.cluster;
+    const col = c!=null ? CLUSTER_COLORS[c] : '#999';
+    const dimsHtml = dims.map(d => {
+      const v = e.scores[d]||0;
+      return `<td style="text-align:right">
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px">
+          <div style="width:30px;height:3px;background:#e8eaf0;border-radius:2px;overflow:hidden">
+            <div style="width:${v}%;height:100%;background:${col}"></div>
+          </div>
+          <span style="font-size:10px;font-weight:700;min-width:28px">${v.toFixed(0)}%</span>
+        </div>
+      </td>`;
+    }).join('');
+    return `<tr>
+      <td style="color:var(--muted2);font-weight:600">${i+1}</td>
+      <td style="font-weight:700;text-align:left;white-space:nowrap">${e.nombre}</td>
+      <td style="text-align:left"><span class="cluster-chip" style="background:${col}22;color:${col}">${c!=null?'Seg '+c:'—'}</span></td>
+      <td style="color:var(--muted);font-size:10px;text-align:left">${e.rubro||'—'}</td>
+      ${dimsHtml}
+      <td style="text-align:right;font-weight:800;color:${col}">${e.puntaje_total.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ORCHESTRATOR ──────────────────────────────────────────────────────────────
 function renderDashboard(data) {
   // Hero
-  document.getElementById('heroTotal').textContent = fmtUSD(data.resumen.total_inversion_usd);
-  document.getElementById('heroAnunciantes').textContent = data.resumen.total_anunciantes;
-  document.getElementById('heroMMI').textContent = data.resumen.market_maturity_index + '%';
-  document.getElementById('heroBase').textContent = data.resumen.total_empresas_base || '—';
-  document.getElementById('heroAno').textContent = data.resumen.ano;
-  document.getElementById('heroAnoSub').textContent = 'Año ' + data.resumen.ano;
+  const r = data.resumen;
+  document.getElementById('heroTotal').textContent = fmtUSD(r.total_inversion_usd);
+  document.getElementById('heroAnunciantes').textContent = r.total_anunciantes;
+  document.getElementById('heroAvg').textContent = fmtUSD(r.total_inversion_usd / r.total_anunciantes);
+  document.getElementById('heroMax').textContent = fmtUSD(r.max_inversion || 0);
+  document.getElementById('heroMaxName').textContent = r.max_anunciante || '—';
+  document.getElementById('heroMMI').textContent = r.market_maturity_index + '%';
+  document.getElementById('heroBase').textContent = r.total_empresas_base || '—';
+  document.getElementById('heroAno').textContent = r.ano;
+  document.getElementById('heroAnoSub').textContent = 'Año ' + r.ano;
   if (data.generado_en) {
-    document.getElementById('heroGenDate').textContent = 'Actualizado: ' + new Date(data.generado_en).toLocaleDateString('es-PY', { day:'numeric', month:'short', year:'numeric' });
+    document.getElementById('heroGenDate').textContent = 'Actualizado: ' + new Date(data.generado_en).toLocaleDateString('es-PY', {day:'numeric',month:'short',year:'numeric'});
   }
 
-  // Bars
-  renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
-  renderBars('grupoBars', data.por_grupo_empresarial, 'grupo', 'inversion', '#6c3fc5');
-  renderBars('agenciaBars', data.por_agencia, 'agencia', 'inversion', '#e85d26');
-  renderBars('sectorBars', data.por_sector, 'sector', 'inversion', '#0ea5b0');
+  // Overview tab
+  renderScatter(data.scatter_data);
+  renderDonut(data.media_mix);
+  renderTopAnunciantesShort(data.top_anunciantes);
   renderEstacionalidad(data.estacionalidad);
-  renderAnunciantes(data.top_anunciantes);
-  renderClusters(data.clusters);
+  renderBars('grupoBars', data.por_grupo_empresarial, 'grupo', 'inversion', '#6c3fc5');
+  renderBars('sectorBars', data.por_sector, 'sector', 'inversion', '#0ea5b0');
+
+  // Segmentación tab
+  renderClusterRadars(data.clusters);
+  renderClusterTable(data.clusters);
+
+  // MKT Wheel tab
   renderWheel(data.scores_globales);
+
+  // Medios tab
+  renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
+  renderBars('grupoBars2', data.por_grupo_empresarial, 'grupo', 'inversion', '#6c3fc5');
+  renderAnunciantes(data.top_anunciantes);
+
+  // Agencias tab
+  renderBars('agenciaBars', data.por_agencia, 'agencia', 'inversion', '#e85d26');
+  renderBars('sectorBars2', data.por_sector, 'sector', 'inversion', '#0ea5b0');
+
+  // Segmentador tab
+  renderSegmentador(data.empresas_lista);
 
   document.getElementById('dashboard').style.display = 'block';
 }
@@ -582,11 +927,15 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     if (!nombre) continue;
     const puntaje = safeParse(row['puntaje total']);
     if (puntaje > 0) { totalPuntaje += puntaje; countPuntaje++; }
+    const pc1 = safeParse(row['Fórmula_PC1'] ?? row['Formula_PC1'] ?? row['PC1']);
+    const pc2 = safeParse(row['Fórmula_PC2'] ?? row['Formula_PC2'] ?? row['PC2']);
     empresaMap[nombre] = {
       rubro: row['rubro principal'] || '',
       cluster: row['Cluster'] != null ? parseInt(row['Cluster']) : null,
       tipo_cluster: row['Tipo de Cluster'] || '',
       puntaje_total: puntaje,
+      pc1: pc1 || null,
+      pc2: pc2 || null,
       scores: {
         Cultura:        safeParse(row['Cultura']),
         Ejecucion:      safeParse(row['Ejecución']),
@@ -658,13 +1007,15 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   }
 
   // ── RANKINGS ─────────────────────────────────────────────────────────────────
-  const top_anunciantes = Object.entries(anunciantes).sort((a,b)=>b[1]-a[1]).slice(0,15)
-    .map(([nombre,inv]) => ({
-      nombre, inversion:Math.round(inv), share:Math.round(inv/totalInversion*10000)/100,
-      cluster:empresaMap[nombre]?.cluster??null,
-      tipo_cluster:empresaMap[nombre]?.tipo_cluster||'',
-      rubro:empresaMap[nombre]?.rubro||'',
-    }));
+  const sortedAnunciantes = Object.entries(anunciantes).sort((a,b)=>b[1]-a[1]);
+  const maxEntry = sortedAnunciantes[0] || ['—', 0];
+
+  const top_anunciantes = sortedAnunciantes.slice(0,15).map(([nombre,inv]) => ({
+    nombre, inversion:Math.round(inv), share:Math.round(inv/totalInversion*10000)/100,
+    cluster:empresaMap[nombre]?.cluster??null,
+    tipo_cluster:empresaMap[nombre]?.tipo_cluster||'',
+    rubro:empresaMap[nombre]?.rubro||'',
+  }));
 
   const media_mix = Object.entries(medios).sort((a,b)=>b[1]-a[1])
     .map(([medio,inv]) => ({ medio, inversion:Math.round(inv), share:Math.round(inv/totalInversion*10000)/100 }));
@@ -682,16 +1033,40 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     mes:i+1, nombre:MES_NOMBRES_B[i], inversion:Math.round(meses[i+1]||0)
   }));
 
+  // ── SCATTER DATA ─────────────────────────────────────────────────────────────
+  const scatter_data = Object.entries(empresaMap)
+    .filter(([_, e]) => e.pc1 != null && e.pc2 != null && (e.pc1 !== 0 || e.pc2 !== 0))
+    .map(([nombre, e]) => ({
+      nombre, pc1: e.pc1, pc2: e.pc2,
+      cluster: e.cluster,
+      inversion: Math.round(anunciantes[nombre]||0),
+    }));
+
+  // ── EMPRESAS LISTA (para Segmentador) ────────────────────────────────────────
+  const empresas_lista = Object.entries(empresaMap)
+    .filter(([_, e]) => e.puntaje_total > 0)
+    .map(([nombre, e]) => ({
+      nombre,
+      rubro: e.rubro,
+      cluster: e.cluster,
+      tipo_cluster: e.tipo_cluster,
+      puntaje_total: e.puntaje_total,
+      scores: e.scores,
+      inversion: Math.round(anunciantes[nombre]||0),
+    }));
+
   return {
     resumen: {
       total_inversion_usd: Math.round(totalInversion),
       total_anunciantes: Object.keys(anunciantes).length,
       market_maturity_index: mmi,
       total_empresas_base: Object.keys(empresaMap).length,
+      max_inversion: Math.round(maxEntry[1]),
+      max_anunciante: maxEntry[0],
       ano: 2024,
     },
     media_mix, top_anunciantes, por_grupo_empresarial, por_agencia, por_sector,
-    estacionalidad, clusters, scores_globales,
+    estacionalidad, clusters, scores_globales, scatter_data, empresas_lista,
     generado_en: new Date().toISOString(),
   };
 }
@@ -702,7 +1077,7 @@ async function uploadFiles() {
   const adlens = document.getElementById('adlensFile').files[0];
   if (!medios || !adlens) { showToast('Seleccioná ambos archivos', 'error'); return; }
 
-  const btn = document.getElementById('btnProcesar');
+  const btn  = document.getElementById('btnProcesar');
   const prog = document.getElementById('uploadProgress');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner" style="border-top-color:#0f1117"></span> Procesando...';
@@ -711,13 +1086,10 @@ async function uploadFiles() {
   try {
     const data = await parseAdlensInBrowser(medios, adlens);
     const r = await fetch('/api/adlens/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
     });
-    let res;
-    try { res = await r.json(); } catch { throw new Error('Error del servidor'); }
-    if (!r.ok) throw new Error(res.error || 'Error al guardar');
+    let res; try { res=await r.json(); } catch { throw new Error('Error del servidor'); }
+    if (!r.ok) throw new Error(res.error||'Error al guardar');
     document.getElementById('uploadModal').style.display = 'none';
     document.getElementById('emptyWrap').style.display = 'none';
     renderDashboard(data);
@@ -742,13 +1114,10 @@ async function uploadFromEmpty() {
   try {
     const data = await parseAdlensInBrowser(medios, adlens);
     const r = await fetch('/api/adlens/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
     });
-    let res;
-    try { res = await r.json(); } catch { throw new Error('Error del servidor'); }
-    if (!r.ok) throw new Error(res.error || 'Error al guardar');
+    let res; try { res=await r.json(); } catch { throw new Error('Error del servidor'); }
+    if (!r.ok) throw new Error(res.error||'Error al guardar');
     document.getElementById('emptyWrap').style.display = 'none';
     renderDashboard(data);
     showToast('✓ Dashboard generado exitosamente', 'success');
