@@ -259,6 +259,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
         </div>
       </div>
       <div class="hero-stats">
+        <div class="hs" style="border-top:3px solid #a78bfa">
+          <div class="hs-label">Facturación</div>
+          <div class="hs-value" id="heroFacturacion">--</div>
+          <div class="hs-sub">total mercado</div>
+        </div>
         <div class="hs hs-green">
           <div class="hs-label">Total Inversión</div>
           <div class="hs-value" id="heroTotal">--</div>
@@ -827,6 +832,7 @@ function renderSegmentador(empresasList) {
 function renderDashboard(data) {
   // Hero
   const r = data.resumen;
+  document.getElementById('heroFacturacion').textContent = r.total_facturacion ? r.total_facturacion.toLocaleString('es-PY') : '--';
   document.getElementById('heroTotal').textContent = fmtUSD(r.total_inversion_usd);
   document.getElementById('heroAnunciantes').textContent = r.total_anunciantes;
   document.getElementById('heroAvg').textContent = fmtUSD(r.total_inversion_usd / r.total_anunciantes);
@@ -936,9 +942,8 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     if (puntaje > 0) { totalPuntaje += puntaje; countPuntaje++; }
     const pc1 = _pc1Key ? safeParse(row[_pc1Key]) : null;
     const pc2 = _pc2Key ? safeParse(row[_pc2Key]) : null;
-    // Inversión total: columna "RANGO DE INVERSIÓN" (en miles USD)
-    const _invKeys = ['RANGO DE INVERSIÓN','RANGO DE INVERSION','Rango de Inversión','Rango de inversion','rangodeinversion','RANGODEINVERSION'];
-    const _invKey = _invKeys.find(k => row[k] != null) || null;
+    // Inversión total: columna "RANGO DE INVERSIÓN" — búsqueda flexible por nombre parcial
+    const _invKey = Object.keys(row).find(k => k.toUpperCase().replace(/\s+/g,' ').trim().includes('RANGO')) || null;
     const inversionMilesUSD = _invKey ? safeParse(row[_invKey]) : 0;
     empresaMap[nombre] = {
       rubro: row['rubro principal'] || '',
@@ -962,15 +967,12 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   // Inversión por empresa: viene del adlens base (miles USD × 1000 = USD)
   const anunciantes = {};
   let totalInversion = 0;
-  const _sampleEntries = Object.entries(empresaMap).slice(0, 5);
-  console.log('[AdLens] Sample inversion_usd (primeros 5):', _sampleEntries.map(([n,e])=>({n, raw: e.inversion_usd})));
   for (const [nombre, emp] of Object.entries(empresaMap)) {
     if (emp.inversion_usd > 0) {
       anunciantes[nombre] = emp.inversion_usd;
       totalInversion += emp.inversion_usd;
     }
   }
-  console.log('[AdLens] totalInversion USD:', totalInversion, '| empresas con inversión:', Object.keys(anunciantes).length);
 
   // ── MEDIOS FILE: solo para proporciones de media mix ─────────────────────────
   // (US$) per-inserción son valores pequeños; usamos sus proporciones y escalamos al total real
@@ -980,7 +982,11 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
 
   const medios={}, grupos={}, agencias={}, sectores={}, meses={};
   const mediosAnunciantes = new Set();
-  let totalMediosRaw = 0;
+  let totalMediosRaw = 0, totalFacturacion = 0;
+  // Detectar columna facturacion una sola vez
+  const _facKey = mediosRows.length > 0
+    ? (Object.keys(mediosRows[0]).find(k => k.toLowerCase().trim() === 'facturacion') || null)
+    : null;
   for (const row of mediosRows) {
     const usd = safeParse(row['(US$)']);
     if (!usd) continue;
@@ -992,6 +998,7 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     const anuncianteMedios = normStr(row['anunciante'] || row['Anunciante'] || row['ANUNCIANTE'] || '');
 
     totalMediosRaw += usd;
+    if (_facKey) totalFacturacion += safeParse(row[_facKey]);
     if (anuncianteMedios) mediosAnunciantes.add(anuncianteMedios);
     if (medio)   medios[medio]     = (medios[medio]||0)     + usd;
     if (grupo)   grupos[grupo]     = (grupos[grupo]||0)     + usd;
@@ -1090,6 +1097,7 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   return {
     resumen: {
       total_inversion_usd: Math.round(totalInversion),
+      total_facturacion: Math.round(totalFacturacion),
       total_anunciantes: mediosAnunciantes.size > 0
         ? Object.keys(anunciantes).filter(n => mediosAnunciantes.has(n)).length
         : Object.keys(anunciantes).length,
