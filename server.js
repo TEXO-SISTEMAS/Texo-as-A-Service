@@ -8,6 +8,7 @@ const jwt     = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const { google } = require('googleapis');
 const { parseExcel } = require('./parser');
+const { parseAdlens } = require('./adlens_parser');
 const drive = require('./drive');
 
 // ── RSS UTILITIES ─────────────────────────────────────────────────────────────
@@ -675,6 +676,37 @@ app.post('/api/marketing/refresh', async (req, res) => {
   } catch (err) {
     console.error('ERROR /api/marketing/refresh:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ── ADLENS ────────────────────────────────────────────────────────────────────
+const uploadAdlens = multer({ storage: multer.memoryStorage(), limits: { fileSize: 30 * 1024 * 1024 } })
+  .fields([{ name: 'medios', maxCount: 1 }, { name: 'adlens', maxCount: 1 }]);
+
+app.post('/api/adlens/upload', requireAuth, (req, res, next) => {
+  uploadAdlens(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    try {
+      const mediosFile = req.files?.medios?.[0];
+      const adlensFile = req.files?.adlens?.[0];
+      if (!mediosFile || !adlensFile) return res.status(400).json({ error: 'Se requieren ambos archivos: medios y adlens' });
+      const data = parseAdlens(mediosFile.buffer, adlensFile.buffer);
+      await drive.saveMarketingIntel('adlens', data);
+      res.json({ ok: true, ...data });
+    } catch (e) {
+      console.error('ERROR /api/adlens/upload:', e);
+      res.status(500).json({ error: e.message });
+    }
+  });
+});
+
+app.get('/api/adlens/latest', requireAuth, async (req, res) => {
+  try {
+    const data = await drive.getMarketingIntel('adlens');
+    if (!data) return res.status(404).json({ error: 'Sin datos. Subí los archivos Excel para iniciar.' });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
