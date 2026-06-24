@@ -936,14 +936,8 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     if (puntaje > 0) { totalPuntaje += puntaje; countPuntaje++; }
     const pc1 = _pc1Key ? safeParse(row[_pc1Key]) : null;
     const pc2 = _pc2Key ? safeParse(row[_pc2Key]) : null;
-    // Loguear las primeras 3 empresas: mostrar TODAS las columnas numéricas para identificar cuál tiene inversión real
-    if (Object.keys(empresaMap).length < 3) {
-      const numCols = Object.entries(row).filter(([k,v]) => typeof v === 'number' && v > 50).map(([k,v]) => `${k}=${v}`);
-      console.log(`[AdLens] Row ${Object.keys(empresaMap).length} (${nombre}) columnas numéricas >50:`, numCols.join(' | '));
-    }
-    // Buscar la columna con distintas variantes del nombre
-    const _invKeys = ['inversión en medios','inversion en medios','Inversión en medios','Inversion en medios',
-                      'INVERSIÓN EN MEDIOS','inversión  en medios','inversión en medios '];
+    // Inversión total: columna "RANGO DE INVERSIÓN" (en miles USD)
+    const _invKeys = ['RANGO DE INVERSIÓN','RANGO DE INVERSION','Rango de Inversión','Rango de inversion','rangodeinversion','RANGODEINVERSION'];
     const _invKey = _invKeys.find(k => row[k] != null) || null;
     const inversionMilesUSD = _invKey ? safeParse(row[_invKey]) : 0;
     empresaMap[nombre] = {
