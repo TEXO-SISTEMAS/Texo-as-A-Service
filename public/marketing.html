@@ -247,13 +247,13 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
       </div>
       <div class="hero-stats">
         <div class="hero-stat hero-stat-green">
-          <div class="hero-stat-label">Mercado PY 2024</div>
-          <div class="hero-stat-value">US$135.5M</div>
-          <div class="hero-stat-sub">+6.5% vs 2023 · APAP</div>
+          <div class="hero-stat-label" id="heroMercadoLabel">Mercado PY</div>
+          <div class="hero-stat-value" id="heroMercadoValue">--</div>
+          <div class="hero-stat-sub" id="heroMercadoSub">Cargando...</div>
         </div>
         <div class="hero-stat hero-stat-yellow">
           <div class="hero-stat-label">Empresas del holding</div>
-          <div class="hero-stat-value">8</div>
+          <div class="hero-stat-value">6</div>
           <div class="hero-stat-sub">Texo as a Service</div>
         </div>
         <div class="hero-stat hero-stat-blue">
@@ -274,7 +274,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
       <div class="sec-label">01 · Estructura</div>
       <div class="sec-heading">Mapa del Holding</div>
       <div class="sec-bar"></div>
-      <div class="sec-desc">Las 8 empresas activas del grupo, sus redes globales, especialidades y clientes principales.</div>
+      <div class="sec-desc">Las 6 empresas activas del grupo, sus redes globales, especialidades y clientes principales.</div>
       <div class="holding-grid" id="holdingGrid">
         <!-- generado por JS -->
       </div>
@@ -284,36 +284,16 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
     <div class="divider-band">
       <div class="divider-band-left">
         <div class="divider-band-title">Mercado Publicitario</div>
-        <div class="divider-band-sub">Paraguay · 2024 · Fuente: APAP / Kantar IBOPE / Audimedia</div>
-        <div class="market-chips">
-          <div class="market-chip">
-            <div class="mc-label">Radio</div>
-            <div class="mc-val">US$14.9M</div>
-            <div class="mc-sub">+7.5% · ~80% de emisiones</div>
-          </div>
-          <div class="market-chip">
-            <div class="mc-label">Sector Banca</div>
-            <div class="mc-val">+54%</div>
-            <div class="mc-sub">Mayor crecimiento del mercado</div>
-          </div>
-          <div class="market-chip">
-            <div class="mc-label">Proyección 2025</div>
-            <div class="mc-val">+4.3%</div>
-            <div class="mc-sub">Crecimiento sostenido</div>
-          </div>
-          <div class="market-chip">
-            <div class="mc-label">Medios tradicionales</div>
-            <div class="mc-val">Récord</div>
-            <div class="mc-sub">TV y radio cierran 2025 en máximo histórico</div>
-          </div>
-        </div>
+        <div class="divider-band-sub" id="mercadoSub">Paraguay · Cargando...</div>
+        <div class="market-chips" id="mercadoChips"></div>
       </div>
       <div class="divider-band-stats">
         <div class="dbs-item">
-          <div class="dbs-val">US$135.5M</div>
+          <div class="dbs-val" id="mercadoTotal">--</div>
           <div class="dbs-label">Total mercado</div>
-          <div class="dbs-growth">↑ +6.5%</div>
+          <div class="dbs-growth" id="mercadoGrowth"></div>
         </div>
+        <button class="btn btn-outline" id="btnRefreshMercado" onclick="refreshMercado()" style="font-size:12px;margin-top:12px">⟳ Actualizar datos</button>
       </div>
     </div>
 
@@ -573,6 +553,7 @@ async function loadMarketing() {
   try {
     const r = await fetch('/api/marketing');
     const data = await r.json();
+    if (data.mercado) renderMercado(data.mercado);
     renderAlertas(data.alertas, data.resumen, data.ultima_actualizacion);
     renderRedes(data.redes, data.redes_resumen, data.redes_actualizacion);
   } catch(e) { console.error('loadMarketing:', e); }
@@ -585,6 +566,42 @@ async function loadNews() {
     renderNews(data);
   } catch(e) {
     document.getElementById('newsWrap').innerHTML = `<div class="news-empty">No se pudieron cargar noticias.</div>`;
+  }
+}
+
+// ── RENDER MERCADO ────────────────────────────────────────────────────────────
+function renderMercado(m) {
+  document.getElementById('mercadoSub').textContent = `Paraguay · ${m.ano} · Fuente: ${m.fuente}${m.generado_en ? ' · Actualizado: ' + new Date(m.generado_en).toLocaleDateString('es-PY',{day:'numeric',month:'short',year:'numeric'}) : ''}`;
+  document.getElementById('mercadoTotal').textContent = `US$${m.total_usd}M`;
+  document.getElementById('mercadoGrowth').textContent = `↑ +${m.crecimiento_pct}%`;
+  document.getElementById('heroMercadoLabel').textContent = `Mercado PY ${m.ano}`;
+  document.getElementById('heroMercadoValue').textContent = `US$${m.total_usd}M`;
+  document.getElementById('heroMercadoSub').textContent = `+${m.crecimiento_pct}% vs ${m.ano - 1} · ${m.fuente.split('/')[0].trim()}`;
+  const chips = document.getElementById('mercadoChips');
+  chips.innerHTML = (m.destacados || []).map(d => `
+    <div class="market-chip">
+      <div class="mc-label">${d.label}</div>
+      <div class="mc-val">${d.valor}</div>
+      <div class="mc-sub">${d.crecimiento ? d.crecimiento + ' · ' : ''}${d.nota}</div>
+    </div>`).join('');
+}
+
+async function refreshMercado() {
+  const btn = document.getElementById('btnRefreshMercado');
+  btn.innerHTML = '<span class="spinner"></span> Buscando datos...';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/marketing/refresh', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ tipo: 'mercado' }) });
+    let data;
+    try { data = await r.json(); } catch(_) { throw new Error('Timeout o error del servidor (código ' + r.status + ')'); }
+    if (!r.ok) throw new Error(data.error || 'Error del servidor');
+    renderMercado(data);
+    showToast('✓ Datos de mercado actualizados', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.innerHTML = '⟳ Actualizar datos';
+    btn.disabled = false;
   }
 }
 

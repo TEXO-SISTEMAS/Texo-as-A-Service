@@ -514,13 +514,14 @@ const MERCADO_DATA = {
 // ── MARKETING — GET ───────────────────────────────────────────────────────────
 app.get('/api/marketing', async (req, res) => {
   try {
-    const [alertasIntel, redesIntel] = await Promise.all([
+    const [alertasIntel, redesIntel, mercadoIntel] = await Promise.all([
       drive.getMarketingIntel('alertas').catch(() => null),
       drive.getMarketingIntel('redes').catch(() => null),
+      drive.getMarketingIntel('mercado').catch(() => null),
     ]);
     res.json({
       holding: HOLDING_DATA,
-      mercado: MERCADO_DATA,
+      mercado: mercadoIntel || MERCADO_DATA,
       alertas: alertasIntel?.alertas || [],
       resumen: alertasIntel?.resumen || '',
       ultima_actualizacion: alertasIntel?.generado_en || null,
@@ -623,6 +624,19 @@ IMPORTANTE: Solo JSON, sin texto adicional, sin markdown.
 Formato: {"alertas":[{"tipo":"riesgo","titulo":"Max 6 palabras","texto":"Una oración con impacto para TEXO.","agencias":["NASTA"],"fecha":"05/2026"}],"resumen":"Una oración ejecutiva.","generado_en":"${new Date().toISOString()}"}
 Genera exactamente 5 alertas. Tipos: riesgo, oportunidad, tension, info. Temas: fusión Omnicom+IPG, AMPLIFY OOH, IA en publicidad, tendencia digital, riesgo de red global.`,
 
+  mercado: () => `Sos analista del mercado publicitario paraguayo con acceso a datos públicos de APAP, Kantar IBOPE Media y Audimedia.
+${TEXO_CONTEXT}
+Fecha actual: ${new Date().toLocaleDateString('es-PY', { day:'numeric', month:'long', year:'numeric' })}.
+Necesito que generes un resumen actualizado del mercado publicitario de Paraguay con los datos más recientes que conozcas.
+IMPORTANTE: Solo JSON, sin texto adicional, sin markdown. Usá solo datos que sean razonablemente públicos o estimables. Si no tenés un dato exacto reciente, usá la última cifra conocida e indicá el año.
+Formato: {"total_usd":number,"crecimiento_pct":number,"ano":number,"fuente":"string","destacados":[{"label":"string max 2 palabras","valor":"string","crecimiento":"string","nota":"string corto"}],"generado_en":"${new Date().toISOString()}"}
+Reglas:
+- total_usd: tamaño total del mercado en millones de USD
+- ano: año al que corresponden los datos
+- destacados: exactamente 4 items con datos relevantes (medios, sectores, tendencias, proyecciones)
+- fuente: las fuentes de donde provienen los datos
+- Sé conservador: mejor un dato viejo correcto que uno nuevo inventado`,
+
   redes: () => `Sos analista de inteligencia competitiva en publicidad global.
 ${TEXO_CONTEXT}
 Fecha: ${new Date().toLocaleDateString('es-PY', { month:'long', year:'numeric' })}.
@@ -632,7 +646,8 @@ Formato: {"briefings":[{"red":"WPP","estado":"una oración sobre su situación a
 };
 
 app.post('/api/marketing/refresh', async (req, res) => {
-  const tipo = (req.body?.tipo === 'redes') ? 'redes' : 'alertas';
+  const validTipos = ['alertas', 'redes', 'mercado'];
+  const tipo = validTipos.includes(req.body?.tipo) ? req.body.tipo : 'alertas';
   try {
     const prompt = PROMPTS[tipo]();
     const response = await getAnthropic().messages.create({
