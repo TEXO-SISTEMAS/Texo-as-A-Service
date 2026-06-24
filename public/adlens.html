@@ -920,6 +920,13 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     { defval: null }
   );
 
+  // Detectar columnas PC1/PC2 por nombre o por posición (últimas 2)
+  const _pc1Keys = ['Fórmula_PC1','Formula_PC1','Fórmula PC1','PC1'];
+  const _pc2Keys = ['Fórmula_PC2','Formula_PC2','Fórmula PC2','PC2'];
+  const _allKeys = adlensRows.length > 0 ? Object.keys(adlensRows[0]) : [];
+  const _pc1Key  = _pc1Keys.find(k => _allKeys.includes(k)) || _allKeys[_allKeys.length - 2] || null;
+  const _pc2Key  = _pc2Keys.find(k => _allKeys.includes(k)) || _allKeys[_allKeys.length - 1] || null;
+
   const empresaMap = {};
   let totalPuntaje = 0, countPuntaje = 0;
   for (const row of adlensRows) {
@@ -927,8 +934,8 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     if (!nombre) continue;
     const puntaje = safeParse(row['puntaje total']);
     if (puntaje > 0) { totalPuntaje += puntaje; countPuntaje++; }
-    const pc1 = safeParse(row['Fórmula_PC1'] ?? row['Formula_PC1'] ?? row['PC1']);
-    const pc2 = safeParse(row['Fórmula_PC2'] ?? row['Formula_PC2'] ?? row['PC2']);
+    const pc1 = _pc1Key ? safeParse(row[_pc1Key]) : null;
+    const pc2 = _pc2Key ? safeParse(row[_pc2Key]) : null;
     empresaMap[nombre] = {
       rubro: row['rubro principal'] || '',
       cluster: row['Cluster'] != null ? parseInt(row['Cluster']) : null,
