@@ -974,6 +974,7 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   const mediosRows = XLSX.utils.sheet_to_json(mediosWb.Sheets[sheetName], { defval: null });
 
   const medios={}, grupos={}, agencias={}, sectores={}, meses={};
+  const mediosAnunciantes = new Set();
   let totalMediosRaw = 0;
   for (const row of mediosRows) {
     const usd = safeParse(row['(US$)']);
@@ -983,8 +984,10 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     const agencia = normStr(row['Agência'] || row['Agencia'] || row['AGENCIA'] || '');
     const setor   = (row['Setor'] || '').toString().trim();
     const mes     = getMesBrowser(row['MES']);
+    const anuncianteMedios = normStr(row['anunciante'] || row['Anunciante'] || row['ANUNCIANTE'] || '');
 
     totalMediosRaw += usd;
+    if (anuncianteMedios) mediosAnunciantes.add(anuncianteMedios);
     if (medio)   medios[medio]     = (medios[medio]||0)     + usd;
     if (grupo)   grupos[grupo]     = (grupos[grupo]||0)     + usd;
     if (agencia) agencias[agencia] = (agencias[agencia]||0) + usd;
@@ -1082,7 +1085,9 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   return {
     resumen: {
       total_inversion_usd: Math.round(totalInversion),
-      total_anunciantes: Object.keys(anunciantes).length,
+      total_anunciantes: mediosAnunciantes.size > 0
+        ? Object.keys(anunciantes).filter(n => mediosAnunciantes.has(n)).length
+        : Object.keys(anunciantes).length,
       market_maturity_index: mmi,
       total_empresas_base: Object.keys(empresaMap).length,
       max_inversion: Math.round(maxEntry[1]),
