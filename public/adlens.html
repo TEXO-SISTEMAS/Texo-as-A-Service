@@ -936,11 +936,14 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     if (puntaje > 0) { totalPuntaje += puntaje; countPuntaje++; }
     const pc1 = _pc1Key ? safeParse(row[_pc1Key]) : null;
     const pc2 = _pc2Key ? safeParse(row[_pc2Key]) : null;
+    // "inversión en medios" está en miles USD → convertir a USD
+    const inversionMilesUSD = safeParse(row['inversión en medios']);
     empresaMap[nombre] = {
       rubro: row['rubro principal'] || '',
       cluster: row['Cluster'] != null ? parseInt(row['Cluster']) : null,
       tipo_cluster: row['Tipo de Cluster'] || '',
       puntaje_total: puntaje,
+      inversion_usd: Math.round(inversionMilesUSD * 1000),
       pc1: pc1 || null,
       pc2: pc2 || null,
       scores: {
@@ -954,44 +957,45 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
   }
   const mmi = countPuntaje > 0 ? Math.round((totalPuntaje / countPuntaje) * 10) / 10 : 0;
 
-  // ── MEDIOS ────────────────────────────────────────────────────────────────────
+  // Inversión por empresa: viene del adlens base (miles USD × 1000 = USD)
+  const anunciantes = {};
+  let totalInversion = 0;
+  for (const [nombre, emp] of Object.entries(empresaMap)) {
+    if (emp.inversion_usd > 0) {
+      anunciantes[nombre] = emp.inversion_usd;
+      totalInversion += emp.inversion_usd;
+    }
+  }
+
+  // ── MEDIOS FILE: solo para proporciones de media mix ─────────────────────────
+  // (US$) per-inserción son valores pequeños; usamos sus proporciones y escalamos al total real
   const mediosWb = XLSX.read(mediosBuf, { type:'array', cellDates: true });
   const sheetName = mediosWb.SheetNames.includes('2024') ? '2024' : mediosWb.SheetNames[0];
   const mediosRows = XLSX.utils.sheet_to_json(mediosWb.Sheets[sheetName], { defval: null });
-  // DIAGNÓSTICO: ver nombres de columnas y primeros valores
-  if (mediosRows.length > 0) {
-    console.log('[AdLens] Total filas medios:', mediosRows.length);
-    // Muestra las primeras 5 filas con anunciante + (US$) + (GS)
-    mediosRows.slice(0, 5).forEach((r, i) => {
-      console.log(`[AdLens] Fila ${i}: anunciante="${r['anunciante']}" (US$)=${r['(US$)']} (GS)=${r['(GS)']} MES=${r['MES']}`);
-    });
-    // Muestra el total real de la columna (US$)
-    const totalUSDBruto = mediosRows.reduce((s, r) => s + (parseFloat(r['(US$)']) || 0), 0);
-    const totalGSBruto  = mediosRows.reduce((s, r) => s + (parseFloat(r['(GS)'])  || 0), 0);
-    console.log('[AdLens] Suma bruta (US$):', totalUSDBruto, '| Suma bruta (GS):', totalGSBruto);
-    console.log('[AdLens] Filas con (US$) > 0:', mediosRows.filter(r => parseFloat(r['(US$)']) > 0).length);
-  }
 
-  let totalInversion = 0;
-  const anunciantes={}, medios={}, grupos={}, agencias={}, sectores={}, meses={};
+  const medios={}, grupos={}, agencias={}, sectores={}, meses={};
+  let totalMediosRaw = 0;
   for (const row of mediosRows) {
     const usd = safeParse(row['(US$)']);
     if (!usd) continue;
-    const anunciante = normStr(row['anunciante']);
-    const medio      = normStr(row['Medio']);
-    const grupo      = normStr(row['Grupo Empresarial']);
-    const agencia    = normStr(row['Agência'] || row['Agencia'] || row['AGENCIA'] || '');
-    const setor      = (row['Setor'] || '').toString().trim();
-    const mes        = getMesBrowser(row['MES']);
+    const medio   = normStr(row['Medio']);
+    const grupo   = normStr(row['Grupo Empresarial']);
+    const agencia = normStr(row['Agência'] || row['Agencia'] || row['AGENCIA'] || '');
+    const setor   = (row['Setor'] || '').toString().trim();
+    const mes     = getMesBrowser(row['MES']);
 
-    totalInversion += usd;
-    if (anunciante) anunciantes[anunciante] = (anunciantes[anunciante]||0) + usd;
-    if (medio)      medios[medio]           = (medios[medio]||0)           + usd;
-    if (grupo)      grupos[grupo]           = (grupos[grupo]||0)           + usd;
-    if (agencia)    agencias[agencia]       = (agencias[agencia]||0)       + usd;
-    if (setor)      sectores[setor]         = (sectores[setor]||0)         + usd;
-    if (mes>=1&&mes<=12) meses[mes]         = (meses[mes]||0)              + usd;
+    totalMediosRaw += usd;
+    if (medio)   medios[medio]     = (medios[medio]||0)     + usd;
+    if (grupo)   grupos[grupo]     = (grupos[grupo]||0)     + usd;
+    if (agencia) agencias[agencia] = (agencias[agencia]||0) + usd;
+    if (setor)   sectores[setor]   = (sectores[setor]||0)   + usd;
+    if (mes>=1&&mes<=12) meses[mes]= (meses[mes]||0)        + usd;
   }
+
+  // Escalar valores de medios al total real (USD del adlens base)
+  const scale = totalMediosRaw > 0 && totalInversion > 0 ? totalInversion / totalMediosRaw : 1;
+  const scaleObj = obj => { Object.keys(obj).forEach(k => { obj[k] = Math.round(obj[k] * scale); }); };
+  scaleObj(medios); scaleObj(grupos); scaleObj(agencias); scaleObj(sectores); scaleObj(meses);
 
   // ── CLUSTERS ─────────────────────────────────────────────────────────────────
   const clusterBuckets = {};
