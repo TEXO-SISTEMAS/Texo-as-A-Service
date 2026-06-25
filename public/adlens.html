@@ -290,11 +290,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <div class="hs-value" id="heroMMI">--</div>
           <div class="hs-sub">promedio del mercado</div>
         </div>
-        <div class="hs" style="border-top:3px solid #f472b6">
-          <div class="hs-label">Base analizada</div>
-          <div class="hs-value" id="heroBase">--</div>
-          <div class="hs-sub">empresas segmentadas</div>
-        </div>
       </div>
     </div>
 
@@ -836,11 +831,10 @@ function renderDashboard(data) {
   document.getElementById('heroFacturacion').textContent = r.total_facturacion ? r.total_facturacion.toLocaleString('es-PY') : '--';
   document.getElementById('heroTotal').textContent = fmtUSD(r.total_inversion_usd);
   document.getElementById('heroAnunciantes').textContent = r.total_anunciantes;
-  document.getElementById('heroAvg').textContent = fmtUSD(r.total_inversion_usd / r.total_anunciantes);
+  document.getElementById('heroAvg').textContent = fmtUSD(r.total_inversion_usd / (r.anunciantes_con_inversion || r.total_anunciantes));
   document.getElementById('heroMax').textContent = fmtUSD(r.max_inversion || 0);
   document.getElementById('heroMaxName').textContent = r.max_anunciante || '—';
   document.getElementById('heroMMI').textContent = r.market_maturity_index + '%';
-  document.getElementById('heroBase').textContent = r.total_empresas_base || '—';
   document.getElementById('heroAno').textContent = r.ano;
   document.getElementById('heroAnoSub').textContent = 'Año ' + r.ano;
   if (data.generado_en) {
@@ -1103,7 +1097,12 @@ async function parseAdlensInBrowser(mediosFile, adlensFile) {
     resumen: {
       total_inversion_usd: Math.round(totalInversion),
       total_facturacion: Math.round(totalFacturacion),
+      // Anunciantes (display) = inner join completo medios ∩ adlens base = 198 (igual que el Looker)
       total_anunciantes: mediosAnunciantes.size > 0
+        ? Object.keys(empresaMap).filter(n => mediosAnunciantes.has(n)).length
+        : Object.keys(empresaMap).length,
+      // Para el promedio: solo empresas con inversión > 0 (denominador del Avg del Looker = 174)
+      anunciantes_con_inversion: mediosAnunciantes.size > 0
         ? Object.keys(anunciantes).filter(n => mediosAnunciantes.has(n)).length
         : Object.keys(anunciantes).length,
       market_maturity_index: mmi,
