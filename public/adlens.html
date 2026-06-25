@@ -359,8 +359,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
       <div class="sec">
         <div class="two-col">
           <div class="card">
-            <div class="card-title">SOI por Grupo de Medios</div>
-            <div class="bar-list" id="grupoBars"></div>
+            <div class="card-title">SOI por Grupo Empresarial</div>
+            <div id="grupoPieWrap" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
           </div>
           <div class="card">
             <div class="card-title">Inversión por Sector</div>
@@ -430,8 +430,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
             <div class="bar-list" id="mediaMixBars"></div>
           </div>
           <div class="card">
-            <div class="card-title">SOI por Grupo de Medios</div>
-            <div class="bar-list" id="grupoBars2"></div>
+            <div class="card-title">SOI por Grupo Empresarial</div>
+            <div id="grupoPieWrap2" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
           </div>
         </div>
         <div class="card">
@@ -643,24 +643,23 @@ function renderScatter(scatterData) {
   ).join('');
 }
 
-function renderDonut(mediaMix) {
-  const top = mediaMix.slice(0, 9);
-  const otrosInv = mediaMix.slice(9).reduce((s,d)=>s+d.inversion, 0);
-  if (otrosInv > 0) top.push({ medio:'Otros', inversion: otrosInv, share: Math.round(otrosInv/(top.reduce((s,d)=>s+d.inversion,0)+otrosInv)*10000)/100 });
+function buildDonutHTML(items, labelKey, n) {
+  const top = items.slice(0, n);
+  const otrosInv = items.slice(n).reduce((s,d)=>s+d.inversion, 0);
+  const otrosShare = items.slice(n).reduce((s,d)=>s+(d.share||0), 0);
+  if (otrosInv > 0) top.push({ [labelKey]:'Otros', inversion: otrosInv, share: Math.round(otrosShare*100)/100 });
 
   const total = top.reduce((s,d)=>s+d.inversion, 0);
   const R=58, CX=78, CY=78;
   const circ = 2*Math.PI*R;
-  let offset = 0;
-  let circles = '';
+  let offset = 0, circles = '';
 
   for(let i=0;i<top.length;i++) {
-    const pct = top[i].inversion / total;
-    const dash = pct * circ;
+    const dash = (top[i].inversion / total) * circ;
     circles += `<circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="${DONUT_COLORS[i]}" stroke-width="26"
       stroke-dasharray="${dash.toFixed(2)} ${circ.toFixed(2)}"
       stroke-dashoffset="${(-offset).toFixed(2)}"
-      transform="rotate(-90 ${CX} ${CY})"><title>${top[i].medio}: ${top[i].share?.toFixed(1)}%</title></circle>`;
+      transform="rotate(-90 ${CX} ${CY})"><title>${top[i][labelKey]}: ${top[i].share?.toFixed(1)}%</title></circle>`;
     offset += dash;
   }
 
@@ -674,11 +673,19 @@ function renderDonut(mediaMix) {
   const legend = top.map((d,i) => `
     <div class="dl-item">
       <div class="dl-dot" style="background:${DONUT_COLORS[i]}"></div>
-      <div class="dl-label" title="${d.medio}">${d.medio}</div>
+      <div class="dl-label" title="${d[labelKey]}">${d[labelKey]}</div>
       <div class="dl-pct">${d.share?.toFixed(1)}%</div>
     </div>`).join('');
 
-  document.getElementById('donutWrap').innerHTML = `${svg}<div class="donut-legend">${legend}</div>`;
+  return `${svg}<div class="donut-legend">${legend}</div>`;
+}
+
+function renderDonut(mediaMix) {
+  document.getElementById('donutWrap').innerHTML = buildDonutHTML(mediaMix, 'medio', 9);
+}
+
+function renderGrupoPie(data) {
+  document.getElementById('grupoPieWrap').innerHTML = buildDonutHTML(data, 'grupo', 6);
 }
 
 function renderBars(containerId, items, labelKey, valKey, color='#1a1a2e') {
@@ -891,7 +898,7 @@ function renderDashboard(data) {
   renderDonut(data.media_mix);
   renderTopAnunciantesShort(data.top_anunciantes);
   renderEstacionalidad(data.estacionalidad);
-  renderBars('grupoBars', data.por_grupo_empresarial, 'grupo', 'inversion', '#6c3fc5');
+  renderGrupoPie(data.por_grupo_empresarial);
   renderBars('sectorBars', data.por_sector, 'sector', 'inversion', '#0ea5b0');
 
   // Segmentación tab
@@ -903,7 +910,7 @@ function renderDashboard(data) {
 
   // Medios tab
   renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
-  renderBars('grupoBars2', data.por_grupo_empresarial, 'grupo', 'inversion', '#6c3fc5');
+  document.getElementById('grupoPieWrap2').innerHTML = buildDonutHTML(data.por_grupo_empresarial, 'grupo', 6);
   renderAnunciantes(data.top_anunciantes);
 
   // Agencias tab
