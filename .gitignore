@@ -3,6 +3,20 @@
 .env.local
 .env.*.local
 
+# Service account keys de Google Cloud / BigQuery — NUNCA commitear
+*-firebase-adminsdk-*.json
+*serviceaccount*.json
+*service-account*.json
+gcp-key*.json
+adlenslooker*.json
+
+# node_modules raíz
+node_modules/
+
+# Scripts de prueba temporales
+_bq_inspect.js
+_test_*.js
+
 # Python
 __pycache__/
 *.py[cod]

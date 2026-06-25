@@ -703,6 +703,25 @@ app.get('/api/adlens/latest', requireAuth, async (req, res) => {
   }
 });
 
+// Datos en vivo desde BigQuery (mismas tablas que el Looker). Cacheado en memoria 1h.
+let _bqCache = { data: null, ts: 0 };
+const BQ_TTL = 60 * 60 * 1000;
+app.get('/api/adlens/bigquery', requireAuth, async (req, res) => {
+  try {
+    const force = req.query.refresh === '1';
+    if (!force && _bqCache.data && (Date.now() - _bqCache.ts) < BQ_TTL) {
+      return res.json({ ..._bqCache.data, cache: true });
+    }
+    const bigquery = require('./bigquery');
+    const data = await bigquery.buildAdlensData();
+    _bqCache = { data, ts: Date.now() };
+    res.json(data);
+  } catch (e) {
+    console.error('ERROR /api/adlens/bigquery:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── START ─────────────────────────────────────────────────────────────────────
 // En local/Render: corre como servidor. En Vercel: exporta el app como función serverless.
 if (require.main === module) {

@@ -270,6 +270,11 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <div class="hs-value" id="heroTotal">--</div>
           <div class="hs-sub" id="heroAnoSub">Año 2024</div>
         </div>
+        <div class="hs" id="heroIBCard" style="border-top:3px solid #38bdf8">
+          <div class="hs-label">Invest / Billing</div>
+          <div class="hs-value" id="heroIB">--</div>
+          <div class="hs-sub">inversión vs facturación</div>
+        </div>
         <div class="hs hs-yellow">
           <div class="hs-label">Anunciantes</div>
           <div class="hs-value" id="heroAnunciantes">--</div>
@@ -832,6 +837,7 @@ function renderDashboard(data) {
   document.getElementById('heroTotal').textContent = fmtUSD(r.total_inversion_usd);
   document.getElementById('heroAnunciantes').textContent = r.total_anunciantes;
   document.getElementById('heroAvg').textContent = fmtUSD(r.total_inversion_usd / (r.anunciantes_con_inversion || r.total_anunciantes));
+  if (r.invest_billing != null) document.getElementById('heroIB').textContent = r.invest_billing + ' %';
   document.getElementById('heroMax').textContent = fmtUSD(r.max_inversion || 0);
   document.getElementById('heroMaxName').textContent = r.max_anunciante || '—';
   document.getElementById('heroMMI').textContent = r.market_maturity_index + '%';
@@ -874,7 +880,10 @@ function renderDashboard(data) {
 // ── LOAD ──────────────────────────────────────────────────────────────────────
 async function loadAdlens() {
   try {
-    const r = await fetch('/api/adlens/latest');
+    // Fuente principal: BigQuery en vivo (mismas tablas que el Looker)
+    let r = await fetch('/api/adlens/bigquery');
+    // Fallback: último JSON guardado en Drive (datos subidos por Excel)
+    if (!r.ok) r = await fetch('/api/adlens/latest');
     if (r.status === 404) {
       document.getElementById('loadingWrap').style.display = 'none';
       document.getElementById('emptyWrap').style.display = 'block';
