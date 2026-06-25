@@ -96,7 +96,7 @@ async function buildAdlensData() {
   // 2) Breakdowns de medios (inner join con anunciantes del adlens) — por GS (guaraníes)
   const innerJoin = `JOIN (SELECT DISTINCT anunciante FROM ${A} WHERE anunciante IS NOT NULL) a USING (anunciante)`;
   const R = fq(T_RADA);
-  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows, anunRangoRows] = await Promise.all([
+  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows, anunRangoRows, evolucionRows] = await Promise.all([
     query(`SELECT Medio AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Medio IS NOT NULL GROUP BY Medio ORDER BY v DESC`),
     query(`SELECT GrupoEmpresarial AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE GrupoEmpresarial IS NOT NULL GROUP BY GrupoEmpresarial ORDER BY v DESC`),
     query(`SELECT Agencia AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Agencia IS NOT NULL GROUP BY Agencia ORDER BY v DESC`),
@@ -109,6 +109,8 @@ async function buildAdlensData() {
     query(`SELECT AVG(r.Score) AS v FROM ${M} m JOIN ${R} r USING(anunciante) WHERE r.Score IS NOT NULL`),
     // Top anunciantes: SUM(RANGODEINVERSION) de medios por anunciante (igual al Looker)
     query(`SELECT m.anunciante AS k, SUM(RANGODEINVERSION) AS v FROM ${M} m ${innerJoin} WHERE m.anunciante IS NOT NULL GROUP BY m.anunciante ORDER BY v DESC`),
+    // Evolución de inversiones: SUM(RANGODEINVERSION) por año inner join
+    query(`SELECT A__O AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE A__O IS NOT NULL GROUP BY A__O ORDER BY A__O ASC`),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
   const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
@@ -238,6 +240,7 @@ async function buildAdlensData() {
     },
     media_mix, top_anunciantes, por_grupo_empresarial, por_agencia, por_sector,
     estacionalidad, clusters, scores_globales, scatter_data, empresas_lista,
+    evolucion: evolucionRows.map(r => ({ ano: +r.k, inversion: +r.v })),
     fuente: 'bigquery',
     generado_en: new Date().toISOString(),
   };

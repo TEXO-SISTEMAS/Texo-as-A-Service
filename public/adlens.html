@@ -344,14 +344,27 @@ body{display:flex;flex-direction:column;min-height:100vh}
         </div>
       </div>
 
-      <!-- ESTACIONALIDAD -->
+      <!-- EVOLUCIÓN ANUAL + ESTACIONALIDAD -->
       <div class="sec alt">
-        <div class="sec-label">Temporalidad</div>
-        <div class="sec-heading">Estacionalidad de Inversiones</div>
-        <div class="sec-bar"></div>
-        <div class="sec-desc">Distribución mensual de la inversión publicitaria total durante el año.</div>
-        <div class="card" style="padding:24px 24px 40px">
-          <div class="est-grid" id="estGrid"></div>
+        <div class="two-col">
+          <div>
+            <div class="sec-label">Histórico</div>
+            <div class="sec-heading">Evolución de las Inversiones</div>
+            <div class="sec-bar"></div>
+            <div class="sec-desc">Inversión total anual en miles USD (inner join 198 anunciantes).</div>
+            <div class="card" style="padding:24px 24px 32px">
+              <div id="evolucionGrid" style="display:flex;gap:8px;align-items:flex-end;height:130px;padding-bottom:24px;position:relative"></div>
+            </div>
+          </div>
+          <div>
+            <div class="sec-label">Temporalidad</div>
+            <div class="sec-heading">Estacionalidad de Inversiones</div>
+            <div class="sec-bar"></div>
+            <div class="sec-desc">Distribución mensual de la inversión publicitaria total durante el año.</div>
+            <div class="card" style="padding:24px 24px 40px">
+              <div class="est-grid" id="estGrid"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -720,6 +733,18 @@ function renderTopAnunciantesShort(data) {
   }).join('');
 }
 
+function renderEvolucion(data) {
+  const max = Math.max(...data.map(d=>d.inversion));
+  document.getElementById('evolucionGrid').innerHTML = data.map(d => {
+    const h = max > 0 ? Math.max(8, (d.inversion / max * 100)) : 8;
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end">
+      <div style="font-size:9px;font-weight:700;color:#f59e0b">${Math.round(d.inversion/1000)}k</div>
+      <div style="width:100%;height:${h}%;background:#f59e0b;border-radius:4px 4px 0 0;min-height:4px" title="${d.ano}: ${d.inversion.toLocaleString()} miles USD"></div>
+      <div style="font-size:10px;font-weight:700;color:var(--muted2)">${d.ano}</div>
+    </div>`;
+  }).join('');
+}
+
 function renderEstacionalidad(data) {
   const max = Math.max(...data.map(d=>d.inversion));
   document.getElementById('estGrid').innerHTML = data.map(d => {
@@ -900,6 +925,7 @@ function renderDashboard(data) {
   renderDonut(data.media_mix);
   renderTopAnunciantesShort(data.top_anunciantes);
   renderEstacionalidad(data.estacionalidad);
+  if (data.evolucion) renderEvolucion(data.evolucion);
   renderGrupoPie(data.por_grupo_empresarial);
   renderBars('sectorBars', data.por_sector, 'sector', 'inversion', '#0ea5b0');
 
