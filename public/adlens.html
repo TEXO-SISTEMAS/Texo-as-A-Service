@@ -290,11 +290,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <div class="hs-value" id="heroMax">--</div>
           <div class="hs-sub" id="heroMaxName">--</div>
         </div>
-        <div class="hs hs-blue">
-          <div class="hs-label">Market Maturity Index</div>
-          <div class="hs-value" id="heroMMI">--</div>
-          <div class="hs-sub">promedio del mercado</div>
-        </div>
       </div>
     </div>
 
@@ -840,7 +835,6 @@ function renderDashboard(data) {
   if (r.invest_billing != null) document.getElementById('heroIB').textContent = r.invest_billing + ' %';
   document.getElementById('heroMax').textContent = fmtUSD(r.max_inversion || 0);
   document.getElementById('heroMaxName').textContent = r.max_anunciante || '—';
-  document.getElementById('heroMMI').textContent = r.market_maturity_index + '%';
   document.getElementById('heroAno').textContent = r.ano;
   document.getElementById('heroAnoSub').textContent = 'Año ' + r.ano;
   if (data.generado_en) {
