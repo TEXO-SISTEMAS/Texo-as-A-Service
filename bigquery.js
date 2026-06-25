@@ -196,7 +196,9 @@ async function buildAdlensData() {
   // ── Scatter
   const scatter_data = Object.entries(empresaMap)
     .filter(([_,e]) => e.pc1 != null && e.pc2 != null && (e.pc1 !== 0 || e.pc2 !== 0))
-    .map(([nombre,e]) => ({ nombre, pc1:e.pc1, pc2:e.pc2, cluster:e.cluster, inversion:Math.round(anunciantes[nombre]||0) }));
+    .map(([nombre,e]) => ({ nombre, pc1:e.pc1, pc2:e.pc2, cluster:e.cluster, tipo_cluster:e.tipo_cluster,
+      inversion:Math.round(anunciantes[nombre]||0),
+      share: totalInversion>0 ? r2((anunciantes[nombre]||0)/totalInversion*100) : 0 }));
 
   // ── Empresas lista
   const empresas_lista = Object.entries(empresaMap)
