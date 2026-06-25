@@ -16,17 +16,16 @@ const T_ADLENS   = 'tablamaterializada_adlens';
 // Carga las credenciales de la service account desde env, de forma robusta.
 // Preferencia: GCP_SA_KEY_B64 (base64 del JSON — a prueba de saltos/comillas) > GCP_SA_KEY (JSON crudo) > archivo.
 function loadCredentials() {
-  let raw = null;
-  if (process.env.GCP_SA_KEY_B64) {
-    raw = Buffer.from(process.env.GCP_SA_KEY_B64.trim(), 'base64').toString('utf8');
-  } else if (process.env.GCP_SA_KEY) {
-    raw = process.env.GCP_SA_KEY;
-  }
+  let raw = process.env.GCP_SA_KEY_B64 || process.env.GCP_SA_KEY;
   if (!raw) return null;
   raw = raw.trim();
   // Quitar comillas externas si el entorno las agregó
   if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
-    raw = raw.slice(1, -1);
+    raw = raw.slice(1, -1).trim();
+  }
+  // Autodetectar: si no parece JSON ("{"), asumir base64 y decodificar
+  if (!raw.startsWith('{')) {
+    try { raw = Buffer.from(raw, 'base64').toString('utf8').trim(); } catch (_) {}
   }
   const creds = JSON.parse(raw);
   // Reparar private_key si los saltos llegaron como "\n" literales
