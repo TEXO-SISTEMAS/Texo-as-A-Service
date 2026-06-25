@@ -101,7 +101,7 @@ async function buildAdlensData() {
     query(`SELECT GrupoEmpresarial AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE GrupoEmpresarial IS NOT NULL GROUP BY GrupoEmpresarial ORDER BY v DESC`),
     query(`SELECT Agencia AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Agencia IS NOT NULL GROUP BY Agencia ORDER BY v DESC`),
     query(`SELECT Scetor AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Scetor IS NOT NULL GROUP BY Scetor ORDER BY v DESC`),
-    query(`SELECT EXTRACT(MONTH FROM MES) AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE A__O = 2024 AND MES IS NOT NULL GROUP BY k ORDER BY k`),
+    query(`SELECT EXTRACT(MONTH FROM MES) AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE MES IS NOT NULL GROUP BY k ORDER BY k`),
     query(`SELECT COUNT(DISTINCT m.anunciante) AS n FROM ${M} m ${innerJoin.replace('USING (anunciante)','USING (anunciante)')} `),
     // Facturación: igual que el Looker (SUM de facturacion sobre el inner join, repetida por fila de medios)
     query(`SELECT SUM(SAFE_CAST(a.facturacion AS FLOAT64)) AS v FROM ${M} m JOIN ${A} a USING(anunciante)`),

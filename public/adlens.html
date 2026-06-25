@@ -361,8 +361,8 @@ body{display:flex;flex-direction:column;min-height:100vh}
             <div class="sec-heading">Estacionalidad de Inversiones</div>
             <div class="sec-bar"></div>
             <div class="sec-desc">Distribución mensual de la inversión publicitaria total durante el año.</div>
-            <div class="card" style="padding:24px 24px 40px">
-              <div class="est-grid" id="estGrid"></div>
+            <div class="card" style="padding:24px 24px 16px">
+              <div id="estGrid" style="width:100%"></div>
             </div>
           </div>
         </div>
@@ -746,14 +746,40 @@ function renderEvolucion(data) {
 }
 
 function renderEstacionalidad(data) {
-  const max = Math.max(...data.map(d=>d.inversion));
-  document.getElementById('estGrid').innerHTML = data.map(d => {
-    const h = max>0 ? Math.max(8, (d.inversion/max*100)) : 8;
-    return `<div class="est-bar-wrap" title="${d.nombre}: ${fmtUSD(d.inversion)}">
-      <div class="est-bar" style="height:${h}%;background:var(--accent);opacity:${0.4+d.inversion/max*0.6}"></div>
-      <div class="est-label">${d.nombre}</div>
-    </div>`;
-  }).join('');
+  const W = 560, H = 140, PAD = { t: 10, r: 10, b: 28, l: 44 };
+  const iW = W - PAD.l - PAD.r, iH = H - PAD.t - PAD.b;
+  const vals = data.map(d => d.inversion);
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const range = mx - mn || 1;
+  const toX = i => PAD.l + (i / (data.length - 1)) * iW;
+  const toY = v => PAD.t + iH - ((v - mn) / range) * iH;
+
+  const pts = data.map((d, i) => `${toX(i).toFixed(1)},${toY(d.inversion).toFixed(1)}`).join(' ');
+  const polyPts = [`${toX(0).toFixed(1)},${(PAD.t+iH).toFixed(1)}`, ...data.map((d,i)=>`${toX(i).toFixed(1)},${toY(d.inversion).toFixed(1)}`), `${toX(data.length-1).toFixed(1)},${(PAD.t+iH).toFixed(1)}`].join(' ');
+
+  // Y axis labels
+  const ySteps = 3;
+  let yLabels = '';
+  for (let i = 0; i <= ySteps; i++) {
+    const v = mn + (range / ySteps) * i;
+    const y = toY(v);
+    yLabels += `<text x="${PAD.l - 4}" y="${y.toFixed(1)}" text-anchor="end" font-size="9" fill="#9ca3af" dominant-baseline="middle">${Math.round(v/1000)}k</text>
+    <line x1="${PAD.l}" y1="${y.toFixed(1)}" x2="${W - PAD.r}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+  }
+
+  // X axis labels
+  const xLabels = data.map((d, i) => `<text x="${toX(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="9" fill="#9ca3af">${d.nombre}</text>`).join('');
+
+  // Dots
+  const dots = data.map((d, i) => `<circle cx="${toX(i).toFixed(1)}" cy="${toY(d.inversion).toFixed(1)}" r="3" fill="#f59e0b"><title>${d.nombre}: ${d.inversion.toLocaleString()}</title></circle>`).join('');
+
+  document.getElementById('estGrid').innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">
+    ${yLabels}
+    <polygon points="${polyPts}" fill="#f59e0b" fill-opacity="0.15"/>
+    <polyline points="${pts}" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}
+    ${xLabels}
+  </svg>`;
 }
 
 function renderAnunciantes(data) {
