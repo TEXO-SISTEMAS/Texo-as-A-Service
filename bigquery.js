@@ -96,7 +96,7 @@ async function buildAdlensData() {
   // 2) Breakdowns de medios (inner join con anunciantes del adlens) — por GS (guaraníes)
   const innerJoin = `JOIN (SELECT DISTINCT anunciante FROM ${A} WHERE anunciante IS NOT NULL) a USING (anunciante)`;
   const R = fq(T_RADA);
-  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows] = await Promise.all([
+  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows, anunRangoRows] = await Promise.all([
     query(`SELECT Medio AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Medio IS NOT NULL GROUP BY Medio ORDER BY v DESC`),
     query(`SELECT GrupoEmpresarial AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE GrupoEmpresarial IS NOT NULL GROUP BY GrupoEmpresarial ORDER BY v DESC`),
     query(`SELECT Agencia AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Agencia IS NOT NULL GROUP BY Agencia ORDER BY v DESC`),
@@ -107,6 +107,8 @@ async function buildAdlensData() {
     query(`SELECT SUM(SAFE_CAST(a.facturacion AS FLOAT64)) AS v FROM ${M} m JOIN ${A} a USING(anunciante)`),
     // Market Maturity Index: AVG(Score) ponderado por filas de medios (blend medios × rada, igual al Looker)
     query(`SELECT AVG(r.Score) AS v FROM ${M} m JOIN ${R} r USING(anunciante) WHERE r.Score IS NOT NULL`),
+    // Top anunciantes: SUM(RANGODEINVERSION) de medios por anunciante (igual al Looker)
+    query(`SELECT m.anunciante AS k, SUM(RANGODEINVERSION) AS v FROM ${M} m ${innerJoin} WHERE m.anunciante IS NOT NULL GROUP BY m.anunciante ORDER BY v DESC`),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
   const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
@@ -176,13 +178,24 @@ async function buildAdlensData() {
     scores_globales[d] = vals.length ? r1((vals.reduce((s,v)=>s+v,0)/vals.length)*scoreScale) : 0;
   }
 
-  // ── Rankings
-  const sorted = Object.entries(anunciantes).sort((a,b)=>b[1]-a[1]);
-  const maxEntry = sorted[0] || ['—', 0];
-  const top_anunciantes = sorted.slice(0,15).map(([nombre,inv]) => ({
-    nombre, inversion:Math.round(inv), share:r2(inv/totalInversion*100),
-    cluster:empresaMap[nombre]?.cluster??null, tipo_cluster:empresaMap[nombre]?.tipo_cluster||'', rubro:empresaMap[nombre]?.rubro||'',
-  }));
+  // ── Rankings — usa SUM(RANGODEINVERSION) de medios (igual al Looker)
+  // maxEntry para hero card usa adlens (inversion USD)
+  const sortedByAdlens = Object.entries(anunciantes).sort((a,b)=>b[1]-a[1]);
+  const maxEntry = sortedByAdlens[0] || ['—', 0];
+
+  // top_anunciantes usa SUM(RANGODEINVERSION) de medios (igual al Looker)
+  const totalRangoMedios = anunRangoRows.reduce((s,r)=>s+(+r.v||0),0);
+  const top_anunciantes = anunRangoRows.map(r => {
+    const nombre = r.k;
+    return {
+      nombre, rango_medios: r2(+r.v||0),
+      share: totalRangoMedios > 0 ? r2((+r.v||0) / totalRangoMedios * 100) : 0,
+      cluster: empresaMap[nombre]?.cluster ?? null,
+      tipo_cluster: empresaMap[nombre]?.tipo_cluster || '',
+      rubro: empresaMap[nombre]?.rubro || '',
+      inversion: anunciantes[nombre] || 0,
+    };
+  });
 
   // ── Breakdowns de medios (share relativo a su propio total)
   const mkList = (rows, keyName, n) => {

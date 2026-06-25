@@ -709,10 +709,12 @@ function renderTopAnunciantesShort(data) {
     const c = a.cluster;
     const col = c!=null ? CLUSTER_COLORS[c] : '#999';
     const bg  = c!=null ? col+'22' : '#f1f3f8';
+    const rango = a.rango_medios != null ? a.rango_medios.toFixed(2) : (a.inversion ? (a.inversion/1000).toFixed(2) : '—');
     return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px">
       <div style="color:var(--muted2);font-weight:700;min-width:16px">${i+1}</div>
       <div style="flex:1;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.nombre}</div>
-      <div style="font-weight:700">${a.share.toFixed(1)}%</div>
+      <div style="color:var(--muted);font-size:10px;min-width:52px;text-align:right">${rango}</div>
+      <div style="font-weight:700;min-width:38px;text-align:right">${a.share.toFixed(2)}%</div>
       <span class="cluster-chip" style="background:${bg};color:${col}">${c!=null?'Seg '+c:'—'}</span>
     </div>`;
   }).join('');
@@ -738,7 +740,7 @@ function renderAnunciantes(data) {
       <td style="color:var(--muted2);font-weight:600">${i+1}</td>
       <td style="font-weight:700;text-align:left">${a.nombre}</td>
       <td style="color:var(--muted);text-align:left">${a.rubro||'—'}</td>
-      <td>${fmtUSDFull(a.inversion)}</td>
+      <td>${a.rango_medios != null ? a.rango_medios.toFixed(2) : '—'}</td>
       <td>${a.share.toFixed(2)}%</td>
       <td style="text-align:left"><span class="cluster-chip" style="background:${chipBg};color:${chipColor}">${c!=null?'Seg '+c:'—'}</span> <span style="font-size:10px;color:var(--muted)">${a.tipo_cluster||''}</span></td>
     </tr>`;
