@@ -13,12 +13,36 @@ const DATASET    = process.env.GCP_DATASET    || 'adlensmedios';
 const T_MEDIOS   = 'tablamaterializada_medios';
 const T_ADLENS   = 'tablamaterializada_adlens';
 
+// Carga las credenciales de la service account desde env, de forma robusta.
+// Preferencia: GCP_SA_KEY_B64 (base64 del JSON — a prueba de saltos/comillas) > GCP_SA_KEY (JSON crudo) > archivo.
+function loadCredentials() {
+  let raw = null;
+  if (process.env.GCP_SA_KEY_B64) {
+    raw = Buffer.from(process.env.GCP_SA_KEY_B64.trim(), 'base64').toString('utf8');
+  } else if (process.env.GCP_SA_KEY) {
+    raw = process.env.GCP_SA_KEY;
+  }
+  if (!raw) return null;
+  raw = raw.trim();
+  // Quitar comillas externas si el entorno las agregó
+  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+    raw = raw.slice(1, -1);
+  }
+  const creds = JSON.parse(raw);
+  // Reparar private_key si los saltos llegaron como "\n" literales
+  if (creds.private_key && creds.private_key.includes('\\n')) {
+    creds.private_key = creds.private_key.replace(/\\n/g, '\n');
+  }
+  return creds;
+}
+
 let _client = null;
 function client() {
   if (_client) return _client;
   const opts = { projectId: PROJECT_ID };
-  if (process.env.GCP_SA_KEY) {
-    opts.credentials = JSON.parse(process.env.GCP_SA_KEY);
+  const creds = loadCredentials();
+  if (creds) {
+    opts.credentials = creds;
   } else if (process.env.GCP_SA_KEY_FILE) {
     opts.keyFilename = process.env.GCP_SA_KEY_FILE;
   }
