@@ -293,6 +293,15 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <div class="hs-value" id="heroMax">--</div>
           <div class="hs-sub" id="heroMaxName">--</div>
         </div>
+        <div class="hs" id="heroMMICard" style="border-top:3px solid #f59e0b">
+          <div class="hs-label">Market Maturity Index</div>
+          <svg id="mmiGauge" viewBox="0 0 120 70" width="120" height="70" style="display:block;margin:4px auto 0">
+            <path d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="#e8eaf0" stroke-width="12" stroke-linecap="round"/>
+            <path id="mmiArc" d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="#f59e0b" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 157"/>
+            <text id="mmiPct" x="60" y="62" text-anchor="middle" font-size="18" font-weight="900" fill="var(--text,#1e293b)">--</text>
+          </svg>
+          <div class="hs-sub">promedio del mercado</div>
+        </div>
       </div>
     </div>
 
@@ -864,6 +873,14 @@ function renderDashboard(data) {
   document.getElementById('heroMax').textContent = fmtUSD(r.max_inversion || 0);
   document.getElementById('heroMaxName').textContent = r.max_anunciante || '—';
   document.getElementById('heroAno').textContent = r.ano;
+  // Market Maturity Index gauge
+  if (r.market_maturity_index != null) {
+    const pct = r.market_maturity_index;
+    document.getElementById('mmiPct').textContent = pct + '%';
+    const arcLen = 157; // longitud total del semicírculo (π×r = π×50)
+    const filled = arcLen * (pct / 100);
+    document.getElementById('mmiArc').setAttribute('stroke-dasharray', filled + ' ' + (arcLen - filled));
+  }
   document.getElementById('heroAnoSub').textContent = 'Año ' + r.ano;
   if (data.generado_en) {
     document.getElementById('heroGenDate').textContent = 'Actualizado: ' + new Date(data.generado_en).toLocaleDateString('es-PY', {day:'numeric',month:'short',year:'numeric'});

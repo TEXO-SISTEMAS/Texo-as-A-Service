@@ -12,6 +12,7 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID || 'adlenslooker';
 const DATASET    = process.env.GCP_DATASET    || 'adlensmedios';
 const T_MEDIOS   = 'tablamaterializada_medios';
 const T_ADLENS   = 'tablamaterializada_adlens';
+const T_RADA     = 'tablamaterializada_rada';
 
 // Carga las credenciales de la service account desde env, de forma robusta.
 // Preferencia: GCP_SA_KEY_B64 (base64 del JSON — a prueba de saltos/comillas) > GCP_SA_KEY (JSON crudo) > archivo.
@@ -94,7 +95,8 @@ async function buildAdlensData() {
 
   // 2) Breakdowns de medios (inner join con anunciantes del adlens) — por GS (guaraníes)
   const innerJoin = `JOIN (SELECT DISTINCT anunciante FROM ${A} WHERE anunciante IS NOT NULL) a USING (anunciante)`;
-  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows] = await Promise.all([
+  const R = fq(T_RADA);
+  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows] = await Promise.all([
     query(`SELECT Medio AS k, SUM(GS) AS v FROM ${M} ${innerJoin} WHERE Medio IS NOT NULL GROUP BY Medio ORDER BY v DESC`),
     query(`SELECT GrupoEmpresarial AS k, SUM(GS) AS v FROM ${M} ${innerJoin} WHERE GrupoEmpresarial IS NOT NULL GROUP BY GrupoEmpresarial ORDER BY v DESC`),
     query(`SELECT Agencia AS k, SUM(GS) AS v FROM ${M} ${innerJoin} WHERE Agencia IS NOT NULL GROUP BY Agencia ORDER BY v DESC`),
@@ -103,8 +105,11 @@ async function buildAdlensData() {
     query(`SELECT COUNT(DISTINCT m.anunciante) AS n FROM ${M} m ${innerJoin.replace('USING (anunciante)','USING (anunciante)')} `),
     // Facturación: igual que el Looker (SUM de facturacion sobre el inner join, repetida por fila de medios)
     query(`SELECT SUM(SAFE_CAST(a.facturacion AS FLOAT64)) AS v FROM ${M} m JOIN ${A} a USING(anunciante)`),
+    // Market Maturity Index: AVG(Score) ponderado por filas de medios (blend medios × rada, igual al Looker)
+    query(`SELECT AVG(r.Score) AS v FROM ${M} m JOIN ${R} r USING(anunciante) WHERE r.Score IS NOT NULL`),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
+  const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
 
   // ── Empresas → mapa
   const empresaMap = {};
@@ -135,7 +140,6 @@ async function buildAdlensData() {
     };
     if (invUsd > 0) { anunciantes[nombre] = invUsd; totalInversion += invUsd; }
   }
-  const mmi = countPuntaje > 0 ? r1(totalPuntaje / countPuntaje) : 0;
   const anunciantesConInversion = Object.keys(anunciantes).length;
   const totalAnunciantes = (anunMediosRows[0] && +anunMediosRows[0].n) || Object.keys(empresaMap).length;
   const investBilling = sumFact > 0 ? r1((sumRango / sumFact) * 100) : 0;
