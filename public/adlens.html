@@ -329,11 +329,15 @@ body{display:flex;flex-direction:column;min-height:100vh}
             <div class="scatter-legend" id="scatterLegend"></div>
           </div>
 
-          <!-- RIGHT: MEDIA MIX + TOP -->
+          <!-- RIGHT: MEDIA MIX + GRUPO + TOP -->
           <div style="display:flex;flex-direction:column;gap:16px">
             <div class="card">
               <div class="card-title">Media Mix</div>
               <div class="donut-wrap" id="donutWrap"></div>
+            </div>
+            <div class="card">
+              <div class="card-title">SOI por Grupo Empresarial</div>
+              <div id="grupoPieWrap" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
             </div>
             <div class="card">
               <div class="card-title">Top 10 Anunciantes · Share%</div>
@@ -368,19 +372,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
         </div>
       </div>
 
-      <!-- SOI POR GRUPO + SECTOR -->
-      <div class="sec">
-        <div class="two-col">
-          <div class="card">
-            <div class="card-title">SOI por Grupo Empresarial</div>
-            <div id="grupoPieWrap" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
-          </div>
-          <div class="card">
-            <div class="card-title">Inversión por Sector</div>
-            <div class="bar-list" id="sectorBars"></div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- ═══ TAB: SEGMENTACIÓN ═══ -->
@@ -770,16 +761,44 @@ function renderEstacionalidad(data) {
   // X axis labels
   const xLabels = data.map((d, i) => `<text x="${toX(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="9" fill="#9ca3af">${d.nombre}</text>`).join('');
 
-  // Dots
-  const dots = data.map((d, i) => `<circle cx="${toX(i).toFixed(1)}" cy="${toY(d.inversion).toFixed(1)}" r="3" fill="#f59e0b"><title>${d.nombre}: ${d.inversion.toLocaleString()}</title></circle>`).join('');
+  // Dots con eventos hover
+  const dots = data.map((d, i) => `<circle cx="${toX(i).toFixed(1)}" cy="${toY(d.inversion).toFixed(1)}" r="4" fill="#f59e0b" stroke="#fff" stroke-width="1.5" style="cursor:pointer"
+    data-mes="${d.nombre}" data-val="${d.inversion}"></circle>`).join('');
 
-  document.getElementById('estGrid').innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">
-    ${yLabels}
-    <polygon points="${polyPts}" fill="#f59e0b" fill-opacity="0.15"/>
-    <polyline points="${pts}" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    ${dots}
-    ${xLabels}
-  </svg>`;
+  const wrap = document.getElementById('estGrid');
+  wrap.innerHTML = `<div style="position:relative">
+    <div id="estTip" style="display:none;position:absolute;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px 12px;box-shadow:0 4px 12px #0002;font-size:12px;pointer-events:none;z-index:10;white-space:nowrap">
+      <div id="estTipMes" style="font-weight:700;color:#f59e0b;margin-bottom:2px"></div>
+      <div id="estTipVal" style="font-weight:800;color:#1e293b;font-size:14px"></div>
+      <div style="font-size:10px;color:#94a3b8">miles USD</div>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">
+      ${yLabels}
+      <polygon points="${polyPts}" fill="#f59e0b" fill-opacity="0.15"/>
+      <polyline points="${pts}" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+      ${xLabels}
+    </svg>
+  </div>`;
+
+  // Tooltip events
+  wrap.querySelectorAll('circle').forEach(c => {
+    c.addEventListener('mouseenter', e => {
+      const tip = document.getElementById('estTip');
+      document.getElementById('estTipMes').textContent = c.dataset.mes;
+      document.getElementById('estTipVal').textContent = (+c.dataset.val).toLocaleString('es-PY');
+      tip.style.display = 'block';
+    });
+    c.addEventListener('mousemove', e => {
+      const tip = document.getElementById('estTip');
+      const rect = wrap.getBoundingClientRect();
+      let left = e.clientX - rect.left + 12;
+      if (left + 130 > rect.width) left = e.clientX - rect.left - 130;
+      tip.style.left = left + 'px';
+      tip.style.top = (e.clientY - rect.top - 40) + 'px';
+    });
+    c.addEventListener('mouseleave', () => { document.getElementById('estTip').style.display = 'none'; });
+  });
 }
 
 function renderAnunciantes(data) {
@@ -953,7 +972,6 @@ function renderDashboard(data) {
   renderEstacionalidad(data.estacionalidad);
   if (data.evolucion) renderEvolucion(data.evolucion);
   renderGrupoPie(data.por_grupo_empresarial);
-  renderBars('sectorBars', data.por_sector, 'sector', 'inversion', '#0ea5b0');
 
   // Segmentación tab
   renderClusterRadars(data.clusters);
