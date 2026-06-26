@@ -498,14 +498,28 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- ═══ TAB: MKT WHEEL ═══ -->
     <div class="tab-panel" id="tab-wheel">
       <div class="sec">
-        <div class="sec-label">Marketing Wheel · Mercado Global</div>
-        <div class="sec-heading">Scores Globales del Mercado</div>
-        <div class="sec-bar"></div>
-        <div class="sec-desc">Promedio de las 5 dimensiones del Marketing Wheel para todas las empresas analizadas.</div>
-        <div class="card">
-          <div class="wheel-wrap">
-            <svg class="wheel-svg" id="wheelSvg" width="260" height="260" viewBox="0 0 260 260"></svg>
-            <div class="wheel-legend" id="wheelLegend"></div>
+        <div class="two-col" style="align-items:start">
+          <!-- Scatter -->
+          <div>
+            <div class="sec-label">Segmentación de Empresas</div>
+            <div class="sec-heading">Posicionamiento Estratégico</div>
+            <div class="sec-bar"></div>
+            <div class="card">
+              <div class="scatter-wrap" id="scatterWrap2"></div>
+              <div class="scatter-legend" id="scatterLegend2"></div>
+            </div>
+          </div>
+          <!-- Wheel -->
+          <div>
+            <div class="sec-label">Marketing Wheel · Mercado Global</div>
+            <div class="sec-heading">Scores Globales del Mercado</div>
+            <div class="sec-bar"></div>
+            <div class="card">
+              <div class="wheel-wrap">
+                <svg class="wheel-svg" id="wheelSvg" width="260" height="260" viewBox="0 0 260 260"></svg>
+                <div class="wheel-legend" id="wheelLegend"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -661,9 +675,9 @@ const DONUT_COLORS    = ['#1a1a2e','#0ea5b0','#8b5cf6','#16a34a','#d4900a','#d42
 const MES_NAMES       = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
 // ── RENDER: TABS & SCATTER ────────────────────────────────────────────────────
-function renderScatter(scatterData) {
+function renderScatter(scatterData, targetId='scatterWrap') {
   if (!scatterData || !scatterData.length) {
-    document.getElementById('scatterWrap').innerHTML = '<div style="color:var(--muted2);font-size:13px;padding:40px;text-align:center">Sin datos PC1/PC2</div>';
+    document.getElementById(targetId).innerHTML = '<div style="color:var(--muted2);font-size:13px;padding:40px;text-align:center">Sin datos PC1/PC2</div>';
     return;
   }
   const W=620, H=300, PAD=46;
@@ -701,7 +715,7 @@ function renderScatter(scatterData) {
       +` data-n="${(d.nombre||'').replace(/"/g,'&quot;')}" data-tc="${d.tipo_cluster ?? d.cluster ?? ''}" data-pc1="${(+d.pc1).toFixed(1)}" data-pc2="${(+d.pc2).toFixed(1)}" data-share="${d.share!=null?d.share:0}"></circle>`;
   }
   s+='</svg><div class="sc-tip" id="scTip"></div>';
-  const wrap = document.getElementById('scatterWrap');
+  const wrap = document.getElementById(targetId);
   wrap.innerHTML = s;
 
   // Tooltip custom (estilo Looker)
@@ -728,7 +742,9 @@ function renderScatter(scatterData) {
   });
 
   // Legend
-  document.getElementById('scatterLegend').innerHTML = [0,1,2,3,4].map(c =>
+  const legendId = targetId.replace('scatterWrap','scatterLegend');
+  const legendEl = document.getElementById(legendId);
+  if (legendEl) legendEl.innerHTML = [0,1,2,3,4].map(c =>
     `<div class="sl-item"><div class="sl-dot" style="background:${CLUSTER_COLORS[c]}"></div>${CLUSTER_NAMES[c]}</div>`
   ).join('');
 }
@@ -1070,6 +1086,8 @@ function renderDashboard(data) {
 
   // Overview tab
   renderScatter(data.scatter_data);
+  // MKT Wheel tab (segunda instancia del scatter)
+  renderScatter(data.scatter_data, 'scatterWrap2');
   renderDonut(data.media_mix);
   renderTopAnunciantesShort(data.top_anunciantes);
   renderEstacionalidad(data.estacionalidad);
