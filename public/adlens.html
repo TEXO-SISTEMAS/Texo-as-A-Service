@@ -511,13 +511,21 @@ body{display:flex;flex-direction:column;min-height:100vh}
           </div>
           <!-- Wheel -->
           <div>
-            <div class="sec-label">Marketing Wheel · Mercado Global</div>
-            <div class="sec-heading">Scores Globales del Mercado</div>
+            <div class="sec-label">Marketing Wheel · Por Cluster</div>
+            <div class="sec-heading">Scores Comparados por Segmento</div>
             <div class="sec-bar"></div>
             <div class="card">
-              <div class="wheel-wrap">
-                <svg class="wheel-svg" id="wheelSvg" width="260" height="260" viewBox="0 0 260 260"></svg>
-                <div class="wheel-legend" id="wheelLegend"></div>
+              <div id="multiClusterRadarWrap" style="display:flex;flex-direction:column;align-items:center;gap:12px"></div>
+            </div>
+            <div style="margin-top:16px">
+              <div class="sec-label">Marketing Wheel · Mercado Global</div>
+              <div class="sec-heading">Scores Globales</div>
+              <div class="sec-bar"></div>
+              <div class="card">
+                <div class="wheel-wrap">
+                  <svg class="wheel-svg" id="wheelSvg" width="260" height="260" viewBox="0 0 260 260"></svg>
+                  <div class="wheel-legend" id="wheelLegend"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -960,6 +968,64 @@ function miniRadarSVG(scores, color, size=110) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${s}</svg>`;
 }
 
+function renderMultiClusterRadar(clusters) {
+  const dims = ['Cultura','Ejecucion','Inversion','Estructura','Competitividad'];
+  const labels = ['Cultura','Ejecución','Inversión','Estructura','Competitividad'];
+  const size = 300, cx = size/2, cy = size/2, r = size/2 - 36;
+  const n = dims.length;
+  const angle = i => (i * 2 * Math.PI / n) - Math.PI/2;
+  const pt = (val, i) => {
+    const a = angle(i), rr = r * val;
+    return `${(cx + rr * Math.cos(a)).toFixed(1)},${(cy + rr * Math.sin(a)).toFixed(1)}`;
+  };
+
+  let s = `<svg viewBox="0 0 ${size} ${size}" style="width:100%;max-width:320px;height:auto;display:block">`;
+
+  // Rings
+  [.2,.4,.6,.8,1].forEach(f => {
+    const pts = dims.map((_,i) => pt(f, i)).join(' ');
+    s += `<polygon points="${pts}" fill="none" stroke="#e8eaf0" stroke-width="1"/>`;
+    const labelX = (cx + r*f*Math.cos(angle(0))).toFixed(1);
+    const labelY = (cy + r*f*Math.sin(angle(0)) - 3).toFixed(1);
+    s += `<text x="${labelX}" y="${labelY}" text-anchor="middle" font-size="8" fill="#c0c4d0">${(f*100).toFixed(0)}%</text>`;
+  });
+
+  // Axes + labels
+  dims.forEach((_, i) => {
+    const a = angle(i);
+    const ex = (cx + r * Math.cos(a)).toFixed(1), ey = (cy + r * Math.sin(a)).toFixed(1);
+    s += `<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="#e0e3ee" stroke-width="1"/>`;
+    const lx = (cx + (r+20) * Math.cos(a)).toFixed(1), ly = (cy + (r+20) * Math.sin(a)).toFixed(1);
+    const anchor = Math.cos(a) > 0.1 ? 'start' : Math.cos(a) < -0.1 ? 'end' : 'middle';
+    s += `<text x="${lx}" y="${(+ly+4).toFixed(1)}" text-anchor="${anchor}" font-size="10" fill="#6b7280" font-weight="600">${labels[i]}</text>`;
+  });
+
+  // One polygon per cluster
+  [0,1,2,3,4].forEach(cid => {
+    const c = clusters.find(x => x.id === cid);
+    if (!c || !c.scores) return;
+    const pts = dims.map((d, i) => pt((c.scores[d]||0)/100, i)).join(' ');
+    s += `<polygon points="${pts}" fill="${c.color}22" stroke="${c.color}" stroke-width="2" stroke-linejoin="round"/>`;
+    dims.forEach((d, i) => {
+      const v = (c.scores[d]||0)/100;
+      const a = angle(i), px = (cx + r*v*Math.cos(a)).toFixed(1), py = (cy + r*v*Math.sin(a)).toFixed(1);
+      s += `<circle cx="${px}" cy="${py}" r="3" fill="${c.color}" stroke="#fff" stroke-width="1.5"/>`;
+    });
+  });
+
+  s += '</svg>';
+
+  // Legend
+  const legend = [0,1,2,3,4].map(cid => {
+    const c = clusters.find(x => x.id === cid);
+    if (!c) return '';
+    return `<div class="sl-item"><div class="sl-dot" style="background:${c.color}"></div>${c.nombre}</div>`;
+  }).join('');
+
+  document.getElementById('multiClusterRadarWrap').innerHTML =
+    s + `<div class="scatter-legend" style="justify-content:center">${legend}</div>`;
+}
+
 function renderClusterRadars(clusters) {
   document.getElementById('clusterRadarGrid').innerHTML = [0,1,2,3,4].map(cid => {
     const c = clusters.find(x=>x.id===cid) || {id:cid,nombre:CLUSTER_NAMES[cid],color:CLUSTER_COLORS[cid],cantidad:0,inversion:0,share:0,scores:{}};
@@ -1096,6 +1162,7 @@ function renderDashboard(data) {
 
   // Segmentación tab
   renderClusterRadars(data.clusters);
+  renderMultiClusterRadar(data.clusters);
   renderClusterTable(data.clusters);
 
   // MKT Wheel tab
