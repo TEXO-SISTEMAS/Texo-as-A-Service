@@ -306,8 +306,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 
       <!-- ── EXPLICACIÓN OVERVIEW (en el hero) ── -->
       <div style="margin-top:28px;padding-top:24px;border-top:1px solid rgba(255,255,255,.1)">
-        <div style="font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:16px">Overview · ¿Qué analiza esta capa?</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-left:3px solid #f0f040;border-radius:10px;padding:16px 18px">
             <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:7px">Qué es AdLens</div>
             <p style="font-size:12.5px;line-height:1.7;color:rgba(255,255,255,.75)">AdLens es el <strong style="color:#fff">índice de madurez de marketing</strong> del mercado publicitario paraguayo. Analiza <strong style="color:#fff">198 anunciantes</strong> que invierten activamente en medios, evaluando 5 dimensiones: <strong style="color:#fff">Cultura, Ejecución, Estructura, Competitividad e Inversión</strong>. Genera un mapa estratégico que permite identificar qué empresas están listas para servicios avanzados, cuáles en desarrollo y cuáles son emergentes.</p>
@@ -315,24 +314,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-left:3px solid #f59e0b;border-radius:10px;padding:16px 18px">
             <div style="font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:7px">Qué busca esta capa</div>
             <p style="font-size:12.5px;line-height:1.7;color:rgba(255,255,255,.75)">Responder tres preguntas clave: <strong style="color:#fff">(1) ¿Quiénes son los mayores inversores?</strong> — para priorizar esfuerzos comerciales. <strong style="color:#fff">(2) ¿Qué tan maduro es el mercado?</strong> — el MMI resume el nivel colectivo. <strong style="color:#fff">(3) ¿Dónde están los clusters de oportunidad?</strong> — el scatter segmenta empresas por perfil estratégico para propuestas diferenciadas.</p>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:13px 15px">
-            <div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#a78bfa;margin-bottom:5px">Segmentación · Scatter</div>
-            <p style="font-size:11.5px;line-height:1.6;color:rgba(255,255,255,.55)">Cada punto = una empresa. <strong style="color:rgba(255,255,255,.8)">Eje X (PC1):</strong> madurez de marketing. <strong style="color:rgba(255,255,255,.8)">Eje Y (PC2):</strong> táctica vs estrategia. Color = cluster. Hover muestra nombre, cluster, PC1/PC2 y % de inversión.</p>
-          </div>
-          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:13px 15px">
-            <div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#22d3ee;margin-bottom:5px">Media Mix + Grupo SOI</div>
-            <p style="font-size:11.5px;line-height:1.6;color:rgba(255,255,255,.55)">Distribución de la pauta por medio (TV, Radio, etc.) y por grupo económico (VIERCI, ALBAVISION…). <strong style="color:rgba(255,255,255,.8)">Calcula:</strong> SUM(RANGODEINVERSION) de medios, inner join 198 anunciantes.</p>
-          </div>
-          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:13px 15px">
-            <div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#4ade80;margin-bottom:5px">Top Anunciantes</div>
-            <p style="font-size:11.5px;line-height:1.6;color:rgba(255,255,255,.55)">Ranking de inversión. <strong style="color:rgba(255,255,255,.8)">Share% =</strong> SUM(RANGODEINVERSION) del anunciante ÷ total 198. Ej: TELECEL 7.783 = 3.44% del mercado. Ordena por inversión en medios, no por score.</p>
-          </div>
-          <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:13px 15px">
-            <div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fbbf24;margin-bottom:5px">Evolución + Estacionalidad</div>
-            <p style="font-size:11.5px;line-height:1.6;color:rgba(255,255,255,.55)">Barras anuales 2020–2024 (inner join, miles USD). Línea mensual de <strong style="color:rgba(255,255,255,.8)">todos los años</strong> — enero es el mes más bajo, noviembre el pico. Hover muestra el valor exacto.</p>
           </div>
         </div>
       </div>
