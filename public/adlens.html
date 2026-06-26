@@ -689,8 +689,8 @@ function renderScatter(scatterData) {
   }
 
   // Axis labels
-  s+=`<text x="${PAD+W/2}" y="${th-4}" text-anchor="middle" font-size="12" fill="#9ca3af" font-weight="600">+ Madurez del Marketing +</text>`;
-  s+=`<text x="14" y="${PAD+H/2}" text-anchor="middle" font-size="12" fill="#9ca3af" font-weight="600" transform="rotate(-90,14,${PAD+H/2})">Estratégico / Táctico</text>`;
+  s+=`<text x="${PAD+W/2}" y="${th-4}" text-anchor="middle" font-size="12" fill="#9ca3af" font-weight="600">− Nivel de Madurez del Marketing +</text>`;
+  s+=`<text x="14" y="${PAD+H/2}" text-anchor="middle" font-size="12" fill="#9ca3af" font-weight="600" transform="rotate(-90,14,${PAD+H/2})">+ Táctico / Estratégico +</text>`;
 
   // Dots — datos en atributos para el tooltip
   for (const d of scatterData) {
