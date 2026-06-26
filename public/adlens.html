@@ -334,55 +334,54 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- ═══ TAB: OVERVIEW ═══ -->
     <div class="tab-panel active" id="tab-overview">
 
+      <!-- ── GRUPO 1: POSICIONAMIENTO ESTRATÉGICO ── -->
       <div class="sec">
-        <div class="overview-grid">
-
-          <!-- SCATTER PLOT -->
-          <div class="card">
-            <div class="card-title">Segmentación de Empresas 2024</div>
-            <div class="scatter-wrap" id="scatterWrap"></div>
-            <div class="scatter-legend" id="scatterLegend"></div>
-          </div>
-
-          <!-- RIGHT: MEDIA MIX + GRUPO + TOP -->
-          <div style="display:flex;flex-direction:column;gap:16px">
-            <div class="card">
-              <div class="card-title">Media Mix</div>
-              <div class="donut-wrap" id="donutWrap"></div>
-            </div>
-            <div class="card">
-              <div class="card-title">SOI por Grupo Empresarial</div>
-              <div id="grupoPieWrap" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
-            </div>
-            <div class="card">
-              <div class="card-title">Top 10 Anunciantes · Share%</div>
-              <div id="topAnunciantesShort"></div>
-            </div>
-          </div>
-
+        <div class="sec-label">Posicionamiento Estratégico</div>
+        <div class="sec-heading">¿Dónde está cada empresa en el mercado?</div>
+        <div class="sec-bar"></div>
+        <div class="sec-desc">Cada punto representa un anunciante. Los ejes PC1 y PC2 condensan las 5 dimensiones de madurez en dos coordenadas: su posición muestra el perfil estratégico relativo al resto del mercado y el color identifica su cluster.</div>
+        <div class="card">
+          <div class="scatter-wrap" id="scatterWrap"></div>
+          <div class="scatter-legend" id="scatterLegend"></div>
         </div>
       </div>
 
-      <!-- EVOLUCIÓN ANUAL + ESTACIONALIDAD -->
+      <!-- ── GRUPO 2: DISTRIBUCIÓN DEL MERCADO ── -->
       <div class="sec alt">
-        <div class="two-col">
-          <div>
-            <div class="sec-label">Histórico</div>
-            <div class="sec-heading">Evolución de las Inversiones</div>
-            <div class="sec-bar"></div>
-            <div class="sec-desc">Inversión total anual en miles USD (inner join 198 anunciantes).</div>
-            <div class="card" style="padding:24px 24px 32px">
-              <div id="evolucionGrid" style="display:flex;gap:8px;align-items:flex-end;height:130px;padding-bottom:24px;position:relative"></div>
-            </div>
+        <div class="sec-label">Distribución del Mercado</div>
+        <div class="sec-heading">¿Cómo se reparte la inversión?</div>
+        <div class="sec-bar"></div>
+        <div class="sec-desc">Tres lecturas complementarias del mismo volumen de inversión: por canal de medio (dónde se pauta), por grupo empresarial (quién domina) y por anunciante individual (el ranking de inversores).</div>
+        <div class="three-col">
+          <div class="card">
+            <div class="card-title">Media Mix</div>
+            <div class="donut-wrap" id="donutWrap"></div>
           </div>
-          <div>
-            <div class="sec-label">Temporalidad</div>
-            <div class="sec-heading">Estacionalidad de Inversiones</div>
-            <div class="sec-bar"></div>
-            <div class="sec-desc">Distribución mensual de la inversión publicitaria total durante el año.</div>
-            <div class="card" style="padding:24px 24px 16px">
-              <div id="estGrid" style="width:100%"></div>
-            </div>
+          <div class="card">
+            <div class="card-title">SOI por Grupo Empresarial</div>
+            <div id="grupoPieWrap" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Top 10 Anunciantes · Share%</div>
+            <div id="topAnunciantesShort"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── GRUPO 3: TEMPORALIDAD ── -->
+      <div class="sec">
+        <div class="sec-label">Temporalidad</div>
+        <div class="sec-heading">¿Cuándo y cómo evoluciona la inversión?</div>
+        <div class="sec-bar"></div>
+        <div class="sec-desc">Dos granularidades de la misma pregunta temporal: la tendencia anual 2020–2024 revela el crecimiento histórico del mercado, y la estacionalidad mensual muestra los picos y caídas del ciclo publicitario.</div>
+        <div class="two-col">
+          <div class="card" style="padding:24px 24px 32px">
+            <div class="card-title">Evolución de las Inversiones · 2020–2024</div>
+            <div id="evolucionGrid" style="display:flex;gap:8px;align-items:flex-end;height:130px;padding-bottom:24px;position:relative"></div>
+          </div>
+          <div class="card" style="padding:24px 24px 16px">
+            <div class="card-title">Estacionalidad de Inversiones</div>
+            <div id="estGrid" style="width:100%"></div>
           </div>
         </div>
       </div>
