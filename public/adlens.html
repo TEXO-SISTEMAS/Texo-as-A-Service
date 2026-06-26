@@ -348,7 +348,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="sec-label">Posicionamiento Estratégico</div>
         <div class="sec-heading">¿Dónde está cada empresa en el mercado?</div>
         <div class="sec-bar"></div>
-        <div class="sec-desc">Cada punto representa un anunciante. Los ejes PC1 y PC2 condensan las 5 dimensiones de madurez en dos coordenadas: su posición muestra el perfil estratégico relativo al resto del mercado y el color identifica su cluster.</div>
+        <div class="sec-desc">Cada punto es un anunciante. Los dos ejes del gráfico condensan las 5 dimensiones de madurez en una sola vista: su posición muestra el perfil estratégico relativo al resto del mercado y el color identifica a qué grupo pertenece.</div>
 
         <div class="insight-grid">
           <div class="insight-card" style="border-top:3px solid #6366f1">
@@ -357,7 +357,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
           </div>
           <div class="insight-card" style="border-top:3px solid #8b5cf6">
             <div class="ic-label" style="color:#8b5cf6">Qué analizamos</div>
-            <div class="ic-text">Las <strong>5 dimensiones de marketing maturity</strong> (Cultura, Ejecución, Estructura, Competitividad e Inversión) de cada anunciante, reducidas a dos ejes mediante PCA. La fuente es el survey RADA cruzado con la base AdLens de medios.</div>
+            <div class="ic-text">Las <strong>5 dimensiones de marketing maturity</strong> (Cultura, Ejecución, Estructura, Competitividad e Inversión) evaluadas en cada empresa, resumidas en dos ejes mediante un modelo estadístico que preserva las diferencias más importantes entre empresas. Los datos combinan una evaluación de madurez propia (RADA) con los registros de inversión publicitaria.</div>
           </div>
           <div class="insight-card" style="border-top:3px solid #10b981">
             <div class="ic-label" style="color:#10b981">Qué vemos</div>
@@ -389,7 +389,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
           </div>
           <div class="insight-card" style="border-top:3px solid #8b5cf6">
             <div class="ic-label" style="color:#8b5cf6">Qué analizamos</div>
-            <div class="ic-text">El <strong>Share of Investment (SOI)</strong> de cada actor. La fuente es la tabla de medios con cada pauta registrada. Se calcula como <strong>SUM(RANGODEINVERSION)</strong> por categoría dividido el total, sobre el inner join de 198 anunciantes activos.</div>
+            <div class="ic-text">El <strong>Share of Investment (SOI)</strong> de cada actor: qué porcentaje del total representa cada medio, grupo o anunciante. Se calcula sumando la inversión de cada categoría y dividiéndola sobre el total general, considerando los <strong>198 anunciantes activos</strong> del mercado.</div>
           </div>
           <div class="insight-card" style="border-top:3px solid #10b981">
             <div class="ic-label" style="color:#10b981">Qué vemos</div>
@@ -422,7 +422,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="sec-label">Temporalidad</div>
         <div class="sec-heading">¿Cuándo y cómo evoluciona la inversión?</div>
         <div class="sec-bar"></div>
-        <div class="sec-desc">Dos granularidades de la misma pregunta temporal: la tendencia anual 2020–2024 revela el crecimiento histórico del mercado, y la estacionalidad mensual muestra los picos y caídas del ciclo publicitario.</div>
+        <div class="sec-desc">Dos formas de ver la misma pregunta temporal: la tendencia anual 2020–2024 revela el crecimiento histórico del mercado, y la distribución mensual muestra los picos y caídas del ciclo publicitario a lo largo del año.</div>
 
         <div class="insight-grid">
           <div class="insight-card" style="border-top:3px solid #6366f1">
@@ -431,7 +431,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
           </div>
           <div class="insight-card" style="border-top:3px solid #8b5cf6">
             <div class="ic-label" style="color:#8b5cf6">Qué analizamos</div>
-            <div class="ic-text">La <strong>inversión total anual</strong> 2020–2024 y su <strong>distribución mes a mes</strong> acumulada. Fuente: tabla de medios con fecha de cada pauta. Se agrupa por año (A__O) y por mes (EXTRACT MONTH FROM MES), sin filtro de año.</div>
+            <div class="ic-text">La <strong>inversión total anual</strong> 2020–2024 y su <strong>distribución mes a mes</strong> acumulada. Los datos provienen de los registros históricos de cada pauta publicitaria con su fecha, agrupados por año y por mes, sumando todos los períodos disponibles para mostrar el patrón completo.</div>
           </div>
           <div class="insight-card" style="border-top:3px solid #10b981">
             <div class="ic-label" style="color:#10b981">Qué vemos</div>
