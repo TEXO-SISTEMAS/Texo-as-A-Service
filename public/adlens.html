@@ -103,7 +103,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .sl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
 /* DONUT */
-.donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.donut-wrap{display:block;width:100%}
 .donut-legend{display:flex;flex-direction:column;gap:6px;flex:1;min-width:120px}
 .dl-item{display:flex;align-items:center;gap:8px;font-size:11px}
 .dl-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
@@ -410,7 +410,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
           </div>
           <div class="card">
             <div class="card-title">SOI por Grupo Empresarial</div>
-            <div id="grupoPieWrap" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
+            <div id="grupoPieWrap" style="width:100%"></div>
           </div>
           <div class="card">
             <div class="card-title">Top 10 Anunciantes · Share%</div>
@@ -753,7 +753,7 @@ function buildDonutHTML(items, labelKey, n) {
     offset += dash;
   }
 
-  const svg = `<svg width="156" height="156" viewBox="0 0 156 156" style="flex-shrink:0">
+  const svg = `<svg viewBox="0 0 156 156" style="width:100%;max-width:200px;height:auto;display:block;margin:0 auto">
     <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#f0f0f5" stroke-width="26"/>
     ${circles}
     <text x="${CX}" y="${CY-6}" text-anchor="middle" font-size="8" fill="#9ca3af" font-weight="700">TOTAL</text>
@@ -767,7 +767,7 @@ function buildDonutHTML(items, labelKey, n) {
       <div class="dl-pct">${d.share?.toFixed(1)}%</div>
     </div>`).join('');
 
-  return `${svg}<div class="donut-legend">${legend}</div>`;
+  return `<div style="display:flex;flex-direction:column;gap:16px;width:100%">${svg}<div class="donut-legend">${legend}</div></div>`;
 }
 
 function renderDonut(mediaMix) {
