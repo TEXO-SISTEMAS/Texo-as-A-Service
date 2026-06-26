@@ -971,7 +971,7 @@ function miniRadarSVG(scores, color, size=110) {
 function renderMultiClusterRadar(clusters) {
   const dims = ['Cultura','Ejecucion','Inversion','Estructura','Competitividad'];
   const labels = ['Cultura','Ejecución','Inversión','Estructura','Competitividad'];
-  const size = 300, cx = size/2, cy = size/2, r = size/2 - 36;
+  const size = 380, cx = size/2, cy = size/2, r = size/2 - 60;
   const n = dims.length;
   const angle = i => (i * 2 * Math.PI / n) - Math.PI/2;
   const pt = (val, i) => {
@@ -979,7 +979,7 @@ function renderMultiClusterRadar(clusters) {
     return `${(cx + rr * Math.cos(a)).toFixed(1)},${(cy + rr * Math.sin(a)).toFixed(1)}`;
   };
 
-  let s = `<svg viewBox="0 0 ${size} ${size}" style="width:100%;max-width:320px;height:auto;display:block">`;
+  let s = `<svg viewBox="0 0 ${size} ${size}" style="width:100%;max-width:400px;height:auto;display:block">`;
 
   // Rings
   [.2,.4,.6,.8,1].forEach(f => {
@@ -995,7 +995,7 @@ function renderMultiClusterRadar(clusters) {
     const a = angle(i);
     const ex = (cx + r * Math.cos(a)).toFixed(1), ey = (cy + r * Math.sin(a)).toFixed(1);
     s += `<line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="#e0e3ee" stroke-width="1"/>`;
-    const lx = (cx + (r+20) * Math.cos(a)).toFixed(1), ly = (cy + (r+20) * Math.sin(a)).toFixed(1);
+    const lx = (cx + (r+26) * Math.cos(a)).toFixed(1), ly = (cy + (r+26) * Math.sin(a)).toFixed(1);
     const anchor = Math.cos(a) > 0.1 ? 'start' : Math.cos(a) < -0.1 ? 'end' : 'middle';
     s += `<text x="${lx}" y="${(+ly+4).toFixed(1)}" text-anchor="${anchor}" font-size="10" fill="#6b7280" font-weight="600">${labels[i]}</text>`;
   });
