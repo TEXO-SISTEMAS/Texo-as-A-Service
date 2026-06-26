@@ -78,6 +78,14 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:22px 24px}
 .card-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
 
+/* INSIGHT CARDS (bloques explicativos de sección) */
+.insight-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+.insight-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:15px 16px}
+.ic-label{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+.ic-text{font-size:12px;color:var(--muted);line-height:1.65}
+.ic-text strong{color:var(--text)}
+.sec.alt .insight-card{background:#fff}
+
 /* TWO/THREE COLUMN GRIDS */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
@@ -198,6 +206,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
   .hero-upload-block{align-items:flex-start}
   .sec{padding:24px 20px}
   .two-col,.three-col,.overview-grid{grid-template-columns:1fr}
+  .insight-grid{grid-template-columns:1fr 1fr}
   .cluster-radar-grid{grid-template-columns:repeat(2,1fr)}
   .upload-fields{grid-template-columns:1fr}
   .bar-label{min-width:80px;max-width:100px}
@@ -340,6 +349,26 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="sec-heading">¿Dónde está cada empresa en el mercado?</div>
         <div class="sec-bar"></div>
         <div class="sec-desc">Cada punto representa un anunciante. Los ejes PC1 y PC2 condensan las 5 dimensiones de madurez en dos coordenadas: su posición muestra el perfil estratégico relativo al resto del mercado y el color identifica su cluster.</div>
+
+        <div class="insight-grid">
+          <div class="insight-card" style="border-top:3px solid #6366f1">
+            <div class="ic-label" style="color:#6366f1">Qué buscamos</div>
+            <div class="ic-text">Visualizar <strong>dónde se ubica cada empresa</strong> dentro del ecosistema publicitario. Identificar quién lidera en madurez de marketing, quién está en transición y quién es emergente, para priorizar esfuerzos comerciales con criterio estratégico.</div>
+          </div>
+          <div class="insight-card" style="border-top:3px solid #8b5cf6">
+            <div class="ic-label" style="color:#8b5cf6">Qué analizamos</div>
+            <div class="ic-text">Las <strong>5 dimensiones de marketing maturity</strong> (Cultura, Ejecución, Estructura, Competitividad e Inversión) de cada anunciante, reducidas a dos ejes mediante PCA. La fuente es el survey RADA cruzado con la base AdLens de medios.</div>
+          </div>
+          <div class="insight-card" style="border-top:3px solid #10b981">
+            <div class="ic-label" style="color:#10b981">Qué vemos</div>
+            <div class="ic-text">Cinco clusters bien diferenciados: <strong>líderes consistentes</strong> (alta inversión y madurez), <strong>creativas y comprometidas</strong>, <strong>operativas con potencial</strong>, <strong>en transición</strong> y <strong>emergentes</strong>. Los grandes inversores no siempre son los más maduros.</div>
+          </div>
+          <div class="insight-card" style="border-top:3px solid #f59e0b">
+            <div class="ic-label" style="color:#f59e0b">Cómo lo usamos</div>
+            <div class="ic-text">Empresas en zona de <strong>alta madurez</strong> son candidatas a propuestas premium (estrategia, consultoría avanzada). Las de <strong>baja madurez</strong> son oportunidades de desarrollo: servicios de base, capacitación y acompañamiento progresivo.</div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="scatter-wrap" id="scatterWrap"></div>
           <div class="scatter-legend" id="scatterLegend"></div>
@@ -352,6 +381,26 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="sec-heading">¿Cómo se reparte la inversión?</div>
         <div class="sec-bar"></div>
         <div class="sec-desc">Tres lecturas complementarias del mismo volumen de inversión: por canal de medio (dónde se pauta), por grupo empresarial (quién domina) y por anunciante individual (el ranking de inversores).</div>
+
+        <div class="insight-grid">
+          <div class="insight-card" style="border-top:3px solid #6366f1">
+            <div class="ic-label" style="color:#6366f1">Qué buscamos</div>
+            <div class="ic-text">Entender <strong>cómo se distribuye el presupuesto publicitario</strong> del mercado paraguayo: qué canales concentran la pauta, qué holdings dominan la inversión y quiénes son los anunciantes con mayor peso relativo.</div>
+          </div>
+          <div class="insight-card" style="border-top:3px solid #8b5cf6">
+            <div class="ic-label" style="color:#8b5cf6">Qué analizamos</div>
+            <div class="ic-text">El <strong>Share of Investment (SOI)</strong> de cada actor. La fuente es la tabla de medios con cada pauta registrada. Se calcula como <strong>SUM(RANGODEINVERSION)</strong> por categoría dividido el total, sobre el inner join de 198 anunciantes activos.</div>
+          </div>
+          <div class="insight-card" style="border-top:3px solid #10b981">
+            <div class="ic-label" style="color:#10b981">Qué vemos</div>
+            <div class="ic-text">Un mercado <strong>altamente concentrado</strong>: los top 3 grupos empresariales acaparan la mayor parte de la inversión. TV y digital dominan el media mix. Los top 10 anunciantes individuales representan una porción desproporcionada del total.</div>
+          </div>
+          <div class="insight-card" style="border-top:3px solid #f59e0b">
+            <div class="ic-label" style="color:#f59e0b">Cómo lo usamos</div>
+            <div class="ic-text">Los <strong>grupos con alto SOI</strong> son cuentas estratégicas clave — requieren relación directa a nivel holding. Los <strong>medios dominantes</strong> indican dónde Texo debe tener mayor expertise y relaciones comerciales para ser relevante.</div>
+          </div>
+        </div>
+
         <div class="three-col">
           <div class="card">
             <div class="card-title">Media Mix</div>
@@ -374,6 +423,26 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="sec-heading">¿Cuándo y cómo evoluciona la inversión?</div>
         <div class="sec-bar"></div>
         <div class="sec-desc">Dos granularidades de la misma pregunta temporal: la tendencia anual 2020–2024 revela el crecimiento histórico del mercado, y la estacionalidad mensual muestra los picos y caídas del ciclo publicitario.</div>
+
+        <div class="insight-grid">
+          <div class="insight-card" style="border-top:3px solid #6366f1">
+            <div class="ic-label" style="color:#6366f1">Qué buscamos</div>
+            <div class="ic-text">Identificar <strong>tendencias de largo plazo</strong> del mercado y los <strong>patrones estacionales</strong> dentro del año, para anticipar cuándo hay mayor actividad publicitaria y planificar propuestas comerciales en el momento oportuno.</div>
+          </div>
+          <div class="insight-card" style="border-top:3px solid #8b5cf6">
+            <div class="ic-label" style="color:#8b5cf6">Qué analizamos</div>
+            <div class="ic-text">La <strong>inversión total anual</strong> 2020–2024 y su <strong>distribución mes a mes</strong> acumulada. Fuente: tabla de medios con fecha de cada pauta. Se agrupa por año (A__O) y por mes (EXTRACT MONTH FROM MES), sin filtro de año.</div>
+          </div>
+          <div class="insight-card" style="border-top:3px solid #10b981">
+            <div class="ic-label" style="color:#10b981">Qué vemos</div>
+            <div class="ic-text">El mercado tuvo un <strong>pico en 2021</strong>, cayó en 2022–2023 y se recupera en 2024. La inversión se concentra en el <strong>segundo semestre</strong>, con mayor actividad entre agosto y noviembre — el periodo más competitivo del año.</div>
+          </div>
+          <div class="insight-card" style="border-top:3px solid #f59e0b">
+            <div class="ic-label" style="color:#f59e0b">Cómo lo usamos</div>
+            <div class="ic-text">Los <strong>picos estacionales</strong> son el momento ideal para lanzar propuestas y renovar contratos. La <strong>tendencia histórica</strong> permite argumentar el crecimiento del mercado y justificar mayor inversión en los planes anuales de los clientes.</div>
+          </div>
+        </div>
+
         <div class="two-col">
           <div class="card" style="padding:24px 24px 32px">
             <div class="card-title">Evolución de las Inversiones · 2020–2024</div>
