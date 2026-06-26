@@ -96,7 +96,7 @@ async function buildAdlensData() {
   // 2) Breakdowns de medios (inner join con anunciantes del adlens) — por GS (guaraníes)
   const innerJoin = `JOIN (SELECT DISTINCT anunciante FROM ${A} WHERE anunciante IS NOT NULL) a USING (anunciante)`;
   const R = fq(T_RADA);
-  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows, anunRangoRows, evolucionRows] = await Promise.all([
+  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows, anunRangoRows, evolucionRows, mmiClusterRows] = await Promise.all([
     query(`SELECT Medio AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Medio IS NOT NULL GROUP BY Medio ORDER BY v DESC`),
     query(`SELECT GrupoEmpresarial AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE GrupoEmpresarial IS NOT NULL GROUP BY GrupoEmpresarial ORDER BY v DESC`),
     query(`SELECT Agencia AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Agencia IS NOT NULL GROUP BY Agencia ORDER BY v DESC`),
@@ -105,15 +105,19 @@ async function buildAdlensData() {
     query(`SELECT COUNT(DISTINCT m.anunciante) AS n FROM ${M} m ${innerJoin.replace('USING (anunciante)','USING (anunciante)')} `),
     // Facturación: igual que el Looker (SUM de facturacion sobre el inner join, repetida por fila de medios)
     query(`SELECT SUM(SAFE_CAST(a.facturacion AS FLOAT64)) AS v FROM ${M} m JOIN ${A} a USING(anunciante)`),
-    // Market Maturity Index: AVG(Score) ponderado por filas de medios (blend medios × rada, igual al Looker)
+    // Market Maturity Index global: AVG(Score) blend medios × rada
     query(`SELECT AVG(r.Score) AS v FROM ${M} m JOIN ${R} r USING(anunciante) WHERE r.Score IS NOT NULL`),
-    // Top anunciantes: SUM(RANGODEINVERSION) de medios por anunciante (igual al Looker)
+    // Top anunciantes: SUM(RANGODEINVERSION) de medios por anunciante
     query(`SELECT m.anunciante AS k, SUM(RANGODEINVERSION) AS v FROM ${M} m ${innerJoin} WHERE m.anunciante IS NOT NULL GROUP BY m.anunciante ORDER BY v DESC`),
     // Evolución de inversiones: SUM(RANGODEINVERSION) por año inner join
     query(`SELECT A__O AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE A__O IS NOT NULL GROUP BY A__O ORDER BY A__O ASC`),
+    // MMI por cluster: AVG(Score) blend medios × rada filtrado por cluster (igual al Looker)
+    query(`SELECT a.Cluster AS k, ROUND(AVG(r.Score)*100, 1) AS v FROM ${M} m JOIN ${A} a USING(anunciante) JOIN ${R} r USING(anunciante) WHERE r.Score IS NOT NULL AND a.Cluster IS NOT NULL GROUP BY a.Cluster`),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
   const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
+  const mmiByCluster = {};
+  mmiClusterRows.forEach(r => { mmiByCluster[+r.k] = +r.v; });
 
   // ── Empresas → mapa
   const empresaMap = {};
@@ -169,7 +173,8 @@ async function buildAdlensData() {
     const scores = {};
     for (const [d,val] of Object.entries(c.scores_sum)) scores[d] = c.cantidad>0 ? r1((val/c.cantidad)*scoreScale) : 0;
     return { id:c.id, nombre:c.nombre, color:c.color, cantidad:c.cantidad, inversion:Math.round(c.inversion),
-      share: totalInversion>0 ? r2(c.inversion/totalInversion*100) : 0, scores };
+      share: totalInversion>0 ? r2(c.inversion/totalInversion*100) : 0, scores,
+      mmi: mmiByCluster[c.id] ?? null };
   });
 
   // ── Scores globales

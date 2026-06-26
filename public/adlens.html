@@ -903,6 +903,22 @@ function renderAnunciantes(data) {
   }).join('');
 }
 
+// ── MINI GAUGE MMI ────────────────────────────────────────────────────────────
+function miniGaugeSVG(pct, color) {
+  const arcLen = 157;
+  const filled = arcLen * ((pct || 0) / 100);
+  return `<div style="text-align:center">
+    <div style="font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:4px">Market Maturity Index</div>
+    <svg viewBox="0 0 120 70" width="110" height="64" style="display:block;margin:0 auto">
+      <path d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="#e8eaf0" stroke-width="10" stroke-linecap="round"/>
+      <path d="M10,65 A50,50 0 0,1 110,65" fill="none" stroke="${color}" stroke-width="10" stroke-linecap="round"
+        stroke-dasharray="${filled.toFixed(1)} ${(arcLen - filled).toFixed(1)}"/>
+      <text x="60" y="62" text-anchor="middle" font-size="17" font-weight="900" fill="${color}">${pct != null ? pct + '%' : '—'}</text>
+    </svg>
+    <div style="font-size:10px;color:var(--muted2)">Avg score del cluster</div>
+  </div>`;
+}
+
 // ── CLUSTER RADARS ────────────────────────────────────────────────────────────
 function miniRadarSVG(scores, color, size=110) {
   const dims = ['Cultura','Ejecucion','Estructura','Competitividad','Inversion'];
@@ -946,6 +962,7 @@ function renderClusterRadars(clusters) {
       <span class="crc-badge" style="background:${c.color}22;color:${c.color}">${c.cantidad} empresas</span></div>
       <div class="crc-radar">${miniRadarSVG(c.scores, c.color)}</div>
       <div style="display:flex;flex-direction:column;gap:4px">${scoresHtml}</div>
+      ${miniGaugeSVG(c.mmi, c.color)}
       <div>
         <div class="crc-inv">${fmtUSD(c.inversion)}</div>
         <div class="crc-inv-share">${c.share.toFixed(1)}% del mercado</div>
