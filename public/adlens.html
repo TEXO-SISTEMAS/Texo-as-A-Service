@@ -979,7 +979,8 @@ function renderMultiClusterRadar(clusters) {
     return `${(cx + rr * Math.cos(a)).toFixed(1)},${(cy + rr * Math.sin(a)).toFixed(1)}`;
   };
 
-  let s = `<svg viewBox="0 0 ${size} ${size}" style="width:100%;max-width:400px;height:auto;display:block">`;
+  const vbPad = 80;
+  let s = `<svg viewBox="${-vbPad} ${-vbPad/2} ${size+vbPad*2} ${size+vbPad}" style="width:100%;max-width:480px;height:auto;display:block">`;
 
   // Rings
   [.2,.4,.6,.8,1].forEach(f => {
