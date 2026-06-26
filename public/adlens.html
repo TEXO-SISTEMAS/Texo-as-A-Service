@@ -370,7 +370,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" style="max-width:900px;margin:0 auto">
           <div class="scatter-wrap" id="scatterWrap"></div>
           <div class="scatter-legend" id="scatterLegend"></div>
         </div>
@@ -666,7 +666,7 @@ function renderScatter(scatterData) {
     document.getElementById('scatterWrap').innerHTML = '<div style="color:var(--muted2);font-size:13px;padding:40px;text-align:center">Sin datos PC1/PC2</div>';
     return;
   }
-  const W=620, H=460, PAD=46;
+  const W=620, H=300, PAD=46;
   const pc1s = scatterData.map(d=>d.pc1), pc2s = scatterData.map(d=>d.pc2);
   const x0=Math.min(-4, Math.min(...pc1s)), x1=Math.max(4, Math.max(...pc1s));
   const y0=Math.min(-3, Math.min(...pc2s)), y1=Math.max(3, Math.max(...pc2s));
