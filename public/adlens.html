@@ -1113,9 +1113,12 @@ function renderWheel(scores) {
   const pts=vals.map((v,i)=>{const a=(i*2*Math.PI/n)-Math.PI/2,rr=r*v/100;return`${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)}`;}).join(' ');
   svg+=`<polygon points="${pts}" fill="rgba(26,26,46,.12)" stroke="#1a1a2e" stroke-width="2" stroke-linejoin="round"/>`;
   vals.forEach((v,i)=>{const a=(i*2*Math.PI/n)-Math.PI/2,rr=r*v/100;svg+=`<circle cx="${(cx+rr*Math.cos(a)).toFixed(1)}" cy="${(cy+rr*Math.sin(a)).toFixed(1)}" r="4" fill="${WHEEL_COLORS[i]}" stroke="#fff" stroke-width="2"/>`;});
-  document.getElementById('wheelSvg').innerHTML = svg;
+  const wheelSvgEl = document.getElementById('wheelSvg');
+  if (wheelSvgEl) wheelSvgEl.innerHTML = svg;
 
-  document.getElementById('wheelLegend').innerHTML = dims.map((dim,i)=>`
+  const wheelLegendEl = document.getElementById('wheelLegend');
+  if (!wheelLegendEl) return;
+  wheelLegendEl.innerHTML = dims.map((dim,i)=>`
     <div class="wl-item">
       <div class="wl-row1">
         <div class="wl-dot" style="background:${WHEEL_COLORS[i]}"></div>
