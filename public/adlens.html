@@ -557,9 +557,15 @@ body{display:flex;flex-direction:column;min-height:100vh}
             <div class="card-title">Media Mix · Inversión por Medio</div>
             <div class="bar-list" id="mediaMixBars"></div>
           </div>
-          <div class="card">
-            <div class="card-title">SOI por Grupo Empresarial</div>
-            <div id="grupoPieWrap2" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-title">SOI por Grupo Empresarial</div>
+              <div id="grupoPieWrap2" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
+            </div>
+            <div class="card" style="padding:16px">
+              <div class="card-title" style="margin-bottom:12px">Inversión por Cluster (USd 000)</div>
+              <div id="invClusterWrap"></div>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -866,6 +872,32 @@ function renderEvolucion(data, targetId='evolucionGrid') {
       <div style="font-size:10px;font-weight:700;color:var(--muted2)">${d.ano}</div>
     </div>`;
   }).join('');
+}
+
+function renderInversionCluster(clusters) {
+  const sorted = [...clusters].sort((a, b) => b.inversion - a.inversion);
+  const rows = sorted.map(c => {
+    const miles = (c.inversion / 1000).toLocaleString('es-PY', {minimumFractionDigits:2, maximumFractionDigits:2});
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:6px 8px">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${c.color};vertical-align:middle;margin-right:6px"></span>
+        <span style="font-weight:700;font-size:12px">${c.id}</span>
+      </td>
+      <td style="padding:6px 8px;font-size:12px;color:var(--muted)">${c.nombre}</td>
+      <td style="padding:6px 8px;font-weight:700;font-size:12px;text-align:right">${miles}</td>
+      <td style="padding:6px 8px;font-weight:700;font-size:12px;text-align:right;color:var(--accent)">${c.share.toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('invClusterWrap').innerHTML =
+    `<table style="width:100%;border-collapse:collapse">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="padding:6px 8px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">Cluster</th>
+        <th style="padding:6px 8px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">Segmento</th>
+        <th style="padding:6px 8px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Inversión (USd 000)</th>
+        <th style="padding:6px 8px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Shr%</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
 function renderAnunciantesTable(data) {
@@ -1222,6 +1254,7 @@ function renderDashboard(data) {
 
   // Medios tab
   renderScatter(data.scatter_data, 'scatterWrap3');
+  renderInversionCluster(data.clusters);
   renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
   document.getElementById('grupoPieWrap2').innerHTML = buildDonutHTML(data.por_grupo_empresarial, 'grupo', 6);
   renderAnunciantes(data.top_anunciantes);
