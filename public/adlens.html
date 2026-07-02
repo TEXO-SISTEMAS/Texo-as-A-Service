@@ -568,9 +568,15 @@ body{display:flex;flex-direction:column;min-height:100vh}
             </div>
           </div>
         </div>
-        <div class="card" style="margin-bottom:20px;padding:20px">
-          <div class="card-title" style="margin-bottom:12px">Participación por Clusters · Grupo Empresarial</div>
-          <div id="participacionClustersWrap"></div>
+        <div class="two-col" style="margin-bottom:20px">
+          <div class="card" style="padding:20px">
+            <div class="card-title" style="margin-bottom:12px">Inversiones Anuales por Rubro (Miles USD)</div>
+            <div class="bar-list" id="rubroBars"></div>
+          </div>
+          <div class="card" style="padding:20px">
+            <div class="card-title" style="margin-bottom:12px">Participación por Clusters · Grupo Empresarial</div>
+            <div id="participacionClustersWrap"></div>
+          </div>
         </div>
         <div class="two-col" style="margin-bottom:20px">
           <div class="card" style="padding:16px">
@@ -1388,6 +1394,7 @@ function renderDashboard(data) {
   renderScatter(data.scatter_data, 'scatterWrap3');
   renderInversionCluster(data.clusters);
   if (data.cluster_grupo) renderParticipacionClusters(data.cluster_grupo);
+  if (data.por_rubro) renderBars('rubroBars', data.por_rubro, 'rubro', 'inversion', '#f59e0b');
   renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
   renderVehiculos(data.media_mix);
   document.getElementById('grupoPieWrap2').innerHTML = buildDonutHTML(data.por_grupo_empresarial, 'grupo', 6);
