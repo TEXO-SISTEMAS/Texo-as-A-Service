@@ -1045,31 +1045,68 @@ function renderParticipacionClusters(rows) {
     s+=`<text x="${PAD.l-6}" y="${y+4}" text-anchor="end" font-size="9" fill="#9ca3af">${pct}%</text>`;
   });
 
-  // Bars
-  pctData.forEach(({c, segs, otrosPct}, i) => {
+  // Bars — guardamos datos para tooltip en data-attrs
+  pctData.forEach(({c, segs, otrosPct, total}, i) => {
+    const clusterTotal = Object.values(byCluster[c]).reduce((s,v)=>s+v,0);
     const x = PAD.l + i*gap + (gap-bW)/2;
     let curY = PAD.t+iH;
-    segs.forEach(({pct}, si) => {
+    segs.forEach(({g, pct}, si) => {
       const h = iH*pct/100;
       curY -= h;
-      s+=`<rect x="${x.toFixed(1)}" y="${curY.toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.max(0,h).toFixed(1)}" fill="${GRUPO_COLORS[si]}"/>`;
+      const val = byCluster[c][g] || 0;
+      s+=`<rect x="${x.toFixed(1)}" y="${curY.toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.max(0,h).toFixed(1)}" fill="${GRUPO_COLORS[si]}" style="cursor:pointer"
+        data-cluster="${c}" data-grupo="${g}" data-val="${val.toFixed(2)}" data-pct="${pct.toFixed(2)}" data-color="${GRUPO_COLORS[si]}"/>`;
     });
     // Otros
+    const otrosVal = clusterTotal - segs.reduce((s,x)=>s+(byCluster[c][x.g]||0),0);
     const hO = iH*otrosPct/100;
     curY -= hO;
-    s+=`<rect x="${x.toFixed(1)}" y="${curY.toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.max(0,hO).toFixed(1)}" fill="#cbd5e1"/>`;
+    s+=`<rect x="${x.toFixed(1)}" y="${curY.toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.max(0,hO).toFixed(1)}" fill="#cbd5e1" style="cursor:pointer"
+      data-cluster="${c}" data-grupo="Otros" data-val="${otrosVal.toFixed(2)}" data-pct="${otrosPct.toFixed(2)}" data-color="#cbd5e1"/>`;
     // X label
     s+=`<text x="${(x+bW/2).toFixed(1)}" y="${PAD.t+iH+16}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">${c}</text>`;
   });
 
-  s+='</svg>';
+  s+=`<rect id="pcTipAnchor" x="0" y="0" width="0" height="0" fill="none"/></svg>
+  <div id="pcTip" style="display:none;position:absolute;background:#fff;border:1px solid #e2e4e9;border-radius:10px;padding:10px 14px;box-shadow:0 6px 20px #0002;pointer-events:none;z-index:20;min-width:180px;font-size:12px">
+    <div id="pcTipCluster" style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px"></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="pcTipDot" style="width:12px;height:12px;border-radius:3px;flex-shrink:0"></div>
+      <div>
+        <div id="pcTipGrupo" style="font-weight:700;color:var(--text)"></div>
+        <div id="pcTipVal" style="font-weight:800;font-size:13px;color:var(--text)"></div>
+      </div>
+    </div>
+  </div>`;
 
   // Leyenda
   const legend = top5.map((g,i)=>`<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted)"><div style="width:10px;height:10px;border-radius:2px;background:${GRUPO_COLORS[i]}"></div>${g}</div>`).join('');
   const legendOtros = `<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted)"><div style="width:10px;height:10px;border-radius:2px;background:#cbd5e1"></div>Otros</div>`;
 
-  document.getElementById('participacionClustersWrap').innerHTML =
-    s + `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;justify-content:center">${legend}${legendOtros}</div>`;
+  const wrap = document.getElementById('participacionClustersWrap');
+  wrap.style.position = 'relative';
+  wrap.innerHTML = `<div style="position:relative">${s}<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;justify-content:center">${legend}${legendOtros}</div></div>`;
+
+  // Tooltips
+  const tip = wrap.querySelector('#pcTip');
+  wrap.querySelectorAll('rect[data-grupo]').forEach(rect => {
+    rect.addEventListener('mouseenter', () => {
+      const d = rect.dataset;
+      wrap.querySelector('#pcTipCluster').textContent = 'Cluster ' + d.cluster;
+      wrap.querySelector('#pcTipDot').style.background = d.color;
+      wrap.querySelector('#pcTipGrupo').textContent = d.grupo;
+      wrap.querySelector('#pcTipVal').textContent = (+d.val).toLocaleString('es-PY', {minimumFractionDigits:2,maximumFractionDigits:2}) + '  (' + (+d.pct).toFixed(2) + '%)';
+      tip.style.display = 'block';
+    });
+    rect.addEventListener('mousemove', e => {
+      const rb = wrap.getBoundingClientRect();
+      let lx = e.clientX - rb.left + 14;
+      if (lx + 200 > rb.width) lx = e.clientX - rb.left - 210;
+      tip.style.left = Math.max(0,lx) + 'px';
+      tip.style.top = (e.clientY - rb.top - 10) + 'px';
+    });
+    rect.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
 }
 
 function renderVehiculos(data) {
