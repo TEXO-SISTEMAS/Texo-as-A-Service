@@ -568,22 +568,38 @@ body{display:flex;flex-direction:column;min-height:100vh}
             </div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-title">Anunciantes · Inversión y Segmento</div>
-          <div style="overflow:auto;max-height:420px">
-            <table class="data-table" id="anunciantesTable">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th style="text-align:left">Anunciante</th>
-                  <th style="text-align:left">Rubro</th>
-                  <th>Inversión USD</th>
-                  <th>Share%</th>
-                  <th style="text-align:left">Segmento</th>
-                </tr>
-              </thead>
-              <tbody id="anunciantesTbody"></tbody>
-            </table>
+        <div class="two-col" style="margin-bottom:20px">
+          <div class="card" style="padding:16px">
+            <div class="card-title" style="margin-bottom:12px">Vehículos · Inversión</div>
+            <div style="overflow:auto;max-height:380px">
+              <table style="width:100%;border-collapse:collapse">
+                <thead><tr style="border-bottom:2px solid var(--border)">
+                  <th style="padding:6px 8px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">#</th>
+                  <th style="padding:6px 8px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">Vehículo</th>
+                  <th style="padding:6px 8px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">INVEST</th>
+                  <th style="padding:6px 8px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Shr%</th>
+                </tr></thead>
+                <tbody id="vehiculosTbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Anunciantes · Inversión y Segmento</div>
+            <div style="overflow:auto;max-height:380px">
+              <table class="data-table" id="anunciantesTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th style="text-align:left">Anunciante</th>
+                    <th style="text-align:left">Rubro</th>
+                    <th>Inversión</th>
+                    <th>Shr%</th>
+                    <th style="text-align:left">Segmento</th>
+                  </tr>
+                </thead>
+                <tbody id="anunciantesTbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -989,6 +1005,18 @@ function renderEstacionalidad(data) {
   });
 }
 
+function renderVehiculos(data) {
+  document.getElementById('vehiculosTbody').innerHTML = data.map((d, i) => {
+    const invest = d.inversion.toLocaleString('es-PY');
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:5px 8px;color:var(--muted2);font-weight:700;font-size:11px">${i+1}</td>
+      <td style="padding:5px 8px;font-weight:600;font-size:11px">${d.medio}</td>
+      <td style="padding:5px 8px;font-weight:700;font-size:11px;text-align:right">$${invest}</td>
+      <td style="padding:5px 8px;font-weight:700;font-size:11px;text-align:right;color:var(--accent)">${d.share.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
+
 function renderAnunciantes(data) {
   document.getElementById('anunciantesTbody').innerHTML = data.map((a, i) => {
     const c = a.cluster;
@@ -1256,6 +1284,7 @@ function renderDashboard(data) {
   renderScatter(data.scatter_data, 'scatterWrap3');
   renderInversionCluster(data.clusters);
   renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
+  renderVehiculos(data.media_mix);
   document.getElementById('grupoPieWrap2').innerHTML = buildDonutHTML(data.por_grupo_empresarial, 'grupo', 6);
   renderAnunciantes(data.top_anunciantes);
 
