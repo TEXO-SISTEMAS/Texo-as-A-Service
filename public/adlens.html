@@ -568,6 +568,10 @@ body{display:flex;flex-direction:column;min-height:100vh}
             </div>
           </div>
         </div>
+        <div class="card" style="margin-bottom:20px;padding:20px">
+          <div class="card-title" style="margin-bottom:12px">Participación por Clusters · Grupo Empresarial</div>
+          <div id="participacionClustersWrap"></div>
+        </div>
         <div class="two-col" style="margin-bottom:20px">
           <div class="card" style="padding:16px">
             <div class="card-title" style="margin-bottom:12px">Vehículos · Inversión</div>
@@ -1005,6 +1009,69 @@ function renderEstacionalidad(data) {
   });
 }
 
+function renderParticipacionClusters(rows) {
+  const GRUPO_COLORS = ['#38bdf8','#fb923c','#a78bfa','#4ade80','#94a3b8'];
+  const clusters = [0,1,2,3,4];
+
+  // Agrupar por cluster → grupo → valor
+  const byCluster = {};
+  clusters.forEach(c => { byCluster[c] = {}; });
+  rows.forEach(r => { if (byCluster[r.cluster] !== undefined) byCluster[r.cluster][r.grupo] = r.v; });
+
+  // Top 5 grupos globales
+  const totales = {};
+  rows.forEach(r => { totales[r.grupo] = (totales[r.grupo]||0) + r.v; });
+  const top5 = Object.entries(totales).sort((a,b)=>b[1]-a[1]).slice(0,5).map(e=>e[0]);
+
+  // Calcular porcentajes por cluster
+  const pctData = clusters.map(c => {
+    const vals = byCluster[c];
+    const total = Object.values(vals).reduce((s,v)=>s+v,0) || 1;
+    const segs = top5.map(g => ({ g, pct: ((vals[g]||0)/total*100) }));
+    const otrosPct = 100 - segs.reduce((s,x)=>s+x.pct,0);
+    return { c, segs, otrosPct };
+  });
+
+  // SVG
+  const W=520, H=260, PAD={t:20,r:20,b:50,l:44};
+  const iW=W-PAD.l-PAD.r, iH=H-PAD.t-PAD.b;
+  const bW=iW/clusters.length*0.65, gap=iW/clusters.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:auto;display:block">`;
+
+  // Grid lines
+  [0,20,40,60,80,100].forEach(pct=>{
+    const y=PAD.t+iH*(1-pct/100);
+    s+=`<line x1="${PAD.l}" x2="${W-PAD.r}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e2e4e9" stroke-width="${pct===0?1.5:0.7}"/>`;
+    s+=`<text x="${PAD.l-6}" y="${y+4}" text-anchor="end" font-size="9" fill="#9ca3af">${pct}%</text>`;
+  });
+
+  // Bars
+  pctData.forEach(({c, segs, otrosPct}, i) => {
+    const x = PAD.l + i*gap + (gap-bW)/2;
+    let curY = PAD.t+iH;
+    segs.forEach(({pct}, si) => {
+      const h = iH*pct/100;
+      curY -= h;
+      s+=`<rect x="${x.toFixed(1)}" y="${curY.toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.max(0,h).toFixed(1)}" fill="${GRUPO_COLORS[si]}"/>`;
+    });
+    // Otros
+    const hO = iH*otrosPct/100;
+    curY -= hO;
+    s+=`<rect x="${x.toFixed(1)}" y="${curY.toFixed(1)}" width="${bW.toFixed(1)}" height="${Math.max(0,hO).toFixed(1)}" fill="#cbd5e1"/>`;
+    // X label
+    s+=`<text x="${(x+bW/2).toFixed(1)}" y="${PAD.t+iH+16}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">${c}</text>`;
+  });
+
+  s+='</svg>';
+
+  // Leyenda
+  const legend = top5.map((g,i)=>`<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted)"><div style="width:10px;height:10px;border-radius:2px;background:${GRUPO_COLORS[i]}"></div>${g}</div>`).join('');
+  const legendOtros = `<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted)"><div style="width:10px;height:10px;border-radius:2px;background:#cbd5e1"></div>Otros</div>`;
+
+  document.getElementById('participacionClustersWrap').innerHTML =
+    s + `<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;justify-content:center">${legend}${legendOtros}</div>`;
+}
+
 function renderVehiculos(data) {
   document.getElementById('vehiculosTbody').innerHTML = data.map((d, i) => {
     const invest = d.inversion.toLocaleString('es-PY');
@@ -1283,6 +1350,7 @@ function renderDashboard(data) {
   // Medios tab
   renderScatter(data.scatter_data, 'scatterWrap3');
   renderInversionCluster(data.clusters);
+  if (data.cluster_grupo) renderParticipacionClusters(data.cluster_grupo);
   renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
   renderVehiculos(data.media_mix);
   document.getElementById('grupoPieWrap2').innerHTML = buildDonutHTML(data.por_grupo_empresarial, 'grupo', 6);
