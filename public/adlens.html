@@ -545,6 +545,13 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- ═══ TAB: MEDIOS ═══ -->
     <div class="tab-panel" id="tab-medios">
       <div class="sec">
+        <div class="sec-label">Segmentación de Empresas</div>
+        <div class="sec-heading">Posicionamiento Estratégico</div>
+        <div class="sec-bar"></div>
+        <div class="card" style="margin-bottom:20px">
+          <div class="scatter-wrap" id="scatterWrap3"></div>
+          <div class="scatter-legend" id="scatterLegend3"></div>
+        </div>
         <div class="two-col" style="margin-bottom:20px">
           <div class="card">
             <div class="card-title">Media Mix · Inversión por Medio</div>
@@ -1214,6 +1221,7 @@ function renderDashboard(data) {
   renderAnunciantesTable(data.top_anunciantes);
 
   // Medios tab
+  renderScatter(data.scatter_data, 'scatterWrap3');
   renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
   document.getElementById('grupoPieWrap2').innerHTML = buildDonutHTML(data.por_grupo_empresarial, 'grupo', 6);
   renderAnunciantes(data.top_anunciantes);
