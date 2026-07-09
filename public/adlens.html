@@ -618,14 +618,37 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- ═══ TAB: AGENCIAS ═══ -->
     <div class="tab-panel" id="tab-agencias">
       <div class="sec">
-        <div class="two-col">
+        <!-- Fila 1: Scatter + Cluster table + Anunciantes -->
+        <div class="two-col" style="margin-bottom:20px">
           <div class="card">
-            <div class="card-title">Share por Agencia de Medios</div>
+            <div class="sec-label" style="margin-bottom:6px">Segmentación de Empresas</div>
+            <div class="scatter-wrap" id="scatterWrap4"></div>
+            <div class="scatter-legend" id="scatterLegend4"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card" style="padding:16px">
+              <div class="card-title" style="margin-bottom:10px">Inversión por Cluster (USd 000)</div>
+              <div id="invClusterWrap2"></div>
+            </div>
+            <div class="card" style="padding:16px;overflow:auto;max-height:280px">
+              <div class="card-title" style="margin-bottom:10px">Top Anunciantes · Inversión</div>
+              <div id="anunciantesTableWrap2"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Fila 2: Agencias + Participación por clusters + Inversiones anuales -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+          <div class="card" style="padding:16px;overflow:auto;max-height:380px">
+            <div class="card-title" style="margin-bottom:12px">Agencias · Share de Inversión</div>
             <div class="bar-list" id="agenciaBars"></div>
           </div>
-          <div class="card">
-            <div class="card-title">Inversión por Sector</div>
-            <div class="bar-list" id="sectorBars2"></div>
+          <div class="card" style="padding:16px">
+            <div class="card-title" style="margin-bottom:12px">Participación por Clusters · Agencia</div>
+            <div id="participacionAgenciasWrap"></div>
+          </div>
+          <div class="card" style="padding:16px">
+            <div class="card-title" style="margin-bottom:12px">Inversiones Anuales por Rubro (Miles USD)</div>
+            <div class="bar-list" id="rubroBars2"></div>
           </div>
         </div>
       </div>
@@ -900,7 +923,84 @@ function renderEvolucion(data, targetId='evolucionGrid') {
   }).join('');
 }
 
-function renderInversionCluster(clusters) {
+function renderParticipacionAgencias(rows) {
+  const AGENCIA_COLORS = ['#38bdf8','#fb923c','#a78bfa','#4ade80','#94a3b8'];
+  const clusters = [0,1,2,3,4];
+  const byCluster = {};
+  clusters.forEach(c => { byCluster[c] = {}; });
+  rows.forEach(r => { if (byCluster[r.cluster] !== undefined) byCluster[r.cluster][r.agencia] = (byCluster[r.cluster][r.agencia]||0) + r.v; });
+
+  const agenciaTotals = {};
+  rows.forEach(r => { agenciaTotals[r.agencia] = (agenciaTotals[r.agencia]||0) + r.v; });
+  const top5 = Object.entries(agenciaTotals).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k])=>k);
+
+  const W = 320, H = 200, PAD = { t:24, r:8, b:36, l:32 };
+  const bW = Math.floor((W - PAD.l - PAD.r) / clusters.length) - 4;
+  let s = `<svg viewBox="0 0 ${W} ${H+PAD.t+PAD.b}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">`;
+
+  clusters.forEach((c, ci) => {
+    const dict = byCluster[c];
+    const total = Object.values(dict).reduce((s,v)=>s+v, 0) || 1;
+    const others = Object.entries(dict).filter(([k])=>!top5.includes(k)).reduce((s,[,v])=>s+v,0);
+    const segments = [
+      ...top5.map(ag => [ag, dict[ag]||0]),
+      ['Otros', others],
+    ].filter(([,v])=>v>0);
+
+    const x = PAD.l + ci * ((W - PAD.l - PAD.r) / clusters.length);
+    let y = PAD.t + H;
+    segments.forEach(([ag, v], si) => {
+      const h = (v / total) * H;
+      const col = si < 5 ? AGENCIA_COLORS[top5.indexOf(ag) !== -1 ? top5.indexOf(ag) : si] : AGENCIA_COLORS[4];
+      const pct = (v/total*100).toFixed(1);
+      const inv = (v/1000).toFixed(1);
+      y -= h;
+      s += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bW}" height="${h.toFixed(1)}" fill="${col}" data-ag="${ag}" data-c="${c}" data-pct="${pct}" data-inv="${inv}" style="cursor:pointer"/>`;
+    });
+    s += `<text x="${(x + bW/2).toFixed(1)}" y="${PAD.t+H+14}" text-anchor="middle" font-size="10" fill="#9ca3af">${c}</text>`;
+  });
+
+  // Y axis
+  for (let p=0; p<=4; p++) {
+    const y = PAD.t + H - (p/4)*H;
+    s += `<text x="${PAD.l-4}" y="${y.toFixed(1)}" text-anchor="end" font-size="9" fill="#9ca3af" dominant-baseline="middle">${p*25}%</text>`;
+    s += `<line x1="${PAD.l}" y1="${y.toFixed(1)}" x2="${W-PAD.r}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+  }
+  s += '</svg>';
+
+  // Leyenda
+  const legItems = top5.map((ag, i) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:10px;white-space:nowrap">
+      <span style="width:8px;height:8px;border-radius:2px;background:${AGENCIA_COLORS[i]};flex-shrink:0"></span>${formatNombre(ag)}</span>`
+  ).join('') + `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px"><span style="width:8px;height:8px;border-radius:2px;background:${AGENCIA_COLORS[4]};flex-shrink:0"></span>Otros</span>`;
+
+  const tipId = 'pcAgTip';
+  const wrap = document.getElementById('participacionAgenciasWrap');
+  wrap.style.position = 'relative';
+  wrap.innerHTML = `<div style="position:relative">${s}<div id="${tipId}" style="display:none;position:absolute;background:#1e293b;color:#fff;border-radius:8px;padding:8px 12px;font-size:11px;pointer-events:none;z-index:99;min-width:150px;box-shadow:0 4px 16px rgba(0,0,0,.3)"></div></div>
+    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">${legItems}</div>`;
+
+  const tip = document.getElementById(tipId);
+  wrap.querySelectorAll('rect[data-ag]').forEach(rect => {
+    rect.addEventListener('mouseenter', () => {
+      const d = rect.dataset;
+      tip.innerHTML = `<div style="font-weight:700;margin-bottom:4px">${formatNombre(d.ag)}</div>
+        <div style="opacity:.7;margin-bottom:2px">Cluster ${d.c}</div>
+        <div>Participación: <b>${d.pct}%</b></div>
+        <div>Inversión: <b>USD ${d.inv}k</b></div>`;
+      tip.style.display = 'block';
+    });
+    rect.addEventListener('mousemove', e => {
+      const rb = wrap.getBoundingClientRect();
+      let lx = e.clientX - rb.left + 14, ly = e.clientY - rb.top + 14;
+      if (lx + 160 > rb.width) lx -= 174;
+      tip.style.left = lx + 'px'; tip.style.top = ly + 'px';
+    });
+    rect.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  });
+}
+
+function renderInversionCluster(clusters, targetId='invClusterWrap') {
   const sorted = [...clusters].sort((a, b) => b.inversion - a.inversion);
   const rows = sorted.map(c => {
     const miles = (c.inversion / 1000).toLocaleString('es-PY', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -914,7 +1014,7 @@ function renderInversionCluster(clusters) {
       <td style="padding:6px 8px;font-weight:700;font-size:12px;text-align:right;color:var(--accent)">${c.share.toFixed(2)}%</td>
     </tr>`;
   }).join('');
-  document.getElementById('invClusterWrap').innerHTML =
+  document.getElementById(targetId).innerHTML =
     `<table style="width:100%;border-collapse:collapse">
       <thead><tr style="border-bottom:2px solid var(--border)">
         <th style="padding:6px 8px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">Cluster</th>
@@ -926,7 +1026,7 @@ function renderInversionCluster(clusters) {
     </table>`;
 }
 
-function renderAnunciantesTable(data) {
+function renderAnunciantesTable(data, targetId='anunciantesTableWrap') {
   const rows = data.map((a, i) => {
     const c = a.cluster;
     const col = c != null ? CLUSTER_COLORS[c] : '#999';
@@ -938,7 +1038,7 @@ function renderAnunciantesTable(data) {
       <td style="padding:5px 6px;text-align:center"><span class="cluster-chip" style="background:${bg};color:${col}">${c!=null?'Seg '+c:'—'}</span></td>
     </tr>`;
   }).join('');
-  document.getElementById('anunciantesTableWrap').innerHTML =
+  document.getElementById(targetId).innerHTML =
     `<table style="width:100%;border-collapse:collapse">
       <thead><tr style="border-bottom:2px solid var(--border)">
         <th style="padding:6px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">#</th>
@@ -1401,8 +1501,12 @@ function renderDashboard(data) {
   renderAnunciantes(data.top_anunciantes);
 
   // Agencias tab
+  renderScatter(data.scatter_data, 'scatterWrap4');
+  renderInversionCluster(data.clusters, 'invClusterWrap2');
+  renderAnunciantesTable(data.top_anunciantes, 'anunciantesTableWrap2');
   renderBars('agenciaBars', data.por_agencia, 'agencia', 'inversion', '#e85d26');
-  renderBars('sectorBars2', data.por_sector, 'sector', 'inversion', '#0ea5b0');
+  if (data.cluster_agencia) renderParticipacionAgencias(data.cluster_agencia);
+  renderBars('rubroBars2', data.por_rubro, 'rubro', 'inversion', '#f59e0b');
 
   // Segmentador tab
   renderSegmentador(data.empresas_lista);

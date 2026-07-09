@@ -96,7 +96,7 @@ async function buildAdlensData() {
   // 2) Breakdowns de medios (inner join con anunciantes del adlens) — por GS (guaraníes)
   const innerJoin = `JOIN (SELECT DISTINCT anunciante FROM ${A} WHERE anunciante IS NOT NULL) a USING (anunciante)`;
   const R = fq(T_RADA);
-  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows, anunRangoRows, evolucionRows, mmiClusterRows, clusterGrupoRows, rubroRows] = await Promise.all([
+  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows, anunRangoRows, evolucionRows, mmiClusterRows, clusterGrupoRows, rubroRows, clusterAgenciaRows] = await Promise.all([
     query(`SELECT Medio AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Medio IS NOT NULL GROUP BY Medio ORDER BY v DESC`),
     query(`SELECT GrupoEmpresarial AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE GrupoEmpresarial IS NOT NULL GROUP BY GrupoEmpresarial ORDER BY v DESC`),
     query(`SELECT Agencia AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Agencia IS NOT NULL GROUP BY Agencia ORDER BY v DESC`),
@@ -117,6 +117,8 @@ async function buildAdlensData() {
     query(`SELECT a.Cluster AS cluster, m.GrupoEmpresarial AS grupo, ROUND(SUM(m.RANGODEINVERSION),2) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE a.Cluster IS NOT NULL AND m.GrupoEmpresarial IS NOT NULL GROUP BY a.Cluster, m.GrupoEmpresarial ORDER BY a.Cluster ASC, v DESC`),
     // Inversión por rubroprincipal (sector): JOIN medios × adlens, top 10 DESC
     query(`SELECT a.rubroprincipal AS k, ROUND(SUM(m.RANGODEINVERSION),2) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE a.rubroprincipal IS NOT NULL GROUP BY a.rubroprincipal ORDER BY v DESC LIMIT 10`),
+    // Participación por cluster × Agencia
+    query(`SELECT a.Cluster AS cluster, m.Agencia AS agencia, ROUND(SUM(m.RANGODEINVERSION),2) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE a.Cluster IS NOT NULL AND m.Agencia IS NOT NULL GROUP BY a.Cluster, m.Agencia ORDER BY a.Cluster ASC, v DESC`),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
   const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
@@ -251,6 +253,7 @@ async function buildAdlensData() {
     estacionalidad, clusters, scores_globales, scatter_data, empresas_lista,
     evolucion: evolucionRows.map(r => ({ ano: +r.k, inversion: +r.v })),
     cluster_grupo: clusterGrupoRows.map(r => ({ cluster: +r.cluster, grupo: r.grupo, v: +r.v })),
+    cluster_agencia: clusterAgenciaRows.map(r => ({ cluster: +r.cluster, agencia: r.agencia, v: +r.v })),
     por_rubro: (() => { const tot = rubroRows.reduce((s,r)=>s+(+r.v||0),0)||1; return rubroRows.map(r=>({ rubro:r.k, inversion:+r.v, share:r2((+r.v/tot)*100) })); })(),
     fuente: 'bigquery',
     generado_en: new Date().toISOString(),
