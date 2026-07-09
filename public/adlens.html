@@ -338,6 +338,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <button class="tab-btn" onclick="switchTab('agencias',this)">Agencias</button>
         <button class="tab-btn" onclick="switchTab('segmentador',this)">Segmentador</button>
         <button class="tab-btn" onclick="switchTab('termometro',this)">Termómetro</button>
+        <button class="tab-btn" onclick="switchTab('trade',this)">Trade</button>
       </div>
     </div>
 
@@ -733,6 +734,79 @@ body{display:flex;flex-direction:column;min-height:100vh}
       </div>
     </div>
 
+    <!-- ── TAB TRADE ─────────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-trade">
+      <div class="sec">
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px" id="tradeKpis"></div>
+
+        <!-- Cuerpo: izquierda + centro + derecha -->
+        <div style="display:grid;grid-template-columns:220px 1fr 260px;gap:16px;align-items:start">
+
+          <!-- Izquierda: filtros + tablas -->
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="card" style="padding:14px">
+              <div class="card-title" style="margin-bottom:8px">Agencia Trade</div>
+              <select id="tradeAgenciaFilter" onchange="_tradeApplyFilter()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);color:var(--text)">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="card" style="padding:14px">
+              <div class="card-title" style="margin-bottom:8px">Segmento</div>
+              <select id="tradeSegFilter" onchange="_tradeApplyFilter()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);color:var(--text)">
+                <option value="">Todos</option>
+                <option value="0">0 · Emergentes o rezagadas</option>
+                <option value="1">1 · Operativas con potencial</option>
+                <option value="2">2 · Creativas y comprometidas</option>
+                <option value="3">3 · Líderes consistentes</option>
+                <option value="4">4 · En transición</option>
+              </select>
+            </div>
+            <!-- Inversión por cluster -->
+            <div class="card" style="padding:14px">
+              <div class="card-title" style="margin-bottom:8px">Inversión PDV por Segmento</div>
+              <div id="tradeClusterTable" style="font-size:12px"></div>
+            </div>
+            <!-- Agencias -->
+            <div class="card" style="padding:14px">
+              <div class="card-title" style="margin-bottom:8px">Por Agencia Trade</div>
+              <div id="tradeAgenciaTable" style="font-size:12px"></div>
+            </div>
+          </div>
+
+          <!-- Centro: scatter + estacionalidad -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card" style="padding:16px">
+              <div class="card-title" style="margin-bottom:12px">Posicionamiento de los segmentos</div>
+              <div id="scatterWrapTrade"></div>
+            </div>
+            <div class="card" style="padding:16px">
+              <div class="card-title" style="margin-bottom:12px">Estacionalidad de la inversión en medios</div>
+              <div id="estacionalidadTrade"></div>
+            </div>
+          </div>
+
+          <!-- Derecha: top anunciantes -->
+          <div class="card" style="padding:14px">
+            <div class="card-title" style="margin-bottom:8px">Top Anunciantes PDV</div>
+            <div id="tradeTopTable" style="font-size:12px"></div>
+          </div>
+        </div>
+
+        <!-- Pilas de cluster -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+          <div class="card" style="padding:16px">
+            <div class="card-title" style="margin-bottom:12px">Share PDV por Segmento</div>
+            <div id="tradePieCluster" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:center"></div>
+          </div>
+          <div class="card" style="padding:16px">
+            <div class="card-title" style="margin-bottom:12px">Share PDV por Agencia Trade</div>
+            <div id="tradePieAgencia" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:center"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div style="height:32px"></div>
   </div><!-- /dashboard -->
 </div><!-- /main -->
@@ -1103,7 +1177,7 @@ function renderAnunciantesTable(data, targetId='anunciantesTableWrap') {
     </table>`;
 }
 
-function renderEstacionalidad(data) {
+function renderEstacionalidad(data, wrapId) {
   const W = 560, H = 140, PAD = { t: 10, r: 10, b: 28, l: 44 };
   const iW = W - PAD.l - PAD.r, iH = H - PAD.t - PAD.b;
   const vals = data.map(d => d.inversion);
@@ -1132,11 +1206,13 @@ function renderEstacionalidad(data) {
   const dots = data.map((d, i) => `<circle cx="${toX(i).toFixed(1)}" cy="${toY(d.inversion).toFixed(1)}" r="4" fill="#f59e0b" stroke="#fff" stroke-width="1.5" style="cursor:pointer"
     data-mes="${d.nombre}" data-val="${d.inversion}"></circle>`).join('');
 
-  const wrap = document.getElementById('estGrid');
+  const wrap = document.getElementById(wrapId || 'estGrid');
+  if (!wrap) return;
+  const tipId = 'estTip_' + (wrapId || 'estGrid');
   wrap.innerHTML = `<div style="position:relative">
-    <div id="estTip" style="display:none;position:absolute;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px 12px;box-shadow:0 4px 12px #0002;font-size:12px;pointer-events:none;z-index:10;white-space:nowrap">
-      <div id="estTipMes" style="font-weight:700;color:#f59e0b;margin-bottom:2px"></div>
-      <div id="estTipVal" style="font-weight:800;color:#1e293b;font-size:14px"></div>
+    <div id="${tipId}" style="display:none;position:absolute;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px 12px;box-shadow:0 4px 12px #0002;font-size:12px;pointer-events:none;z-index:10;white-space:nowrap">
+      <div class="estTipMes_${tipId}" style="font-weight:700;color:#f59e0b;margin-bottom:2px"></div>
+      <div class="estTipVal_${tipId}" style="font-weight:800;color:#1e293b;font-size:14px"></div>
       <div style="font-size:10px;color:#94a3b8">miles USD</div>
     </div>
     <svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible">
@@ -1150,21 +1226,21 @@ function renderEstacionalidad(data) {
 
   // Tooltip events
   wrap.querySelectorAll('circle').forEach(c => {
-    c.addEventListener('mouseenter', e => {
-      const tip = document.getElementById('estTip');
-      document.getElementById('estTipMes').textContent = c.dataset.mes;
-      document.getElementById('estTipVal').textContent = (+c.dataset.val).toLocaleString('es-PY');
+    c.addEventListener('mouseenter', () => {
+      const tip = document.getElementById(tipId);
+      wrap.querySelector('.estTipMes_' + tipId).textContent = c.dataset.mes;
+      wrap.querySelector('.estTipVal_' + tipId).textContent = (+c.dataset.val).toLocaleString('es-PY');
       tip.style.display = 'block';
     });
     c.addEventListener('mousemove', e => {
-      const tip = document.getElementById('estTip');
+      const tip = document.getElementById(tipId);
       const rect = wrap.getBoundingClientRect();
       let left = e.clientX - rect.left + 12;
       if (left + 130 > rect.width) left = e.clientX - rect.left - 130;
       tip.style.left = left + 'px';
       tip.style.top = (e.clientY - rect.top - 40) + 'px';
     });
-    c.addEventListener('mouseleave', () => { document.getElementById('estTip').style.display = 'none'; });
+    c.addEventListener('mouseleave', () => { document.getElementById(tipId).style.display = 'none'; });
   });
 }
 
@@ -1721,6 +1797,162 @@ function renderTermometro(data) {
   _termoApplyFilter();
 }
 
+// ── TRADE ─────────────────────────────────────────────────────────────────────
+let _tradeData = null;
+
+function _buildDonutTrade(items, labelKey, colorFn, total) {
+  const size = 160;
+  const r = 55, cx = 80, cy = 80;
+  let startAngle = -Math.PI / 2;
+  const slices = items.map(it => {
+    const pct = total > 0 ? it.v / total : 0;
+    const angle = pct * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+    const x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
+    const large = angle > Math.PI ? 1 : 0;
+    const d = `M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large} 1 ${x2.toFixed(1)},${y2.toFixed(1)} Z`;
+    const result = { ...it, d, color: colorFn(it), pct };
+    startAngle = endAngle;
+    return result;
+  });
+  const svgSlices = slices.map(s => `<path d="${s.d}" fill="${s.color}" opacity=".85"><title>${s[labelKey]}: ${s.pct > 0 ? (s.pct*100).toFixed(1) : 0}%</title></path>`).join('');
+  const legend = slices.map(s => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+    <div style="width:10px;height:10px;border-radius:2px;background:${s.color};flex-shrink:0"></div>
+    <span style="font-size:10px;color:var(--text)">${s[labelKey]}</span>
+    <span style="font-size:10px;font-weight:700;color:var(--muted);margin-left:auto">${s.pct > 0 ? (s.pct*100).toFixed(1) : 0}%</span>
+  </div>`).join('');
+  return `<div style="display:flex;gap:16px;align-items:center">
+    <svg viewBox="0 0 160 160" width="${size}" height="${size}" style="flex-shrink:0">${svgSlices}</svg>
+    <div style="min-width:140px">${legend}</div>
+  </div>`;
+}
+
+function _tradeRenderContent(td, empresas) {
+  const total = td.total_pdv || 0;
+  const fmtPdv = v => v >= 1e6 ? (v/1e6).toFixed(2) + 'M' : v >= 1e3 ? (v/1e3).toFixed(1) + 'K' : v.toFixed(0);
+
+  // KPIs
+  document.getElementById('tradeKpis').innerHTML = [
+    { label:'Inversión PDV 2024', val: fmtPdv(total), sub: 'Total anunciantes' },
+    { label:'Promedio por empresa', val: fmtPdv(td.avg_pdv || 0), sub: 'PDV 2024' },
+    { label:'Anunciantes', val: td.n_anunciantes || 0, sub: 'con inversión PDV' },
+  ].map(k => `<div class="card" style="padding:20px">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${k.label}</div>
+    <div style="font-size:28px;font-weight:900;color:var(--text)">${k.val}</div>
+    <div style="font-size:11px;color:var(--muted2);margin-top:4px">${k.sub}</div>
+  </div>`).join('');
+
+  // Tabla cluster
+  document.getElementById('tradeClusterTable').innerHTML = td.por_cluster.map(c => {
+    const color = CLUSTER_COLORS[c.cluster] || '#64748b';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${color}"></div>
+        <span style="color:var(--muted);font-size:11px">Seg. ${c.cluster}</span>
+      </div>
+      <div style="text-align:right">
+        <span style="font-weight:700;color:var(--text)">${fmtPdv(c.v)}</span>
+        <span style="color:var(--muted2);font-size:10px;margin-left:4px">${c.pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Tabla agencia
+  document.getElementById('tradeAgenciaTable').innerHTML = td.por_agencia.map(a => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted);font-size:11px">${a.agencia}</span>
+      <div style="text-align:right">
+        <span style="font-weight:700;color:var(--text)">${fmtPdv(a.v)}</span>
+        <span style="color:var(--muted2);font-size:10px;margin-left:4px">${a.pct}%</span>
+      </div>
+    </div>`).join('');
+
+  // Top anunciantes
+  const topList = td.top_anunciantes.slice(0, 20);
+  const topTotal = topList.reduce((s, e) => s + e.pdv, 0) || 1;
+  document.getElementById('tradeTopTable').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr auto auto;gap:4px 8px;font-size:10px;color:var(--muted2);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">
+      <span>Empresa</span><span style="text-align:right">PDV</span><span style="text-align:right">Shr%</span>
+    </div>` +
+    topList.map((e, i) => {
+      const color = CLUSTER_COLORS[e.cluster] || '#64748b';
+      const pct = (e.pdv / topTotal * 100).toFixed(2);
+      return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:2px 8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:5px;min-width:0">
+          <span style="font-size:10px;color:var(--muted2);min-width:14px">${i+1}.</span>
+          <div style="width:6px;height:6px;border-radius:50%;background:${color};flex-shrink:0"></div>
+          <span style="font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.nombre}</span>
+        </div>
+        <span style="font-size:11px;font-weight:700;color:var(--text);text-align:right">${fmtPdv(e.pdv)}</span>
+        <span style="font-size:10px;color:var(--muted2);text-align:right">${pct}%</span>
+      </div>`;
+    }).join('');
+
+  // Pie cluster
+  document.getElementById('tradePieCluster').innerHTML = _buildDonutTrade(
+    td.por_cluster, 'cluster',
+    c => CLUSTER_COLORS[c.cluster] || '#64748b',
+    total
+  );
+
+  // Pie agencia
+  const agColors = ['#1a1a2e','#0ea5b0','#8b5cf6','#16a34a','#d4900a'];
+  document.getElementById('tradePieAgencia').innerHTML = _buildDonutTrade(
+    td.por_agencia, 'agencia',
+    (a, i) => agColors[td.por_agencia.indexOf(a) % agColors.length],
+    total
+  );
+}
+
+function _tradeApplyFilter() {
+  if (!_tradeData) return;
+  const td = _tradeData.trade_data;
+  const empresas = _tradeData.empresas_lista || [];
+  const agFilt = document.getElementById('tradeAgenciaFilter')?.value || '';
+  const segFilt = document.getElementById('tradeSegFilter')?.value;
+  const cluster = segFilt !== '' && segFilt != null ? +segFilt : null;
+
+  let filtered = td.top_anunciantes.slice();
+  if (agFilt) filtered = filtered.filter(e => e.agencia === agFilt);
+  if (cluster != null) filtered = filtered.filter(e => e.cluster === cluster);
+
+  const filtTotal = filtered.reduce((s, e) => s + e.pdv, 0);
+  const agMap = {}, clMap = {};
+  for (const e of filtered) {
+    agMap[e.agencia] = (agMap[e.agencia] || 0) + e.pdv;
+    if (e.cluster != null) clMap[e.cluster] = (clMap[e.cluster] || 0) + e.pdv;
+  }
+
+  const filtTd = {
+    total_pdv: filtTotal,
+    avg_pdv: filtered.length > 0 ? filtTotal / filtered.length : 0,
+    n_anunciantes: filtered.length,
+    por_agencia: Object.entries(agMap).map(([ag, v]) => ({ agencia: ag, v, pct: filtTotal > 0 ? Math.round(v/filtTotal*10000)/100 : 0 })).sort((a,b)=>b.v-a.v),
+    por_cluster: Object.entries(clMap).map(([cl, v]) => ({ cluster: +cl, v, pct: filtTotal > 0 ? Math.round(v/filtTotal*10000)/100 : 0 })).sort((a,b)=>a.cluster-b.cluster),
+    top_anunciantes: filtered,
+  };
+  _tradeRenderContent(filtTd, empresas);
+}
+
+function renderTrade(data) {
+  _tradeData = data;
+  const td = data.trade_data;
+
+  // Poblar dropdown agencias
+  const agSel = document.getElementById('tradeAgenciaFilter');
+  if (agSel && td.por_agencia) {
+    agSel.innerHTML = '<option value="">Todas</option>' +
+      td.por_agencia.map(a => `<option value="${a.agencia}">${a.agencia}</option>`).join('');
+  }
+
+  // Render scatter y estacionalidad
+  if (data.scatter_data) renderScatter(data.scatter_data, 'scatterWrapTrade');
+  if (data.estacionalidad) renderEstacionalidad(data.estacionalidad, 'estacionalidadTrade');
+
+  _tradeApplyFilter();
+}
+
 // ── ORCHESTRATOR ──────────────────────────────────────────────────────────────
 function renderDashboard(data) {
   // Hero
@@ -1793,6 +2025,9 @@ function renderDashboard(data) {
 
   // Termómetro tab
   renderTermometro(data);
+
+  // Trade tab
+  renderTrade(data);
 
   document.getElementById('dashboard').style.display = 'block';
 }

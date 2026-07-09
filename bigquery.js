@@ -110,7 +110,9 @@ async function buildAdlensData() {
            nlaempresainvierteeninvestigacionestrategiaoserviciosdeconsultoria AS sm_investigacion,
            nlaempresainvierteendigital AS sm_inv_digital,
            nlaempresainvierteenresearch AS sm_inv_research,
-           nlaempresainvierteenpdv AS sm_inv_pdv
+           nlaempresainvierteenpdv AS sm_inv_pdv,
+           inversionenpdv2024 AS pdv2024,
+           agenciatrade
     FROM ${A}
     WHERE anunciante IS NOT NULL`);
 
@@ -304,6 +306,41 @@ async function buildAdlensData() {
     submetricas_por_empresa[row.anunciante] = sm;
   }
 
+  // ── Trade data (inversionenpdv2024 + agenciatrade)
+  const tradePorEmpresa = {};
+  for (const row of adlensRows) {
+    const nombre = (row.anunciante || '').toString().trim();
+    if (!nombre || tradePorEmpresa[nombre]) continue;
+    tradePorEmpresa[nombre] = {
+      pdv: row.pdv2024 != null ? +row.pdv2024 : 0,
+      agencia: (row.agenciatrade || 'OTROS').toString().trim(),
+    };
+  }
+  const tradeAgencias = {}, tradeClusters = {};
+  let tradeTotalPdv = 0;
+  for (const emp of empresas_lista) {
+    const t = tradePorEmpresa[emp.nombre] || { pdv: 0, agencia: 'OTROS' };
+    tradeTotalPdv += t.pdv;
+    tradeAgencias[t.agencia] = (tradeAgencias[t.agencia] || 0) + t.pdv;
+    const cl = emp.cluster ?? -1;
+    if (cl >= 0) tradeClusters[cl] = (tradeClusters[cl] || 0) + t.pdv;
+  }
+  const trade_data = {
+    total_pdv: r2(tradeTotalPdv),
+    avg_pdv: empresas_lista.length > 0 ? r2(tradeTotalPdv / empresas_lista.length) : 0,
+    n_anunciantes: empresas_lista.length,
+    por_agencia: Object.entries(tradeAgencias)
+      .map(([ag, v]) => ({ agencia: ag, v: r2(v), pct: tradeTotalPdv > 0 ? r2(v / tradeTotalPdv * 100) : 0 }))
+      .sort((a, b) => b.v - a.v),
+    por_cluster: Object.entries(tradeClusters)
+      .map(([cl, v]) => ({ cluster: +cl, v: r2(v), pct: tradeTotalPdv > 0 ? r2(v / tradeTotalPdv * 100) : 0 }))
+      .sort((a, b) => a.cluster - b.cluster),
+    top_anunciantes: empresas_lista
+      .map(e => ({ nombre: e.nombre, cluster: e.cluster, pdv: (tradePorEmpresa[e.nombre] || {}).pdv || 0, agencia: (tradePorEmpresa[e.nombre] || {}).agencia || 'OTROS' }))
+      .filter(e => e.pdv > 0)
+      .sort((a, b) => b.pdv - a.pdv),
+  };
+
   return {
     resumen: {
       total_inversion_usd: Math.round(totalInversion),
@@ -325,6 +362,7 @@ async function buildAdlensData() {
     rada_dims: radaDimRows.map(r => ({ dimension: r.Dimension, avg: +r.avg_score, n: +r.n })),
     submetricas: radaMetricRows[0] || null,
     submetricas_por_empresa,
+    trade_data,
     por_rubro: (() => { const tot = rubroRows.reduce((s,r)=>s+(+r.v||0),0)||1; return rubroRows.map(r=>({ rubro:r.k, inversion:+r.v, share:r2((+r.v/tot)*100) })); })(),
     fuente: 'bigquery',
     generado_en: new Date().toISOString(),
