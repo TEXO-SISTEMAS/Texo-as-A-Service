@@ -1031,9 +1031,11 @@ function renderAnunciantesTable(data, targetId='anunciantesTableWrap') {
     const c = a.cluster;
     const col = c != null ? CLUSTER_COLORS[c] : '#999';
     const bg  = c != null ? col + '22' : '#f1f3f8';
+    const rango = a.rango_medios != null ? (+a.rango_medios).toLocaleString('es-PY', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
     return `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:5px 6px;color:var(--muted2);font-weight:700;font-size:11px">${i+1}</td>
-      <td style="padding:5px 6px;font-weight:600;font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${formatNombre(a.nombre)}</td>
+      <td style="padding:5px 6px;font-weight:600;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${formatNombre(a.nombre)}</td>
+      <td style="padding:5px 6px;text-align:right;font-size:11px">${rango}</td>
       <td style="padding:5px 6px;text-align:right;font-weight:700;font-size:11px">${a.share.toFixed(2)}%</td>
       <td style="padding:5px 6px;text-align:center"><span class="cluster-chip" style="background:${bg};color:${col}">${c!=null?'Seg '+c:'—'}</span></td>
     </tr>`;
@@ -1043,6 +1045,7 @@ function renderAnunciantesTable(data, targetId='anunciantesTableWrap') {
       <thead><tr style="border-bottom:2px solid var(--border)">
         <th style="padding:6px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">#</th>
         <th style="padding:6px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">Anunciante</th>
+        <th style="padding:6px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Rango Inv.</th>
         <th style="padding:6px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Shr%</th>
         <th style="padding:6px;font-size:10px;font-weight:800;text-align:center;color:var(--muted2)">Seg</th>
       </tr></thead>
