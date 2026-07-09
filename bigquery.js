@@ -82,14 +82,35 @@ const r1 = n => Math.round(n*10)/10;
 async function buildAdlensData() {
   const A = fq(T_ADLENS), M = fq(T_MEDIOS);
 
-  // 1) Filas por empresa (tabla adlens) — una por anunciante
+  // 1) Filas por empresa (tabla adlens) — una por anunciante + sub-métricas numéricas
   const adlensRows = await query(`
     SELECT anunciante, rubroprincipal,
            Cluster, tipodecluster, npuntajetotal,
            rangodeinversion AS rango,
            SAFE_CAST(facturacion AS FLOAT64) AS facturacion,
            Cultura, ejecucion AS Ejecucion, Estructura, Competitividad, inversion AS Inversion,
-           formulapc1 AS pc1, formulapc2 AS pc2
+           formulapc1 AS pc1, formulapc2 AS pc2,
+           nconrespectoalmarketingylapublicidadesunaempresa AS sm_vanguardia_mkt,
+           nlaempresatrabajaenconstrucciondemarcas AS sm_construccion_marca,
+           ncomoseproyectalaempresa_ AS sm_largo_plazo,
+           nquetanimportanteeslaestrategiadetumarca__ AS sm_importancia_estrategia,
+           neldepartamentodemarketingtieneunpresupuestoanualdefinido AS sm_presupuesto_definido,
+           ntienelaempresaundepartamentodecompras AS sm_tiene_dpto_compras,
+           \`_ntienelaempresaareademarketing\` AS sm_tiene_area_mkt,
+           ntamanodelaempresa_ AS sm_tamano_empresa,
+           ndecuantaspersonasestaconstituidalaestructurademarketingdelaempresa AS sm_tamano_dpto_mkt,
+           nlaempresacuentaconundepartamentoencargadodemarketingdigital AS sm_tiene_dpto_digital,
+           nquetanimportanteeseldisenoylacreatividad_ AS sm_diseno_creatividad,
+           nlamarcaempresasedestacaporinnovarenpublicidad AS sm_innovacion,
+           quetandesconfiadaeslaempresa AS sm_confianza,
+           nafinidaddelaempresaconserviciosdecomunicacionesdemarketing_ AS sm_afinidad_mkt,
+           nsumarcasson AS sm_liderazgo_marcas,
+           nenqueestadiodelbrandfunnelseencuentralamarca AS sm_brand_funnel,
+           nqueporcentajedemarketsharetienelamarca AS sm_market_share,
+           nlaempresainvierteeninvestigacionestrategiaoserviciosdeconsultoria AS sm_investigacion,
+           nlaempresainvierteendigital AS sm_inv_digital,
+           nlaempresainvierteenresearch AS sm_inv_research,
+           nlaempresainvierteenpdv AS sm_inv_pdv
     FROM ${A}
     WHERE anunciante IS NOT NULL`);
 
@@ -138,7 +159,7 @@ async function buildAdlensData() {
       ROUND(AVG(quetandesconfiadaeslaempresa),2) AS confianza,
       ROUND(AVG(nafinidaddelaempresaconserviciosdecomunicacionesdemarketing_),2) AS afinidad_mkt,
       ROUND(AVG(nsumarcasson),2) AS liderazgo_marcas,
-      ROUND(AVG(nenqueestadiodelbrandfunnelseencuentralamarca)/3,2) AS brand_funnel,
+      ROUND(AVG(nenqueestadiodelbrandfunnelseencuentralamarca),2) AS brand_funnel,
       ROUND(AVG(nqueporcentajedemarketsharetienelamarca),2) AS market_share,
       ROUND(AVG(nlaempresainvierteeninvestigacionestrategiaoserviciosdeconsultoria),2) AS investigacion,
       ROUND(AVG(nlaempresainvierteendigital),2) AS inv_digital,
@@ -267,6 +288,22 @@ async function buildAdlensData() {
         scores: scaledScores, inversion:Math.round(anunciantes[nombre]||0) };
     });
 
+  // ── Sub-métricas por empresa (para filtro en Termómetro)
+  const SM_KEYS = ['vanguardia_mkt','construccion_marca','largo_plazo','importancia_estrategia',
+    'presupuesto_definido','tiene_dpto_compras','tiene_area_mkt','tamano_empresa','tamano_dpto_mkt',
+    'tiene_dpto_digital','diseno_creatividad','innovacion','confianza','afinidad_mkt',
+    'liderazgo_marcas','brand_funnel','market_share','investigacion','inv_digital','inv_research','inv_pdv'];
+  const submetricas_por_empresa = {};
+  for (const row of adlensRows) {
+    if (!row.anunciante) continue;
+    const sm = {};
+    for (const k of SM_KEYS) {
+      const v = row[`sm_${k}`];
+      sm[k] = v != null ? +v : null;
+    }
+    submetricas_por_empresa[row.anunciante] = sm;
+  }
+
   return {
     resumen: {
       total_inversion_usd: Math.round(totalInversion),
@@ -287,6 +324,7 @@ async function buildAdlensData() {
     cluster_agencia: clusterAgenciaRows.map(r => ({ cluster: +r.cluster, agencia: r.agencia, v: +r.v })),
     rada_dims: radaDimRows.map(r => ({ dimension: r.Dimension, avg: +r.avg_score, n: +r.n })),
     submetricas: radaMetricRows[0] || null,
+    submetricas_por_empresa,
     por_rubro: (() => { const tot = rubroRows.reduce((s,r)=>s+(+r.v||0),0)||1; return rubroRows.map(r=>({ rubro:r.k, inversion:+r.v, share:r2((+r.v/tot)*100) })); })(),
     fuente: 'bigquery',
     generado_en: new Date().toISOString(),
