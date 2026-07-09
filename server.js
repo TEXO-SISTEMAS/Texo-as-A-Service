@@ -709,12 +709,12 @@ const BQ_TTL = 60 * 60 * 1000;
 app.get('/api/adlens/schema', requireAuth, async (req, res) => {
   try {
     const bq = require('./bigquery');
-    const [tables, radaCols, radaSample] = await Promise.all([
-      bq.query(`SELECT table_name FROM \`${bq.PROJECT_ID}.${bq.DATASET}.INFORMATION_SCHEMA.TABLES\` ORDER BY table_name`),
+    const [adlensCols, radaCols, adlensSample] = await Promise.all([
+      bq.getColumns(bq.T_ADLENS),
       bq.getColumns(bq.T_RADA),
-      bq.query(`SELECT * FROM \`${bq.PROJECT_ID}.${bq.DATASET}.${bq.T_RADA}\` LIMIT 2`),
+      bq.query(`SELECT * FROM \`${bq.PROJECT_ID}.${bq.DATASET}.${bq.T_ADLENS}\` LIMIT 1`),
     ]);
-    res.json({ tables: tables.map(r=>r.table_name), radaCols, radaSample });
+    res.json({ adlensCols, radaCols, adlensSample });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
