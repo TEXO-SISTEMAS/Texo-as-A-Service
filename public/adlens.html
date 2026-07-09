@@ -337,6 +337,7 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <button class="tab-btn" onclick="switchTab('medios',this)">Medios</button>
         <button class="tab-btn" onclick="switchTab('agencias',this)">Agencias</button>
         <button class="tab-btn" onclick="switchTab('segmentador',this)">Segmentador</button>
+        <button class="tab-btn" onclick="switchTab('termometro',this)">Termómetro</button>
       </div>
     </div>
 
@@ -688,6 +689,39 @@ body{display:flex;flex-direction:column;min-height:100vh}
               </tr></thead>
               <tbody id="segmentadorTbody"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TAB: TERMÓMETRO ═══ -->
+    <div class="tab-panel" id="tab-termometro">
+      <div class="sec">
+        <div style="display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start">
+          <!-- Izquierda: gauge MMI global -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card" style="padding:20px;text-align:center">
+              <div style="font-size:11px;font-weight:800;color:#f0f040;letter-spacing:.08em;margin-bottom:12px">MARKET MATURITY INDEX</div>
+              <div id="termoGaugeWrap"></div>
+            </div>
+            <div class="card" style="padding:16px">
+              <div class="card-title" style="margin-bottom:10px">Filtrar por Segmento</div>
+              <select id="termoSegFilter" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--surface);color:var(--text)">
+                <option value="">Todos los segmentos</option>
+                <option value="0">0 · Emergentes o rezagadas</option>
+                <option value="1">1 · Operativas con potencial</option>
+                <option value="2">2 · Creativas y comprometidas</option>
+                <option value="3">3 · Líderes consistentes</option>
+                <option value="4">4 · En transición</option>
+              </select>
+            </div>
+          </div>
+          <!-- Derecha: dimensiones + métricas -->
+          <div>
+            <!-- Gauges por dimensión -->
+            <div id="termoDimGauges" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px"></div>
+            <!-- Métricas individuales -->
+            <div id="termoMetricas"></div>
           </div>
         </div>
       </div>
@@ -1538,6 +1572,87 @@ function _applySegFilters() {
   renderSegmentador(null, f);
 }
 
+// ── TERMÓMETRO ────────────────────────────────────────────────────────────────
+function buildGaugeSVG(pct, size, color, label) {
+  const r = size/2 - 8, cx = size/2, cy = size/2 + 8;
+  const arcLen = Math.PI * r;
+  const filled = arcLen * (pct/100);
+  const startX = cx - r, startY = cy;
+  const endX = cx + r, endY = cy;
+  return `<svg viewBox="0 0 ${size} ${size*0.65}" width="${size}" style="display:block;margin:0 auto">
+    <path d="M${startX},${cy} A${r},${r} 0 0 1 ${endX},${cy}" fill="none" stroke="#e2e8f0" stroke-width="8" stroke-linecap="round"/>
+    <path d="M${startX},${cy} A${r},${r} 0 0 1 ${endX},${cy}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round"
+      stroke-dasharray="${filled.toFixed(1)} ${(arcLen-filled).toFixed(1)}" style="transition:stroke-dasharray .6s"/>
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="${size>100?20:13}" font-weight="800" fill="currentColor">${pct.toFixed(1)}%</text>
+    <text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="${size>100?11:9}" fill="#9ca3af">${label}</text>
+    <text x="${startX-2}" y="${cy+16}" text-anchor="end" font-size="8" fill="#9ca3af">0%</text>
+    <text x="${endX+2}" y="${cy+16}" text-anchor="start" font-size="8" fill="#9ca3af">100%</text>
+  </svg>`;
+}
+
+function renderTermometro(data) {
+  const mmi = data.resumen.market_maturity_index || 0;
+  const dims = data.mmi_dimensiones || data.scores_globales || {};
+  const DIM_ORDER = ['Cultura','Estructura','Ejecucion','Inversion','Competitividad'];
+  const DIM_COLORS = { Cultura:'#6c3fc5', Estructura:'#0ea5b0', Ejecucion:'#16a34a', Inversion:'#d4900a', Competitividad:'#d42b4f' };
+  const DIM_LABELS = { Cultura:'Cultura', Estructura:'Estructura', Ejecucion:'Ejecución', Inversion:'Inversión', Competitividad:'Competitividad' };
+
+  // Gauge MMI global
+  document.getElementById('termoGaugeWrap').innerHTML = buildGaugeSVG(mmi, 180, '#f0f040', 'Avg Score');
+
+  // Gauges por dimensión
+  document.getElementById('termoDimGauges').innerHTML = DIM_ORDER.map(d => {
+    const v = dims[d] || 0;
+    return `<div class="card" style="padding:12px;flex:1;min-width:140px;text-align:center">
+      ${buildGaugeSVG(v, 130, DIM_COLORS[d]||'#0ea5b0', DIM_LABELS[d]||d)}
+    </div>`;
+  }).join('');
+
+  // Columnas de métricas por dimensión (usando scores de clusters como referencia)
+  const colsDef = [
+    { dim:'Cultura', color:DIM_COLORS.Cultura, items: data.rada_cols ? [] : [
+      {label:'Vanguardia del MKT'}, {label:'Construcción de marca'}, {label:'Largo plazo'},
+      {label:'Importancia de la estrategia'}, {label:'Presupuesto definido'}
+    ]},
+    { dim:'Estructura', color:DIM_COLORS.Estructura, items: [
+      {label:'Tiene Dpto. Compras'}, {label:'Tiene Área MKT'}, {label:'Tamaño empresa'},
+      {label:'Tamaño Depto. MKT'}, {label:'Tiene Dpto. Mkt Digital'}
+    ]},
+    { dim:'Ejecución', color:DIM_COLORS.Ejecucion, items: [
+      {label:'Diseño y creatividad'}, {label:'Innovación'}, {label:'Confianza'}, {label:'Afinidad Servicios MKT'}
+    ]},
+    { dim:'Competitividad', color:DIM_COLORS.Competitividad, items: [
+      {label:'Liderazgo de marcas'}, {label:'Estadio de Brand Funnel'}, {label:'Market Share'}, {label:'Investigación y consultoría'}
+    ]},
+    { dim:'Inversión', color:DIM_COLORS.Inversion, items: [
+      {label:'Inversión en digital'}, {label:'Inversión en research'}, {label:'Inversión en PDV'}
+    ]},
+  ];
+
+  // Log rada_cols para debugging
+  if (data.rada_cols && data.rada_cols.length) {
+    console.log('RADA columns:', data.rada_cols);
+  }
+
+  document.getElementById('termoMetricas').innerHTML =
+    `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+      ${colsDef.map(col => `
+        <div>
+          <div style="font-size:10px;font-weight:800;color:${col.color};letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;border-bottom:2px solid ${col.color};padding-bottom:4px">${col.dim}</div>
+          ${col.items.map(item => {
+            const v = item.value != null ? item.value : null;
+            const bgColor = v == null ? '#f1f5f9' : v >= 6 ? '#16a34a22' : v >= 4 ? '#d4900a22' : '#d42b4f22';
+            const textColor = v == null ? 'var(--muted2)' : v >= 6 ? '#16a34a' : v >= 4 ? '#d4900a' : '#d42b4f';
+            return `<div style="background:${bgColor};border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:10px;font-weight:600;color:var(--text)">${item.label}</span>
+              ${v != null ? `<span style="font-size:13px;font-weight:800;color:${textColor};margin-left:8px">${v.toFixed(2)}</span>` : '<span style="font-size:10px;color:var(--muted2)">—</span>'}
+            </div>`;
+          }).join('')}
+        </div>
+      `).join('')}
+    </div>`;
+}
+
 // ── ORCHESTRATOR ──────────────────────────────────────────────────────────────
 function renderDashboard(data) {
   // Hero
@@ -1607,6 +1722,9 @@ function renderDashboard(data) {
   renderScatter(data.scatter_data, 'scatterWrap5');
   renderClusterScores(data.clusters);
   initSegSliders(data.empresas_lista);
+
+  // Termómetro tab
+  renderTermometro(data);
 
   document.getElementById('dashboard').style.display = 'block';
 }
