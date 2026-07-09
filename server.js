@@ -706,6 +706,20 @@ app.get('/api/adlens/latest', requireAuth, async (req, res) => {
 // Datos en vivo desde BigQuery (mismas tablas que el Looker). Cacheado en memoria 1h.
 let _bqCache = { data: null, ts: 0 };
 const BQ_TTL = 60 * 60 * 1000;
+app.get('/api/adlens/schema', requireAuth, async (req, res) => {
+  try {
+    const bq = require('./bigquery');
+    const [tables, radaCols, radaSample] = await Promise.all([
+      bq.query(`SELECT table_name FROM \`${bq.PROJECT_ID}.${bq.DATASET}.INFORMATION_SCHEMA.TABLES\` ORDER BY table_name`),
+      bq.getColumns(bq.T_RADA),
+      bq.query(`SELECT * FROM \`${bq.PROJECT_ID}.${bq.DATASET}.${bq.T_RADA}\` LIMIT 2`),
+    ]);
+    res.json({ tables: tables.map(r=>r.table_name), radaCols, radaSample });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/adlens/bigquery', requireAuth, async (req, res) => {
   try {
     const force = req.query.refresh === '1';
