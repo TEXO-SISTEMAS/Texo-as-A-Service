@@ -657,28 +657,38 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- ═══ TAB: SEGMENTADOR ═══ -->
     <div class="tab-panel" id="tab-segmentador">
       <div class="sec">
-        <div class="sec-label">Termómetro de Madurez</div>
-        <div class="sec-heading">Scores por Empresa</div>
-        <div class="sec-bar"></div>
-        <div class="sec-desc">Dimensiones del Marketing Wheel para cada empresa analizada, ordenadas por puntaje total.</div>
-        <div class="card" style="overflow:auto">
-          <table class="data-table seg-table" id="segmentadorTable">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th style="text-align:left">Empresa</th>
-                <th style="text-align:left">Cluster</th>
-                <th style="text-align:left">Rubro</th>
-                <th>Estructura</th>
-                <th>Cultura</th>
-                <th>Ejecución</th>
-                <th>Compet.</th>
-                <th>Inversión</th>
-                <th>Score Total</th>
-              </tr>
-            </thead>
-            <tbody id="segmentadorTbody"></tbody>
-          </table>
+        <div style="display:grid;grid-template-columns:200px 1fr 1fr;gap:16px;align-items:start">
+          <!-- Filtros -->
+          <div class="card" style="padding:16px">
+            <div class="card-title" style="margin-bottom:14px">Filtrar por Score mínimo</div>
+            <div id="segSliders"></div>
+          </div>
+          <!-- Centro: scatter + cluster scores -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="scatter-wrap" id="scatterWrap5"></div>
+              <div class="scatter-legend" id="scatterLegend5"></div>
+            </div>
+            <div class="card" style="padding:16px">
+              <div class="card-title" style="margin-bottom:10px">Scores Promedio por Cluster</div>
+              <div id="clusterScoresWrap"></div>
+            </div>
+          </div>
+          <!-- Derecha: tabla empresas -->
+          <div class="card" style="padding:16px;overflow:auto;max-height:700px">
+            <div class="card-title" style="margin-bottom:10px">Empresas · Scores por Dimensión</div>
+            <table style="width:100%;border-collapse:collapse" id="segmentadorTable">
+              <thead><tr style="border-bottom:2px solid var(--border)">
+                <th style="padding:5px 6px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">Empresa</th>
+                <th style="padding:5px 6px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Estructura</th>
+                <th style="padding:5px 6px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Cultura</th>
+                <th style="padding:5px 6px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Ejecución</th>
+                <th style="padding:5px 6px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Compet.</th>
+                <th style="padding:5px 6px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">Inversión</th>
+              </tr></thead>
+              <tbody id="segmentadorTbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1449,36 +1459,83 @@ function makeTableSortable(containerId) {
   });
 }
 
-function renderSegmentador(empresasList) {
-  if (!empresasList || !empresasList.length) {
-    document.getElementById('segmentadorTbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted2);padding:32px">Sin datos</td></tr>';
+let _segEmpresasList = [];
+
+function renderSegmentador(empresasList, filters) {
+  _segEmpresasList = empresasList || _segEmpresasList;
+  const f = filters || {};
+  const dims = ['Estructura','Cultura','Ejecucion','Competitividad','Inversion'];
+  if (!_segEmpresasList.length) {
+    document.getElementById('segmentadorTbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted2);padding:32px">Sin datos</td></tr>';
     return;
   }
-  const sorted = [...empresasList].sort((a,b) => b.puntaje_total - a.puntaje_total);
-  const dims = ['Estructura','Cultura','Ejecucion','Competitividad','Inversion'];
-  document.getElementById('segmentadorTbody').innerHTML = sorted.map((e, i) => {
+  const filtered = _segEmpresasList
+    .filter(e => dims.every(d => (e.scores[d]||0) >= (f[d]||0)))
+    .sort((a,b) => b.puntaje_total - a.puntaje_total);
+
+  document.getElementById('segmentadorTbody').innerHTML = filtered.length ? filtered.map(e => {
     const c = e.cluster;
     const col = c!=null ? CLUSTER_COLORS[c] : '#999';
-    const dimsHtml = dims.map(d => {
-      const v = e.scores[d]||0;
-      return `<td style="text-align:right">
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px">
-          <div style="width:30px;height:3px;background:#e8eaf0;border-radius:2px;overflow:hidden">
-            <div style="width:${v}%;height:100%;background:${col}"></div>
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:5px 6px;font-weight:700;font-size:11px;white-space:nowrap">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${col};margin-right:5px;vertical-align:middle"></span>${formatNombre(e.nombre)}
+      </td>
+      ${dims.map(d => {
+        const v = e.scores[d]||0;
+        return `<td style="padding:5px 6px;text-align:right">
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px">
+            <div style="width:28px;height:3px;background:#e8eaf0;border-radius:2px;overflow:hidden">
+              <div style="width:${v}%;height:100%;background:${col}"></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;min-width:34px">${v.toFixed(1)}%</span>
           </div>
-          <span style="font-size:10px;font-weight:700;min-width:28px">${v.toFixed(0)}%</span>
-        </div>
-      </td>`;
-    }).join('');
-    return `<tr>
-      <td style="color:var(--muted2);font-weight:600">${i+1}</td>
-      <td style="font-weight:700;text-align:left;white-space:nowrap">${formatNombre(e.nombre)}</td>
-      <td style="text-align:left"><span class="cluster-chip" style="background:${col}22;color:${col}">${c!=null?'Seg '+c:'—'}</span></td>
-      <td style="color:var(--muted);font-size:10px;text-align:left">${e.rubro||'—'}</td>
-      ${dimsHtml}
-      <td style="text-align:right;font-weight:800;color:${col}">${e.puntaje_total.toFixed(1)}%</td>
+        </td>`;
+      }).join('')}
     </tr>`;
-  }).join('');
+  }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted2);padding:24px">Sin resultados para los filtros seleccionados</td></tr>';
+}
+
+function renderClusterScores(clusters) {
+  const dims = ['Estructura','Cultura','Ejecucion','Competitividad','Inversion'];
+  const labels = ['Estructura','Cultura','Ejecución','Compet.','Inversión'];
+  const sorted = [...clusters].sort((a,b) => b.scores.Estructura - a.scores.Estructura);
+  document.getElementById('clusterScoresWrap').innerHTML =
+    `<table style="width:100%;border-collapse:collapse">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="padding:5px 8px;font-size:10px;font-weight:800;text-align:left;color:var(--muted2)">Cluster</th>
+        ${labels.map(l=>`<th style="padding:5px 8px;font-size:10px;font-weight:800;text-align:right;color:var(--muted2)">${l}</th>`).join('')}
+      </tr></thead>
+      <tbody>${sorted.map(c=>`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:5px 8px">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${c.color};margin-right:5px;vertical-align:middle"></span>
+          <span style="font-weight:700;font-size:11px">${c.id}</span>
+        </td>
+        ${dims.map(d=>`<td style="padding:5px 8px;text-align:right;font-size:11px;font-weight:700">${(c.scores[d]||0).toFixed(1)}%</td>`).join('')}
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+function initSegSliders(empresasList) {
+  const dims = ['Estructura','Cultura','Ejecucion','Competitividad','Inversion'];
+  const labels = { Estructura:'Estructura', Cultura:'Cultura', Ejecucion:'Ejecución', Competitividad:'Competitividad', Inversion:'Inversión' };
+  document.getElementById('segSliders').innerHTML = dims.map(d => `
+    <div style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:11px;font-weight:600">${labels[d]}</span>
+        <span style="font-size:11px;color:var(--muted2)" id="segLbl_${d}">0,0 %</span>
+      </div>
+      <input type="range" min="0" max="100" value="0" step="5" id="segSlider_${d}"
+        style="width:100%;accent-color:#f0f040;cursor:pointer"
+        oninput="document.getElementById('segLbl_${d}').textContent=this.value.replace('.',',')+',0 %';_applySegFilters()">
+    </div>`).join('');
+  renderSegmentador(empresasList);
+}
+
+function _applySegFilters() {
+  const dims = ['Estructura','Cultura','Ejecucion','Competitividad','Inversion'];
+  const f = {};
+  dims.forEach(d => { const el = document.getElementById('segSlider_'+d); if (el) f[d] = +el.value; });
+  renderSegmentador(null, f);
 }
 
 // ── ORCHESTRATOR ──────────────────────────────────────────────────────────────
@@ -1547,7 +1604,9 @@ function renderDashboard(data) {
   renderBars('rubroBars2', data.por_rubro, 'rubro', 'inversion', '#f59e0b');
 
   // Segmentador tab
-  renderSegmentador(data.empresas_lista);
+  renderScatter(data.scatter_data, 'scatterWrap5');
+  renderClusterScores(data.clusters);
+  initSegSliders(data.empresas_lista);
 
   document.getElementById('dashboard').style.display = 'block';
 }
