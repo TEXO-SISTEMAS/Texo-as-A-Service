@@ -121,8 +121,30 @@ async function buildAdlensData() {
     query(`SELECT a.Cluster AS cluster, m.Agencia AS agencia, ROUND(SUM(m.RANGODEINVERSION),2) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE a.Cluster IS NOT NULL AND m.Agencia IS NOT NULL GROUP BY a.Cluster, m.Agencia ORDER BY a.Cluster ASC, v DESC`),
     // Termómetro: AVG Score por Dimension (formato largo: anunciante, Dimension, Score)
     query(`SELECT Dimension, ROUND(AVG(Score),4) AS avg_score, COUNT(*) AS n FROM ${R} WHERE Dimension IS NOT NULL GROUP BY Dimension ORDER BY Dimension`).catch(()=>[]),
-    // placeholder vacío (segunda posición mantenida por compatibilidad)
-    Promise.resolve([]),
+    // Sub-métricas del Termómetro: AVG de cada columna numérica de la tabla adlens
+    query(`SELECT
+      ROUND(AVG(nconrespectoalmarketingylapublicidadesunaempresa),2) AS vanguardia_mkt,
+      ROUND(AVG(nlaempresatrabajaenconstrucciondemarcas),2) AS construccion_marca,
+      ROUND(AVG(ncomoseproyectalaempresa_),2) AS largo_plazo,
+      ROUND(AVG(nquetanimportanteeslaestrategiadetumarca__),2) AS importancia_estrategia,
+      ROUND(AVG(neldepartamentodemarketingtieneunpresupuestoanualdefinido),2) AS presupuesto_definido,
+      ROUND(AVG(ntienelaempresaundepartamentodecompras),2) AS tiene_dpto_compras,
+      ROUND(AVG(\`_ntienelaempresaareademarketing\`),2) AS tiene_area_mkt,
+      ROUND(AVG(ntamanodelaempresa_),2) AS tamano_empresa,
+      ROUND(AVG(ndecuantaspersonasestaconstituidalaestructurademarketingdelaempresa),2) AS tamano_dpto_mkt,
+      ROUND(AVG(nlaempresacuentaconundepartamentoencargadodemarketingdigital),2) AS tiene_dpto_digital,
+      ROUND(AVG(nquetanimportanteeseldisenoylacreatividad_),2) AS diseno_creatividad,
+      ROUND(AVG(nlamarcaempresasedestacaporinnovarenpublicidad),2) AS innovacion,
+      ROUND(AVG(quetandesconfiadaeslaempresa),2) AS confianza,
+      ROUND(AVG(nafinidaddelaempresaconserviciosdecomunicacionesdemarketing_),2) AS afinidad_mkt,
+      ROUND(AVG(nsumarcasson),2) AS liderazgo_marcas,
+      ROUND(AVG(nenqueestadiodelbrandfunnelseencuentralamarca)/3,2) AS brand_funnel,
+      ROUND(AVG(nqueporcentajedemarketsharetienelamarca),2) AS market_share,
+      ROUND(AVG(nlaempresainvierteeninvestigacionestrategiaoserviciosdeconsultoria),2) AS investigacion,
+      ROUND(AVG(nlaempresainvierteendigital),2) AS inv_digital,
+      ROUND(AVG(nlaempresainvierteenresearch),2) AS inv_research,
+      ROUND(AVG(nlaempresainvierteenpdv),2) AS inv_pdv
+    FROM ${A} WHERE anunciante IS NOT NULL`).catch(()=>[]),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
   const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
@@ -264,6 +286,7 @@ async function buildAdlensData() {
     cluster_grupo: clusterGrupoRows.map(r => ({ cluster: +r.cluster, grupo: r.grupo, v: +r.v })),
     cluster_agencia: clusterAgenciaRows.map(r => ({ cluster: +r.cluster, agencia: r.agencia, v: +r.v })),
     rada_dims: radaDimRows.map(r => ({ dimension: r.Dimension, avg: +r.avg_score, n: +r.n })),
+    submetricas: radaMetricRows[0] || null,
     por_rubro: (() => { const tot = rubroRows.reduce((s,r)=>s+(+r.v||0),0)||1; return rubroRows.map(r=>({ rubro:r.k, inversion:+r.v, share:r2((+r.v/tot)*100) })); })(),
     fuente: 'bigquery',
     generado_en: new Date().toISOString(),

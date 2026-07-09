@@ -1623,49 +1623,41 @@ function renderTermometro(data) {
     </div>`;
   }).join('');
 
-  // Columnas de sub-métricas por dimensión
-  // Las claves "key" son variantes normalizadas para coincidir con valores reales de RADA
+  // Sub-métricas del Termómetro: vienen de tablamaterializada_adlens (escala 0-10)
+  const sm = data.submetricas || {};
   const colsDef = [
     { dim:'Cultura', color:DIM_COLORS.Cultura, items: [
-      {label:'Vanguardia del MKT',    keys:['Vanguardia del MKT','Vanguardia MKT']},
-      {label:'Construcción de marca', keys:['Construccion de marca','Construcción de marca']},
-      {label:'Largo plazo',           keys:['Largo plazo']},
-      {label:'Importancia estrategia',keys:['Importancia de la estrategia','Importancia estrategia']},
-      {label:'Presupuesto definido',  keys:['Presupuesto definido']},
+      {label:'Vanguardia del MKT',     val: sm.vanguardia_mkt},
+      {label:'Construcción de marca',  val: sm.construccion_marca},
+      {label:'Largo plazo',            val: sm.largo_plazo},
+      {label:'Importancia estrategia', val: sm.importancia_estrategia},
+      {label:'Presupuesto definido',   val: sm.presupuesto_definido},
     ]},
     { dim:'Estructura', color:DIM_COLORS.Estructura, items: [
-      {label:'Tiene Dpto. Compras',   keys:['Tiene Dpto. Compras','Dpto Compras']},
-      {label:'Tiene Área MKT',        keys:['Tiene Area MKT','Tiene Área MKT']},
-      {label:'Tamaño empresa',        keys:['Tamano empresa','Tamaño empresa']},
-      {label:'Tamaño Depto. MKT',     keys:['Tamano Depto. MKT','Tamaño Depto. MKT']},
-      {label:'Tiene Dpto. Mkt Digital',keys:['Tiene Dpto. Mkt Digital','Mkt Digital']},
+      {label:'Tiene Dpto. Compras',    val: sm.tiene_dpto_compras},
+      {label:'Tiene Área MKT',         val: sm.tiene_area_mkt},
+      {label:'Tamaño empresa',         val: sm.tamano_empresa},
+      {label:'Tamaño Depto. MKT',      val: sm.tamano_dpto_mkt},
+      {label:'Tiene Dpto. Mkt Digital',val: sm.tiene_dpto_digital},
     ]},
     { dim:'Ejecución', color:DIM_COLORS.Ejecucion, items: [
-      {label:'Diseño y creatividad',  keys:['Diseno y creatividad','Diseño y creatividad']},
-      {label:'Innovación',            keys:['Innovacion','Innovación']},
-      {label:'Confianza',             keys:['Confianza']},
-      {label:'Afinidad Servicios MKT',keys:['Afinidad Servicios MKT','Afinidad MKT']},
+      {label:'Diseño y creatividad',   val: sm.diseno_creatividad},
+      {label:'Innovación',             val: sm.innovacion},
+      {label:'Confianza',              val: sm.confianza},
+      {label:'Afinidad Servicios MKT', val: sm.afinidad_mkt},
     ]},
     { dim:'Competitividad', color:DIM_COLORS.Competitividad, items: [
-      {label:'Liderazgo de marcas',   keys:['Liderazgo de marcas']},
-      {label:'Brand Funnel',          keys:['Estadio de Brand Funnel','Brand Funnel']},
-      {label:'Market Share',          keys:['Market Share']},
-      {label:'Investigación',         keys:['Investigacion y consultoria','Investigación y consultoría']},
+      {label:'Liderazgo de marcas',    val: sm.liderazgo_marcas},
+      {label:'Brand Funnel',           val: sm.brand_funnel},
+      {label:'Market Share',           val: sm.market_share},
+      {label:'Investigación',          val: sm.investigacion},
     ]},
     { dim:'Inversión', color:DIM_COLORS.Inversion, items: [
-      {label:'Inversión en digital',  keys:['Inversion en digital','Inversión en digital']},
-      {label:'Inversión en research', keys:['Inversion en research','Inversión en research']},
-      {label:'Inversión en PDV',      keys:['Inversion en PDV','Inversión en PDV']},
+      {label:'Inversión en digital',   val: sm.inv_digital},
+      {label:'Inversión en research',  val: sm.inv_research},
+      {label:'Inversión en PDV',       val: sm.inv_pdv},
     ]},
   ];
-
-  // Asignar valores desde RADA
-  colsDef.forEach(col => {
-    col.items.forEach(item => {
-      const v = findVal(...item.keys, item.label);
-      if (v != null) item.value = v;
-    });
-  });
 
   document.getElementById('termoMetricas').innerHTML =
     `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
@@ -1673,12 +1665,12 @@ function renderTermometro(data) {
         <div>
           <div style="font-size:10px;font-weight:800;color:${col.color};letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;border-bottom:2px solid ${col.color};padding-bottom:4px">${col.dim}</div>
           ${col.items.map(item => {
-            const v = item.value != null ? item.value : null;
-            const bgColor = v == null ? '#f1f5f9' : v >= 60 ? '#16a34a22' : v >= 40 ? '#d4900a22' : '#d42b4f22';
-            const textColor = v == null ? 'var(--muted2)' : v >= 60 ? '#16a34a' : v >= 40 ? '#d4900a' : '#d42b4f';
+            const v = item.val != null ? +item.val : null;
+            const bgColor = v == null ? 'var(--card)' : v > 7 ? '#16a34a22' : v > 3 ? '#d4900a22' : '#d42b4f22';
+            const textColor = v == null ? 'var(--muted2)' : v > 7 ? '#16a34a' : v > 3 ? '#d4900a' : '#d42b4f';
             return `<div style="background:${bgColor};border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
               <span style="font-size:10px;font-weight:600;color:var(--text)">${item.label}</span>
-              ${v != null ? `<span style="font-size:13px;font-weight:800;color:${textColor};margin-left:8px">${v.toFixed(1)}%</span>` : '<span style="font-size:10px;color:var(--muted2)">—</span>'}
+              ${v != null ? `<span style="font-size:13px;font-weight:800;color:${textColor};margin-left:8px">${v.toFixed(2)}</span>` : '<span style="font-size:10px;color:var(--muted2)">—</span>'}
             </div>`;
           }).join('')}
         </div>
