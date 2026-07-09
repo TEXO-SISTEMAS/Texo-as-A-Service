@@ -1413,6 +1413,39 @@ function renderWheel(scores) {
 }
 
 // ── SEGMENTADOR TABLE ─────────────────────────────────────────────────────────
+function makeTableSortable(containerId) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  const table = wrap.querySelector('table');
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  const headers = [...table.querySelectorAll('thead th')];
+  let sortCol = -1, sortAsc = true;
+
+  headers.forEach((th, i) => {
+    th.style.cursor = 'pointer';
+    th.style.userSelect = 'none';
+    th.dataset.base = th.textContent.trim();
+    th.title = 'Ordenar';
+    th.addEventListener('click', () => {
+      if (sortCol === i) sortAsc = !sortAsc; else { sortCol = i; sortAsc = true; }
+      headers.forEach((h, j) => {
+        h.textContent = h.dataset.base + (j === sortCol ? (sortAsc ? ' ▲' : ' ▼') : '');
+      });
+      const rows = [...tbody.querySelectorAll('tr')];
+      rows.sort((a, b) => {
+        const at = a.cells[i]?.textContent?.trim() || '';
+        const bt = b.cells[i]?.textContent?.trim() || '';
+        const an = parseFloat(at.replace(/[^0-9.-]/g, ''));
+        const bn = parseFloat(bt.replace(/[^0-9.-]/g, ''));
+        if (!isNaN(an) && !isNaN(bn)) return sortAsc ? an - bn : bn - an;
+        return sortAsc ? at.localeCompare(bt, 'es') : bt.localeCompare(at, 'es');
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+}
+
 function renderSegmentador(empresasList) {
   if (!empresasList || !empresasList.length) {
     document.getElementById('segmentadorTbody').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted2);padding:32px">Sin datos</td></tr>';
@@ -1504,6 +1537,8 @@ function renderDashboard(data) {
   renderScatter(data.scatter_data, 'scatterWrap4');
   renderInversionCluster(data.clusters, 'invClusterWrap2');
   renderAnunciantesTable(data.top_anunciantes, 'anunciantesTableWrap2');
+  makeTableSortable('anunciantesTableWrap2');
+  makeTableSortable('invClusterWrap2');
   renderBars('agenciaBars', data.por_agencia, 'agencia', 'inversion', '#e85d26');
   if (data.cluster_agencia) renderParticipacionAgencias(data.cluster_agencia);
   renderBars('rubroBars2', data.por_rubro, 'rubro', 'inversion', '#f59e0b');
