@@ -119,10 +119,10 @@ async function buildAdlensData() {
     query(`SELECT a.rubroprincipal AS k, ROUND(SUM(m.RANGODEINVERSION),2) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE a.rubroprincipal IS NOT NULL GROUP BY a.rubroprincipal ORDER BY v DESC LIMIT 10`),
     // Participación por cluster × Agencia
     query(`SELECT a.Cluster AS cluster, m.Agencia AS agencia, ROUND(SUM(m.RANGODEINVERSION),2) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE a.Cluster IS NOT NULL AND m.Agencia IS NOT NULL GROUP BY a.Cluster, m.Agencia ORDER BY a.Cluster ASC, v DESC`),
-    // Termómetro: scores por dimensión desde RADA (AVG de columnas de dimensión)
-    query(`SELECT ROUND(AVG(Cultura)*100,1) AS cultura, ROUND(AVG(Estructura)*100,1) AS estructura, ROUND(AVG(ejecucion)*100,1) AS ejecucion, ROUND(AVG(inversion)*100,1) AS inversion, ROUND(AVG(Competitividad)*100,1) AS competitividad FROM ${R} WHERE Score IS NOT NULL`).catch(()=>[]),
-    // Termómetro: AVG por cada métrica individual de RADA
-    query(`SELECT column_name FROM \`${PROJECT_ID}.${DATASET}.INFORMATION_SCHEMA.COLUMNS\` WHERE table_name = '${T_RADA}' ORDER BY ordinal_position`).catch(()=>[]),
+    // Termómetro: AVG Score por Dimension (formato largo: anunciante, Dimension, Score)
+    query(`SELECT Dimension, ROUND(AVG(Score),4) AS avg_score, COUNT(*) AS n FROM ${R} WHERE Dimension IS NOT NULL GROUP BY Dimension ORDER BY Dimension`).catch(()=>[]),
+    // placeholder vacío (segunda posición mantenida por compatibilidad)
+    Promise.resolve([]),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
   const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
@@ -263,12 +263,7 @@ async function buildAdlensData() {
     evolucion: evolucionRows.map(r => ({ ano: +r.k, inversion: +r.v })),
     cluster_grupo: clusterGrupoRows.map(r => ({ cluster: +r.cluster, grupo: r.grupo, v: +r.v })),
     cluster_agencia: clusterAgenciaRows.map(r => ({ cluster: +r.cluster, agencia: r.agencia, v: +r.v })),
-    mmi_dimensiones: radaDimRows[0] ? {
-      Cultura: +radaDimRows[0].cultura||0, Estructura: +radaDimRows[0].estructura||0,
-      Ejecucion: +radaDimRows[0].ejecucion||0, Inversion: +radaDimRows[0].inversion||0,
-      Competitividad: +radaDimRows[0].competitividad||0,
-    } : null,
-    rada_cols: radaMetricRows.map(r => r.column_name),
+    rada_dims: radaDimRows.map(r => ({ dimension: r.Dimension, avg: +r.avg_score, n: +r.n })),
     por_rubro: (() => { const tot = rubroRows.reduce((s,r)=>s+(+r.v||0),0)||1; return rubroRows.map(r=>({ rubro:r.k, inversion:+r.v, share:r2((+r.v/tot)*100) })); })(),
     fuente: 'bigquery',
     generado_en: new Date().toISOString(),
