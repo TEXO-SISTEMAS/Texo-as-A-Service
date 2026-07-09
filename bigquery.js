@@ -230,11 +230,16 @@ async function buildAdlensData() {
       inversion:Math.round(anunciantes[nombre]||0),
       share: totalInversion>0 ? r2((anunciantes[nombre]||0)/totalInversion*100) : 0 }));
 
-  // ── Empresas lista
+  // ── Empresas lista — aplicar scoreScale igual que clusters
   const empresas_lista = Object.entries(empresaMap)
     .filter(([_,e]) => e.puntaje_total > 0)
-    .map(([nombre,e]) => ({ nombre, rubro:e.rubro, cluster:e.cluster, tipo_cluster:e.tipo_cluster,
-      puntaje_total:e.puntaje_total, scores:e.scores, inversion:Math.round(anunciantes[nombre]||0) }));
+    .map(([nombre,e]) => {
+      const scaledScores = {};
+      for (const [d,v] of Object.entries(e.scores)) scaledScores[d] = r1(v * scoreScale);
+      return { nombre, rubro:e.rubro, cluster:e.cluster, tipo_cluster:e.tipo_cluster,
+        puntaje_total: r1(e.puntaje_total * scoreScale),
+        scores: scaledScores, inversion:Math.round(anunciantes[nombre]||0) };
+    });
 
   return {
     resumen: {
