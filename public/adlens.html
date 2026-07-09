@@ -545,40 +545,39 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- ═══ TAB: MEDIOS ═══ -->
     <div class="tab-panel" id="tab-medios">
       <div class="sec">
-        <div class="sec-label">Segmentación de Empresas</div>
-        <div class="sec-heading">Posicionamiento Estratégico</div>
-        <div class="sec-bar"></div>
-        <div class="card" style="margin-bottom:20px;max-width:760px">
-          <div class="scatter-wrap" id="scatterWrap3"></div>
-          <div class="scatter-legend" id="scatterLegend3"></div>
-        </div>
+        <!-- Fila 1: Scatter + Media Mix -->
         <div class="two-col" style="margin-bottom:20px">
           <div class="card">
-            <div class="card-title">Media Mix · Inversión por Medio</div>
+            <div class="sec-label" style="margin-bottom:6px">Segmentación de Empresas</div>
+            <div class="scatter-wrap" id="scatterWrap3"></div>
+            <div class="scatter-legend" id="scatterLegend3"></div>
+          </div>
+          <div class="card" style="padding:20px">
+            <div class="card-title" style="margin-bottom:12px">Media Mix · Inversión por Medio</div>
             <div class="bar-list" id="mediaMixBars"></div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:16px">
-            <div class="card">
-              <div class="card-title">SOI por Grupo Empresarial</div>
-              <div id="grupoPieWrap2" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
-            </div>
-            <div class="card" style="padding:16px">
-              <div class="card-title" style="margin-bottom:12px">Inversión por Cluster (USd 000)</div>
-              <div id="invClusterWrap"></div>
-            </div>
-          </div>
         </div>
-        <div class="two-col" style="margin-bottom:20px">
+        <!-- Fila 2: SOI Grupo + Cluster table + Rubro bars -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+          <div class="card">
+            <div class="card-title">SOI por Grupo Empresarial</div>
+            <div id="grupoPieWrap2" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"></div>
+          </div>
+          <div class="card" style="padding:16px">
+            <div class="card-title" style="margin-bottom:12px">Inversión por Cluster (USd 000)</div>
+            <div id="invClusterWrap"></div>
+          </div>
           <div class="card" style="padding:20px">
             <div class="card-title" style="margin-bottom:12px">Inversiones Anuales por Rubro (Miles USD)</div>
             <div class="bar-list" id="rubroBars"></div>
           </div>
+        </div>
+        <!-- Fila 3: Participación clusters + Vehículos -->
+        <div class="two-col" style="margin-bottom:20px">
           <div class="card" style="padding:20px">
             <div class="card-title" style="margin-bottom:12px">Participación por Clusters · Grupo Empresarial</div>
             <div id="participacionClustersWrap"></div>
           </div>
-        </div>
-        <div class="two-col" style="margin-bottom:20px">
           <div class="card" style="padding:16px">
             <div class="card-title" style="margin-bottom:12px">Vehículos · Inversión</div>
             <div style="overflow:auto;max-height:380px">
@@ -593,23 +592,24 @@ body{display:flex;flex-direction:column;min-height:100vh}
               </table>
             </div>
           </div>
-          <div class="card">
-            <div class="card-title">Anunciantes · Inversión y Segmento</div>
-            <div style="overflow:auto;max-height:380px">
-              <table class="data-table" id="anunciantesTable">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th style="text-align:left">Anunciante</th>
-                    <th style="text-align:left">Rubro</th>
-                    <th>Inversión</th>
-                    <th>Shr%</th>
-                    <th style="text-align:left">Segmento</th>
-                  </tr>
-                </thead>
-                <tbody id="anunciantesTbody"></tbody>
-              </table>
-            </div>
+        </div>
+        <!-- Fila 4: Anunciantes -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-title">Anunciantes · Inversión y Segmento</div>
+          <div style="overflow:auto;max-height:380px">
+            <table class="data-table" id="anunciantesTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th style="text-align:left">Anunciante</th>
+                  <th style="text-align:left">Rubro</th>
+                  <th>Inversión</th>
+                  <th>Shr%</th>
+                  <th style="text-align:left">Segmento</th>
+                </tr>
+              </thead>
+              <tbody id="anunciantesTbody"></tbody>
+            </table>
           </div>
         </div>
       </div>
