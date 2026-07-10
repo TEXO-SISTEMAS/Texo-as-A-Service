@@ -1,0 +1,2053 @@
+
+╭─── Claude Code v2.1.68 ───────────────────────────────────────────────────────────────────────────────────╮
+│                                       │ Tips for getting started                                          │
+│             Welcome back!             │ Run /init to create a CLAUDE.md file with instructions for Claude │
+│                                       │ ───────────────────────────────────────────────────────────────── │
+│                                       │ Recent activity                                                   │
+│                ▐▛███▜▌                │ No recent activity                                                │
+│               ▝▜█████▛▘               │                                                                   │
+│                 ▘▘ ▝▝                 │                                                                   │
+│   qwen3.5:cloud · API Usage Billing   │                                                                   │
+│      ~\Desktop\texo_as_a_service      │                                                                   │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+  /model to try Opus 4.6
+
+❯ lee nuevo diseño.txt, el ejemplo esta chat-ejecutivo.html
+
+● Searched for 2 patterns, read 3 files (ctrl+o to expand)
+
+● He leído ambos archivos. El documento nuevo diseño.txt contiene las especificaciones técnicas para un rediseño
+  ejecutivo del sistema, y chat-ejecutivo.html es el ejemplo de implementación actual.
+
+  Resumen del diseño:
+
+  Paleta de colores:
+  - Fondos oscuros: #0a0e1a, #0d1220, #121829
+  - Azul corporativo: #3b82f6, #2563eb
+  - Textos: blanco, #c5cad4, #7c8597, #5f6b7f
+
+  Componentes principales:
+  1. Sidebar (300px) con logo, botón "Nueva conversación", sugerencias y footer
+  2. Header con badge de sesión e info del usuario
+  3. Body centrado con estado vacío y cards de capacidades
+  4. Input area fijo abajo con textarea auto-redimensionable
+  5. Footer con branding
+
+  Estrategia de reutilización propuesta:
+  - Crear base.css con variables CSS y componentes compartidos
+  - Crear archivos específicos por página (chat.css, upload.css, dashboard.css)
+  - Utilidades JS compartidas (utils.js)
+
+  ¿Qué querés hacer con esta información? ¿Necesitás que:
+  1. Cree la página de upload siguiendo este diseño
+  2. Extraiga el CSS base a un archivo separado
+  3. Implemente alguna otra parte del sistema
+
+✻ Sautéed for 2m 7s
+
+❯ quiero que implementes el diseño completo en todo el proyecto
+
+● Searched for 5 patterns (ctrl+o to expand)
+
+● Voy a leer los archivos actuales del frontend para entender la estructura y aplicar el diseño ejecutivo en toda la
+  aplicación React/Next.js.
+
+● Read 11 files (ctrl+o to expand)
+
+● Ahora voy a implementar el nuevo diseño ejecutivo en todo el proyecto. Comenzaré actualizando el CSS base y creando
+  los componentes reutilizables.
+
+● Write(frontend\src\app\globals.css)
+  ⎿  Added 223 lines, removed 45 lines
+        1 -@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600;700&display=swap');
+        2 -
+        1  @tailwind base;
+        2  @tailwind components;
+        3  @tailwind utilities;
+        4
+        5 -/* Variables de diseño institucional - estilo directorio */
+        5 +/* ========================================
+        6 +   VARIABLES DE DISEÑO EJECUTIVO
+        7 +   Sistema de diseño corporativo-ejecutivo
+        8 +   ======================================== */
+        9  :root {
+       10 -  /* Colores institucionales */
+       11 -  --teal: #1a6b6b;
+       12 -  --teal-dark: #145555;
+       13 -  --teal-light: #2d8a8a;
+       14 -  --gold: #f5a623;
+       15 -  --coral: #e05a3a;
+       16 -  --green: #3dbfa0;
+       17 -  --purple: #9b8fd4;
+       18 -  --bg-light: #f0f7f5;
+       19 -  --bg-cream: #faf6ed;
+       10 +  /* Colores base - Fondos oscuros */
+       11 +  --bg-primary: #0a0e1a;
+       12 +  --bg-secondary: #0d1220;
+       13 +  --bg-tertiary: #121829;
+       14 +  --bg-surface: #0d1220;
+       15 +  --bg-panel: #121829;
+       16
+       17 -  /* Colores base para el tema oscuro */
+       18 -  --bg-base: #0a0c10;
+       19 -  --bg-surface: #151922;
+       20 -  --bg-panel: #1e2330;
+       21 -  --border: #2d3548;
+       17 +  /* Bordes sutiles */
+       18 +  --border-subtle: rgba(255, 255, 255, 0.06);
+       19 +  --border-light: rgba(255, 255, 255, 0.1);
+       20 +
+       21 +  /* Tipografía */
+       22    --text-primary: #ffffff;
+       23 -  --text-secondary: #a0aec0;
+       24 -  --text-muted: #64748b;
+       23 +  --text-secondary: #c5cad4;
+       24 +  --text-muted: #7c8597;
+       25 +  --text-subtle: #5f6b7f;
+       26
+       27 -  /* Tipografía - base 18px para mejor legibilidad */
+       28 -  --font-base: 18px;
+       29 -  --text-xs: 0.75rem;    /* 12px */
+       30 -  --text-sm: 0.875rem;   /* 14px */
+       31 -  --text-base: 1rem;     /* 16px */
+       32 -  --text-lg: 1.25rem;    /* 20px */
+       33 -  --text-xl: 1.5rem;     /* 24px */
+       34 -  --text-2xl: 1.875rem;  /* 30px */
+       35 -  --text-3xl: 2.25rem;   /* 36px */
+       27 +  /* Acento corporativo - Azul */
+       28 +  --accent-primary: #3b82f6;
+       29 +  --accent-secondary: #2563eb;
+       30 +  --accent-dark: #1d4ed8;
+       31 +  --accent-warning: #f59e0b;
+       32 +  --accent-success: #10b981;
+       33 +  --accent-danger: #ef4444;
+       34 +
+       35 +  /* Sombras */
+       36 +  --shadow-sm: 0 2px 8px rgba(59, 130, 246, 0.25);
+       37 +  --shadow-md: 0 4px 12px rgba(59, 130, 246, 0.35);
+       38 +  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+       39 +
+       40 +  /* Efectos */
+       41 +  --backdrop-blur: blur(10px);
+       42 +  --transition-base: all 0.2s;
+       43 +  --transition-smooth: all 0.3s;
+       44 +
+       45 +  /* Border radius */
+       46 +  --radius-sm: 6px;
+       47 +  --radius-md: 10px;
+       48 +  --radius-lg: 12px;
+       49 +  --radius-xl: 14px;
+       50 +  --radius-2xl: 16px;
+       51 +  --radius-3xl: 20px;
+       52  }
+       53
+       54  @layer base {
+       55    *, *::before, *::after { box-sizing: border-box; }
+       56
+       57    html {
+       58 -    font-size: var(--font-base);
+       58 +    font-size: 16px;
+       59    }
+       60
+       61    html, body {
+       62 -    @apply bg-base text-white font-sans;
+       62      margin: 0;
+       63 -    line-height: 1.7;
+       63 +    padding: 0;
+       64 +    height: 100%;
+       65 +    overflow: hidden;
+       66    }
+       67
+       68    body {
+       69 -    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+       69 +    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+       70 +    background: var(--bg-primary);
+       71 +    color: var(--text-primary);
+       72 +    line-height: 1.5;
+       73 +    -webkit-font-smoothing: antialiased;
+       74 +    -moz-osx-font-smoothing: grayscale;
+       75    }
+       76
+       77 -  /* Títulos con más peso visual */
+       77 +  /* Tipografía */
+       78    h1 {
+       79 -    font-size: var(--text-3xl);
+       80 -    font-weight: 700;
+       79 +    font-size: 2rem;
+       80 +    font-weight: 600;
+       81      letter-spacing: -0.02em;
+       82 +    color: var(--text-primary);
+       83    }
+       84
+       85    h2 {
+       86 -    font-size: var(--text-2xl);
+       86 +    font-size: 1.5rem;
+       87      font-weight: 600;
+       88 +    color: var(--text-primary);
+       89    }
+       90
+       91    h3 {
+       92 -    font-size: var(--text-xl);
+       92 +    font-size: 1.25rem;
+       93      font-weight: 600;
+       94 +    color: var(--text-primary);
+       95    }
+       96
+       97 +  p {
+       98 +    color: var(--text-secondary);
+       99 +  }
+      100 +
+      101    /* Labels uppercase para secciones */
+      102    .section-label {
+      103 -    font-size: 0.85rem;
+      104 -    letter-spacing: 0.15em;
+      103 +    font-size: 11px;
+      104 +    font-weight: 600;
+      105      text-transform: uppercase;
+      106 +    letter-spacing: 0.08em;
+      107 +    color: var(--accent-warning);
+      108 +  }
+      109 +
+      110 +  /* Scrollbar personalizado */
+      111 +  ::-webkit-scrollbar { width: 6px; height: 6px; }
+      112 +  ::-webkit-scrollbar-track { background: var(--bg-tertiary); }
+      113 +  ::-webkit-scrollbar-thumb {
+      114 +    background: rgba(255, 255, 255, 0.1);
+      115 +    border-radius: 3px;
+      116 +  }
+      117 +  ::-webkit-scrollbar-thumb:hover {
+      118 +    background: rgba(255, 255, 255, 0.15);
+      119 +  }
+      120 +}
+      121 +
+      122 +@layer components {
+      123 +  /* ========================================
+      124 +     COMPONENTES REUTILIZABLES
+      125 +     ======================================== */
+      126 +
+      127 +  /* Sidebar */
+      128 +  .sidebar {
+      129 +    width: 300px;
+      130 +    background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+      131 +    border-right: 1px solid var(--border-subtle);
+      132 +    display: flex;
+      133 +    flex-direction: column;
+      134 +    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+      135 +  }
+      136 +
+      137 +  .sidebar-header {
+      138 +    padding: 28px 24px;
+      139 +    border-bottom: 1px solid var(--border-subtle);
+      140 +  }
+      141 +
+      142 +  /* Botón primario con gradiente azul */
+      143 +  .btn-primary {
+      144 +    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      145 +    padding: 14px 20px;
+      146 +    border-radius: var(--radius-md);
+      147 +    color: white;
+      148 +    font-size: 14px;
+      149 +    font-weight: 500;
+      150 +    border: none;
+      151 +    cursor: pointer;
+      152 +    transition: var(--transition-base);
+      153 +    box-shadow: var(--shadow-sm);
+      154 +    display: flex;
+      155 +    align-items: center;
+      156 +    gap: 10px;
+      157 +  }
+      158 +
+      159 +  .btn-primary:hover {
+      160 +    transform: translateY(-1px);
+      161 +    box-shadow: var(--shadow-md);
+      162 +  }
+      163 +
+      164 +  .btn-primary:disabled {
+      165 +    opacity: 0.4;
+      166 +    cursor: not-allowed;
+      167 +    transform: none;
+      168 +  }
+      169 +
+      170 +  /* Cards */
+      171 +  .card {
+      172 +    background: rgba(255, 255, 255, 0.02);
+      173 +    border: 1px solid var(--border-subtle);
+      174 +    border-radius: var(--radius-lg);
+      175 +    padding: 20px;
+      176 +    transition: var(--transition-smooth);
+      177 +    cursor: pointer;
+      178 +  }
+      179 +
+      180 +  .card:hover {
+      181 +    background: rgba(59, 130, 246, 0.06);
+      182 +    border-color: rgba(59, 130, 246, 0.2);
+      183 +    transform: translateY(-2px);
+      184 +    box-shadow: var(--shadow-lg);
+      185 +  }
+      186 +
+      187 +  /* Inputs */
+      188 +  .input-container {
+      189 +    background: rgba(255, 255, 255, 0.04);
+      190 +    border: 1px solid var(--border-light);
+      191 +    border-radius: var(--radius-xl);
+      192 +    transition: var(--transition-base);
+      193 +  }
+      194 +
+      195 +  .input-container:focus-within {
+      196 +    background: rgba(255, 255, 255, 0.06);
+      197 +    border-color: rgba(59, 130, 246, 0.4);
+      198 +    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      199 +  }
+      200 +
+      201 +  .text-input {
+      202 +    width: 100%;
+      203 +    background: transparent;
+      204 +    border: none;
+      205 +    outline: none;
+      206 +    color: var(--text-primary);
+      207 +    font-size: 15px;
+      208 +    font-family: inherit;
+      209 +    resize: none;
+      210 +    line-height: 1.5;
+      211 +  }
+      212 +
+      213 +  .text-input::placeholder {
+      214 +    color: var(--text-subtle);
+      215 +  }
+      216 +
+      217 +  /* Badges */
+      218 +  .badge {
+      219 +    font-size: 11px;
+      220      font-weight: 600;
+      221 +    text-transform: uppercase;
+      222 +    letter-spacing: 0.05em;
+      223 +    padding: 6px 12px;
+      224 +    border-radius: var(--radius-sm);
+      225    }
+      226
+      227 -  /* Scrollbar oscura consistente con el tema */
+      228 -  ::-webkit-scrollbar { width: 8px; }
+      229 -  ::-webkit-scrollbar-track { background: #1a1d27; }
+      230 -  ::-webkit-scrollbar-thumb { background: #2d3144; border-radius: 4px; }
+      231 -  ::-webkit-scrollbar-thumb:hover { background: var(--teal-light); }
+      227 +  .badge-warning {
+      228 +    color: var(--accent-warning);
+      229 +    background: rgba(245, 158, 11, 0.1);
+      230 +    border: 1px solid rgba(245, 158, 11, 0.2);
+      231 +  }
+      232 +
+      233 +  /* Footer branding */
+      234 +  .footer-branding {
+      235 +    text-align: center;
+      236 +    padding: 16px;
+      237 +    font-size: 12px;
+      238 +    color: #4b5563;
+      239 +    font-weight: 500;
+      240 +    letter-spacing: 0.03em;
+      241 +    border-top: 1px solid var(--border-subtle);
+      242 +  }
+      243  }
+      244 +
+      245 +@layer utilities {
+      246 +  /* Gradientes corporativos */
+      247 +  .bg-gradient-executive {
+      248 +    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      249 +  }
+      250 +
+      251 +  .bg-gradient-sidebar {
+      252 +    background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+      253 +  }
+      254 +
+      255 +  /* Backdrop blur */
+      256 +  .backdrop-blur-header {
+      257 +    backdrop-filter: var(--backdrop-blur);
+      258 +    -webkit-backdrop-filter: var(--backdrop-blur);
+      259 +  }
+      260 +
+      261 +  /* Transiciones */
+      262 +  .transition-all-smooth {
+      263 +    transition: var(--transition-smooth);
+      264 +  }
+      265 +}
+
+● Write(frontend\src\components\Sidebar.tsx)
+  ⎿  Wrote 101 lines to frontend\src\components\Sidebar.tsx
+     "use client";
+
+     import Link from "next/link";
+     import { useRouter } from "next/navigation";
+
+     interface SidebarProps {
+       sesionId?: number;
+       activeSection?: "chat" | "matches" | "dashboard" | "upload";
+     }
+
+     … +91 lines (ctrl+o to expand)
+
+● Write(frontend\src\components\Header.tsx)
+  ⎿  Wrote 32 lines to frontend\src\components\Header.tsx
+     "use client";
+
+     interface HeaderProps {
+       sessionBadge?: string;
+       sessionNumber?: string | number;
+       userName?: string;
+       userRole?: string;
+     }
+
+     export default function Header({
+     … +22 lines (ctrl+o to expand)
+
+● Ahora voy a agregar los estilos CSS específicos para los componentes y actualizar el Footer:
+
+● Update(frontend\src\app\globals.css)
+  ⎿  Added 247 lines
+      240      letter-spacing: 0.03em;
+      241      border-top: 1px solid var(--border-subtle);
+      242    }
+      243 +
+      244 +  /* Header styles */
+      245 +  .chat-header {
+      246 +    padding: 20px 32px;
+      247 +    border-bottom: 1px solid var(--border-subtle);
+      248 +    display: flex;
+      249 +    justify-content: space-between;
+      250 +    align-items: center;
+      251 +    background: rgba(18, 24, 41, 0.6);
+      252 +    backdrop-filter: blur(10px);
+      253 +    -webkit-backdrop-filter: blur(10px);
+      254 +  }
+      255 +
+      256 +  .session-info {
+      257 +    display: flex;
+      258 +    align-items: center;
+      259 +    gap: 12px;
+      260 +  }
+      261 +
+      262 +  .session-badge {
+      263 +    font-size: 11px;
+      264 +    font-weight: 600;
+      265 +    text-transform: uppercase;
+      266 +    letter-spacing: 0.05em;
+      267 +    color: var(--accent-warning);
+      268 +    background: rgba(245, 158, 11, 0.1);
+      269 +    padding: 6px 12px;
+      270 +    border-radius: var(--radius-sm);
+      271 +    border: 1px solid rgba(245, 158, 11, 0.2);
+      272 +  }
+      273 +
+      274 +  .session-number {
+      275 +    font-size: 15px;
+      276 +    color: var(--text-muted);
+      277 +    font-weight: 400;
+      278 +  }
+      279 +
+      280 +  .user-info {
+      281 +    display: flex;
+      282 +    align-items: center;
+      283 +    gap: 12px;
+      284 +  }
+      285 +
+      286 +  .user-role {
+      287 +    font-size: 13px;
+      288 +    color: var(--text-muted);
+      289 +    font-weight: 500;
+      290 +  }
+      291 +
+      292 +  .user-avatar {
+      293 +    width: 36px;
+      294 +    height: 36px;
+      295 +    border-radius: 50%;
+      296 +    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      297 +    display: flex;
+      298 +    align-items: center;
+      299 +    justify-content: center;
+      300 +    font-size: 14px;
+      301 +    font-weight: 600;
+      302 +    color: white;
+      303 +  }
+      304 +
+      305 +  /* Chat body */
+      306 +  .chat-body {
+      307 +    flex: 1;
+      308 +    display: flex;
+      309 +    flex-direction: column;
+      310 +    overflow: hidden;
+      311 +  }
+      312 +
+      313 +  .chat-messages {
+      314 +    flex: 1;
+      315 +    overflow-y: auto;
+      316 +    padding: 40px 32px;
+      317 +  }
+      318 +
+      319 +  /* Input section */
+      320 +  .input-section {
+      321 +    padding: 24px 32px 28px;
+      322 +    border-top: 1px solid var(--border-subtle);
+      323 +    background: rgba(18, 24, 41, 0.4);
+      324 +  }
+      325 +
+      326 +  .input-wrapper {
+      327 +    max-width: 900px;
+      328 +    margin: 0 auto;
+      329 +    position: relative;
+      330 +  }
+      331 +
+      332 +  .send-btn {
+      333 +    position: absolute;
+      334 +    right: 12px;
+      335 +    top: 50%;
+      336 +    transform: translateY(-50%);
+      337 +    width: 40px;
+      338 +    height: 40px;
+      339 +    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      340 +    border: none;
+      341 +    border-radius: var(--radius-md);
+      342 +    cursor: pointer;
+      343 +    display: flex;
+      344 +    align-items: center;
+      345 +    justify-content: center;
+      346 +    transition: var(--transition-base);
+      347 +    box-shadow: var(--shadow-sm);
+      348 +  }
+      349 +
+      350 +  .send-btn:hover {
+      351 +    transform: translateY(-50%) scale(1.05);
+      352 +    box-shadow: var(--shadow-md);
+      353 +  }
+      354 +
+      355 +  .send-btn:disabled {
+      356 +    opacity: 0.4;
+      357 +    cursor: not-allowed;
+      358 +    transform: translateY(-50%);
+      359 +  }
+      360 +
+      361 +  .input-note {
+      362 +    text-align: center;
+      363 +    font-size: 11px;
+      364 +    color: var(--text-subtle);
+      365 +    margin-top: 12px;
+      366 +  }
+      367 +
+      368 +  /* Empty state */
+      369 +  .empty-state {
+      370 +    max-width: 680px;
+      371 +    text-align: center;
+      372 +    margin: auto;
+      373 +  }
+      374 +
+      375 +  .welcome-icon {
+      376 +    width: 72px;
+      377 +    height: 72px;
+      378 +    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      379 +    border-radius: var(--radius-3xl);
+      380 +    display: flex;
+      381 +    align-items: center;
+      382 +    justify-content: center;
+      383 +    font-size: 36px;
+      384 +    margin: 0 auto 28px;
+      385 +    box-shadow: var(--shadow-md);
+      386 +  }
+      387 +
+      388 +  .welcome-title {
+      389 +    font-size: 32px;
+      390 +    font-weight: 600;
+      391 +    margin-bottom: 12px;
+      392 +    letter-spacing: -0.02em;
+      393 +    background: linear-gradient(135deg, #ffffff 0%, #c5cad4 100%);
+      394 +    -webkit-background-clip: text;
+      395 +    -webkit-text-fill-color: transparent;
+      396 +    background-clip: text;
+      397 +  }
+      398 +
+      399 +  .welcome-subtitle {
+      400 +    font-size: 16px;
+      401 +    color: var(--text-muted);
+      402 +    line-height: 1.6;
+      403 +    margin-bottom: 40px;
+      404 +    font-weight: 400;
+      405 +  }
+      406 +
+      407 +  /* Capabilities grid */
+      408 +  .capabilities-grid {
+      409 +    display: grid;
+      410 +    grid-template-columns: repeat(3, 1fr);
+      411 +    gap: 16px;
+      412 +    margin-top: 20px;
+      413 +  }
+      414 +
+      415 +  .capability-card {
+      416 +    background: rgba(255, 255, 255, 0.02);
+      417 +    border: 1px solid var(--border-subtle);
+      418 +    border-radius: var(--radius-lg);
+      419 +    padding: 20px;
+      420 +    transition: var(--transition-smooth);
+      421 +    cursor: pointer;
+      422 +  }
+      423 +
+      424 +  .capability-card:hover {
+      425 +    background: rgba(59, 130, 246, 0.06);
+      426 +    border-color: rgba(59, 130, 246, 0.2);
+      427 +    transform: translateY(-2px);
+      428 +    box-shadow: var(--shadow-lg);
+      429 +  }
+      430 +
+      431 +  .capability-icon {
+      432 +    font-size: 24px;
+      433 +    margin-bottom: 12px;
+      434 +  }
+      435 +
+      436 +  .capability-title {
+      437 +    font-size: 14px;
+      438 +    font-weight: 600;
+      439 +    color: var(--text-primary);
+      440 +    margin-bottom: 6px;
+      441 +  }
+      442 +
+      443 +  .capability-desc {
+      444 +    font-size: 12px;
+      445 +    color: var(--text-muted);
+      446 +    line-height: 1.5;
+      447 +  }
+      448 +
+      449 +  /* Suggestion items in sidebar */
+      450 +  .suggestion-item {
+      451 +    padding: 14px 12px;
+      452 +    margin-bottom: 6px;
+      453 +    border-radius: 8px;
+      454 +    cursor: pointer;
+      455 +    transition: var(--transition-base);
+      456 +    background: rgba(255, 255, 255, 0.02);
+      457 +    border: 1px solid transparent;
+      458 +  }
+      459 +
+      460 +  .suggestion-item:hover {
+      461 +    background: rgba(59, 130, 246, 0.08);
+      462 +    border-color: rgba(59, 130, 246, 0.2);
+      463 +    transform: translateX(2px);
+      464 +  }
+      465 +
+      466 +  .suggestion-text {
+      467 +    font-size: 13.5px;
+      468 +    line-height: 1.5;
+      469 +    color: var(--text-secondary);
+      470 +    font-weight: 400;
+      471 +  }
+      472 +
+      473 +  /* Footer link */
+      474 +  .footer-link {
+      475 +    display: flex;
+      476 +    align-items: center;
+      477 +    gap: 10px;
+      478 +    padding: 10px 8px;
+      479 +    color: var(--text-muted);
+      480 +    text-decoration: none;
+      481 +    font-size: 13px;
+      482 +    border-radius: var(--radius-sm);
+      483 +    transition: var(--transition-base);
+      484 +  }
+      485 +
+      486 +  .footer-link:hover {
+      487 +    background: rgba(255, 255, 255, 0.04);
+      488 +    color: var(--text-secondary);
+      489 +  }
+      490  }
+      491
+      492  @layer utilities {
+
+● Ahora actualizo el Footer y luego las páginas principales:
+
+● Update(frontend\src\components\Footer.tsx)
+  ⎿  Added 2 lines, removed 6 lines
+      1  export default function Footer() {
+      2    return (
+      3 -    <footer className="border-t border-teal/30 bg-teal-dark/50 py-4 mt-8">
+      4 -      <div className="text-center">
+      5 -        <p className="section-label text-gold/70 font-semibold tracking-widest text-xs">
+      6 -          DANILO SOSA | TEXO SISTEMAS
+      7 -        </p>
+      8 -      </div>
+      3 +    <footer className="footer-branding">
+      4 +      DANILO SOSA | TEXO SISTEMAS
+      5      </footer>
+      6    );
+      7  }
+
+
+● Ahora actualizo la página de chat con el nuevo diseño:
+
+● Write(frontend\src\app\sesion\[id]\chat\page.tsx)
+  ⎿  Added 114 lines, removed 132 lines
+       5  import { useAuth } from "@/hooks/useAuth";
+       6  import { useChat } from "@/hooks/useChat";
+       7  import MensajeChat from "@/components/MensajeChat";
+       8 +import Sidebar from "@/components/Sidebar";
+       9 +import Header from "@/components/Header";
+      10  import Footer from "@/components/Footer";
+      11
+      12  const SUGERENCIAS = [
+     ...
+      21    const { mensajes, enviando, error, enviarMensaje, nuevaConversacion } = useChat(sesionId);
+      22    const [input, setInput] = useState("");
+      23    const bottomRef = useRef<HTMLDivElement>(null);
+      24 +  const textareaRef = useRef<HTMLTextAreaElement>(null);
+      25
+      26    useEffect(() => {
+      27      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      28    }, [mensajes]);
+      29
+      30 +  // Escuchar sugerencias desde Sidebar
+      31 +  useEffect(() => {
+      32 +    const handleSuggestion = (e: Event) => {
+      33 +      const customEvent = e as CustomEvent<string>;
+      34 +      setInput(customEvent.detail);
+      35 +      textareaRef.current?.focus();
+      36 +    };
+      37 +    window.addEventListener("suggestion-select", handleSuggestion);
+      38 +    return () => window.removeEventListener("suggestion-select", handleSuggestion);
+      39 +  }, []);
+      40 +
+      41 +  // Auto-resize textarea
+      42 +  useEffect(() => {
+      43 +    const textarea = textareaRef.current;
+      44 +    if (!textarea) return;
+      45 +    const handleInput = () => {
+      46 +      textarea.style.height = "auto";
+      47 +      textarea.style.height = Math.min(textarea.scrollHeight, 150) + "px";
+      48 +    };
+      49 +    textarea.addEventListener("input", handleInput);
+      50 +    return () => textarea.removeEventListener("input", handleInput);
+      51 +  }, []);
+      52 +
+      53    if (authLoading) return (
+      54 -    <div className="min-h-screen bg-base flex items-center justify-center">
+      55 -      <p className="text-gray-400 text-sm">Cargando...</p>
+      54 +    <div className="min-h-screen bg-primary flex items-center justify-center">
+      55 +      <p className="text-muted text-sm">Cargando...</p>
+      56      </div>
+      57    );
+      58    if (!user) return null;
+     ...
+       48    };
+       49
+       50    return (
+       51 -    <div className="flex h-screen bg-base overflow-hidden">
+       51 +    <div className="container">
+       52        {/* Sidebar */}
+       53 -      <aside className="w-64 shrink-0 flex flex-col bg-teal-dark border-r border-teal/30">
+       54 -        {/* Logo */}
+       55 -        <div className="px-5 py-5 border-b border-teal/30 flex items-center gap-3">
+       56 -          <div className="w-9 h-9 rounded-lg bg-gold/20 flex items-center justify-center">
+       57 -            <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       58 -              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+       59 -                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0
+          -012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2
+          -2h-2a2 2 0 01-2-2z" />
+       60 -            </svg>
+       61 -          </div>
+       62 -          <div>
+       63 -            <span className="text-base font-bold text-white tracking-tight">AI Data Chat</span>
+       64 -            <p className="text-xs text-teal-100/60">Análisis Inteligente</p>
+       65 -          </div>
+       66 -        </div>
+       53 +      <Sidebar sesionId={sesionId} activeSection="chat" />
+       54
+       55 -        {/* Nueva conversación */}
+       56 -        <div className="p-4 border-b border-teal/30">
+       57 -          <button
+       58 -            onClick={nuevaConversacion}
+       59 -            className="w-full text-left text-sm text-white/80 hover:text-white bg-teal/20
+          -hover:bg-teal/30
+       60 -                       border border-teal/30 rounded-xl px-4 py-3 transition-colors font-medium"
+       61 -          >
+       62 -            + Nueva conversación
+       63 -          </button>
+       64 -        </div>
+       65 -
+       66 -        {/* Sugerencias */}
+       67 -        <div className="p-4 flex-1 overflow-y-auto">
+       68 -          <p className="section-label text-gold/80 mb-3 px-1">
+       69 -            Sugerencias
+       70 -          </p>
+       71 -          {SUGERENCIAS.map((s) => (
+       72 -            <button
+       73 -              key={s}
+       74 -              onClick={() => setInput(s)}
+       75 -              className="w-full text-left text-sm text-white/70 hover:text-white hover:bg-teal/20
+       76 -                         rounded-xl px-3 py-3 mb-1.5 transition-colors leading-relaxed"
+       77 -            >
+       78 -              {s}
+       79 -            </button>
+       80 -          ))}
+       81 -        </div>
+       82 -
+       83 -        {/* Navegación */}
+       84 -        <div className="p-4 border-t border-teal/30 flex flex-col gap-2">
+       85 -          <button
+       86 -            onClick={() => router.push(`/sesion/${sesionId}/matches`)}
+       87 -            className="text-left text-sm text-white/70 hover:text-white py-2.5 px-3 rounded-xl
+          -hover:bg-teal/20 transition-colors"
+       88 -          >
+       89 -            ← Ver matches
+       90 -          </button>
+       91 -          <button
+       92 -            onClick={() => router.push("/dashboard")}
+       93 -            className="text-left text-sm text-white/70 hover:text-white py-2.5 px-3 rounded-xl
+          -hover:bg-teal/20 transition-colors"
+       94 -          >
+       95 -            ⬡ Dashboard
+       96 -          </button>
+       97 -        </div>
+       98 -      </aside>
+       99 -
+      100 -      {/* Área principal */}
+      101 -      <div className="flex-1 flex flex-col overflow-hidden">
+       55 +      {/* Main Content */}
+       56 +      <div className="main-content">
+       57          {/* Header */}
+       58 -        <header className="px-8 py-4 border-b border-border bg-surface flex items-center
+          -justify-between shrink-0">
+       59 -          <div>
+       60 -            <p className="section-label text-gold mb-0.5">Chat con IA</p>
+       61 -            <p className="text-base font-semibold text-white">Sesión #{sesionId}</p>
+       62 -          </div>
+       63 -          <span className="text-sm text-white/70 font-medium">{user.nombre}</span>
+       64 -        </header>
+       58 +        <Header
+       59 +          sessionBadge="Chat con IA"
+       60 +          sessionNumber={`Sesión #${sesionId}`}
+       61 +          userName={user.nombre}
+       62 +          userRole="Admin"
+       63 +        />
+       64
+       65 -        {/* Mensajes */}
+       66 -        <div className="flex-1 overflow-y-auto px-8 py-8">
+       67 -          {mensajes.length === 0 && (
+       68 -            <div className="flex flex-col items-center justify-center h-full text-center gap-4">
+       69 -              <div className="w-16 h-16 rounded-2xl bg-teal/20 flex items-center justify-center">
+       70 -                <svg className="w-8 h-8 text-teal-light" fill="none" stroke="currentColor" viewBox="0
+          - 0 24 24">
+       71 -                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+       72 -                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0
+          -01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+       73 -                </svg>
+       65 +        {/* Chat Body */}
+       66 +        <div className="chat-body">
+       67 +          <div className="chat-messages">
+       68 +            {mensajes.length === 0 && (
+       69 +              <div className="empty-state">
+       70 +                <div className="welcome-icon">💬</div>
+       71 +                <h1 className="welcome-title">Bienvenido, {user.nombre}</h1>
+       72 +                <p className="welcome-subtitle">
+       73 +                  Realizá consultas estratégicas sobre tus datos de negocio.
+       74 +                  El sistema analizará información de ERP, AdLens y DNIT para brindarte insights
+          +accionables.
+       75 +                </p>
+       76 +
+       77 +                <div className="capabilities-grid">
+       78 +                  <div className="capability-card">
+       79 +                    <div className="capability-icon">📊</div>
+       80 +                    <div className="capability-title">Análisis de Datos</div>
+       81 +                    <div className="capability-desc">Consultas complejas entre múltiples
+          +fuentes</div>
+       82 +                  </div>
+       83 +                  <div className="capability-card">
+       84 +                    <div className="capability-icon">📈</div>
+       85 +                    <div className="capability-title">Visualizaciones</div>
+       86 +                    <div className="capability-desc">Gráficos ejecutivos personalizados</div>
+       87 +                  </div>
+       88 +                  <div className="capability-card">
+       89 +                    <div className="capability-icon">🎯</div>
+       90 +                    <div className="capability-title">Insights Estratégicos</div>
+       91 +                    <div className="capability-desc">Recomendaciones basadas en datos</div>
+       92 +                  </div>
+       93 +                </div>
+       94                </div>
+       95 -              <div>
+       96 -                <p className="text-white font-semibold text-lg">Hola, {user.nombre}</p>
+       97 -                <p className="text-gray-400 text-base mt-1">Hacé una pregunta sobre los datos de esta
+          - sesión.</p>
+       98 -              </div>
+       99 -            </div>
+      100 -          )}
+       95 +            )}
+       96
+       97 -          {mensajes.map((m) => (
+       98 -            <MensajeChat key={m.id} mensaje={m} />
+       99 -          ))}
+       97 +            {mensajes.map((m) => (
+       98 +              <MensajeChat key={m.id} mensaje={m} />
+       99 +            ))}
+      100
+      101 -          {/* Indicador de escritura */}
+      102 -          {enviando && (
+      103 -            <div className="flex items-start gap-3 mb-4">
+      104 -              <div className="w-9 h-9 rounded-full bg-teal
+          -/20 flex items-center justify-center shrink-0">
+      105 -                <svg className="w-5 h-5 text-teal-light
+          -" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      106 -                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      107 -
+          -d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0
+          -01-2 2h-2" />
+      108 -                </svg>
+      109 -              </div>
+      110 -              <div className="bg-panel border border-border rounded-2xl rounded-tl-sm px-5 py-4">
+      111 -                <div className="flex gap-1.5 items-center h-5">
+      112 -                  <div className="w-2 h-2 bg-teal-light rounded-full animate-bounce
+          -[animation-delay:0ms]" />
+      113 -                  <div className="w-2 h-2 bg-teal-light rounded-full animate-bounce
+          -[animation-delay:150ms]" />
+      114 -                  <div className="w-2 h-2 bg-teal-light rounded-full animate-bounce
+          -[animation-delay:300ms]" />
+      101 +            {/* Indicador de escritura */}
+      102 +            {enviando && (
+      103 +              <div className="flex items-start gap-3 mb-4">
+      104 +                <div className="w-9 h-9 rounded-full bg-accent-primary
+          +/20 flex items-center justify-center shrink-0">
+      105 +                  <svg className="w-5 h-5 text-accent-primary
+          +" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      106 +                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      107 +
+          +d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0
+          +01-2 2h-2" />
+      108 +                  </svg>
+      109                  </div>
+      110 +                <div className="bg-tertiary border border-subtle rounded-2xl rounded-tl-sm px-5
+          +py-4">
+      111 +                  <div className="flex gap-1.5 items-center h-5">
+      112 +                    <div className="w-2 h-2 bg-accent-primary rounded-full animate-bounce
+          +[animation-delay:0ms]" />
+      113 +                    <div className="w-2 h-2 bg-accent-primary rounded-full animate-bounce
+          +[animation-delay:150ms]" />
+      114 +                    <div className="w-2 h-2 bg-accent-primary rounded-full animate-bounce
+          +[animation-delay:300ms]" />
+      115 +                  </div>
+      116 +                </div>
+      117                </div>
+      118 -            </div>
+      119 -          )}
+      118 +            )}
+      119
+      120 -          <div ref={bottomRef} />
+      120 +            <div ref={bottomRef} />
+      121 +          </div>
+      122          </div>
+      123
+      124 -        {/* Input */}
+      125 -        <div className="px-8 py-5 border-t border-border bg-surface shrink-0">
+      124 +        {/* Input Area */}
+      125 +        <div className="input-section">
+      126            {error && (
+      127              <div className="bg-danger/10 border border-danger/30 rounded-xl px-5 py-3 mb-4">
+      128                <p className="text-danger font-medium text-sm">{error}</p>
+      129              </div>
+      130            )}
+      131 -          <div className="flex items-end gap-4">
+      132 -            <textarea
+      133 -              value={input}
+      134 -              onChange={(e) => setInput(e.target.value)}
+      135 -              onKeyDown={handleKeyDown}
+      136 -              placeholder="Escribí tu pregunta... (Enter para enviar, Shift+Enter para nueva línea)"
+      137 -              rows={2}
+      138 -              disabled={enviando}
+      139 -              className="flex-1 bg-panel border border-border rounded-xl px-5 py-4 text-base
+          -text-white
+      140 -                         placeholder-gray-500 resize-none focus:outline-none focus:border-teal
+          -focus:ring-2
+      141 -                         focus:ring-teal/20 transition-all disabled:opacity-50 font-sans
+          -leading-relaxed"
+      142 -            />
+      143 -            <button
+      144 -              onClick={handleEnviar}
+      145 -              disabled={!input.trim() || enviando}
+      146 -              className="bg-gradient-to-r from-teal to-teal-light hover:from-teal-dark hover:to-teal
+      147 -                         disabled:opacity-40 disabled:cursor-not-allowed
+      148 -                         text-white font-semibold text-base rounded-xl px-6 py-4 transition-all
+          -shadow-lg hover:shadow-teal/25 shrink-0"
+      149 -            >
+      150 -              Enviar
+      151 -            </button>
+      131 +          <div className="input-wrapper">
+      132 +            <div className="input-container">
+      133 +              <textarea
+      134 +                ref={textareaRef}
+      135 +                value={input}
+      136 +                onChange={(e) => setInput(e.target.value)}
+      137 +                onKeyDown={handleKeyDown}
+      138 +                placeholder="Escribí tu pregunta... (Enter para enviar, Shift+Enter para nueva
+          +línea)"
+      139 +                rows={1}
+      140 +                disabled={enviando}
+      141 +                className="text-input"
+      142 +              />
+      143 +              <button
+      144 +                onClick={handleEnviar}
+      145 +                disabled={!input.trim() || enviando}
+      146 +                className="send-btn"
+      147 +              >
+      148 +                <span style={{ fontSize: 18 }}>➤</span>
+      149 +              </button>
+      150 +            </div>
+      151 +            <p className="input-note">
+      152 +              Los datos nunca salen del servidor local.
+      153 +            </p>
+      154            </div>
+      155 -          <p className="text-xs text-gray-500 mt-3">
+      156 -            Los datos nunca salen del servidor local.
+      157 -          </p>
+      155          </div>
+      156
+      157          {/* Footer */}
+
+● Ahora agrego las clases CSS faltantes para el layout principal y actualizo el login:
+
+● Update(frontend\src\app\globals.css)
+  ⎿  Added 15 lines
+      487      background: rgba(255, 255, 255, 0.04);
+      488      color: var(--text-secondary);
+      489    }
+      490 +
+      491 +  /* Layout principal */
+      492 +  .container {
+      493 +    display: flex;
+      494 +    height: 100vh;
+      495 +    background: var(--bg-primary);
+      496 +  }
+      497 +
+      498 +  .main-content {
+      499 +    flex: 1;
+      500 +    background: var(--bg-secondary);
+      501 +    display: flex;
+      502 +    flex-direction: column;
+      503 +    overflow: hidden;
+      504 +  }
+      505  }
+      506
+      507  @layer utilities {
+
+● Write(frontend\src\app\login\page.tsx)
+  ⎿  Added 21 lines, removed 25 lines
+      3  import { useState, FormEvent } from "react";
+      4  import { useRouter } from "next/navigation";
+      5  import api from "@/lib/api";
+      6 -import Footer from "@/components/Footer";
+      6
+      7  export default function LoginPage() {
+      8    const router = useRouter();
+     ...
+      28    };
+      29
+      30    return (
+      31 -    <main className="min-h-screen bg-gradient-to-br from-teal-dark via-base to-base
+         -flex items-center justify-center px-4">
+      31 +    <main className="min-h-screen bg-primary flex items-center justify-center px-4">
+      32        <div className="w-full max-w-md">
+      33 -
+      34 -        {/* Logo / nombre */}
+      33 +        {/* Logo */}
+      34          <div className="text-center mb-10">
+      35 -          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gold/20
+         - mb-5 shadow-lg shadow-gold/10">
+      36 -            <svg className="w-8 h-8 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      37 -              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      38 -                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0
+         -012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2
+         -2h-2a2 2 0 01-2-2z" />
+      39 -            </svg>
+      35 +          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-
+         +gradient-executive mb-5 shadow-lg">
+      36 +            <span className="text-3xl">📊</span>
+      37            </div>
+      38 -          <h1 className="text-3xl font-bold text-white tracking-tight">AI Data Chat</h1>
+      39 -          <p className="text-base text-gray-300 mt-2">Análisis conversacional de datos comerciales</p>
+      38 +          <h1 className="text-3xl font-semibold text-white tracking-tight">AI Data Chat</h1>
+      39 +          <p className="text-base text-muted mt-2">Análisis conversacional de datos comerciales</p>
+      40          </div>
+      41
+      42          {/* Card */}
+      43 -        <div className="bg-surface border border-teal/30 rounded-2xl p-10 shadow-xl">
+      43 +        <div className="bg-tertiary border border-subtle rounded-2xl p-10 shadow-lg">
+      44            <div className="mb-6">
+      45 -            <p className="section-label text-gold mb-2">Acceso al Sistema</p>
+      45 +            <p className="section-label mb-2 block">Acceso al Sistema</p>
+      46              <h2 className="text-xl font-semibold text-white">Iniciar sesión</h2>
+      47            </div>
+      48
+      49            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      50              <label className="flex flex-col gap-2">
+      51 -              <span className="text-sm font-medium text-white/90 uppercase tracking-wider">Email</span>
+      51 +              <span className="text-sm font-medium text-secondary
+         + uppercase tracking-wider">Email</span>
+      52                <input
+      53                  type="email"
+      54                  value={email}
+      55                  onChange={(e) => setEmail(e.target.value)}
+      56                  required
+      57                  autoComplete="email"
+      58 -                className="bg-panel border border-border
+         - rounded-xl px-4 py-3.5 text-base text-white placeholder-gray-500
+      59 -                           focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal
+         -/20 transition-all"
+      58 +                className="bg-white/4 border border-light
+         + rounded-xl px-4 py-3.5 text-base text-white placeholder-subtle
+      59 +                           focus:outline-none focus:border-accent-primary focus:ring-2 focus:ring-
+         +accent-primary/20 transition-all"
+      60                  placeholder="usuario@empresa.com"
+      61                />
+      62              </label>
+      63
+      64              <label className="flex flex-col gap-2">
+      65 -              <span className="text-sm font-medium text-white/90
+         - uppercase tracking-wider">Contraseña</span>
+      65 +              <span className="text-sm font-medium text-secondary
+         + uppercase tracking-wider">Contraseña</span>
+      66                <input
+      67                  type="password"
+      68                  value={password}
+      69                  onChange={(e) => setPassword(e.target.value)}
+      70                  required
+      71                  autoComplete="current-password"
+      72 -                className="bg-panel border border-border
+         - rounded-xl px-4 py-3.5 text-base text-white placeholder-gray-500
+      73 -                           focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal
+         -/20 transition-all"
+      72 +                className="bg-white/4 border border-light
+         + rounded-xl px-4 py-3.5 text-base text-white placeholder-subtle
+      73 +                           focus:outline-none focus:border-accent-primary focus:ring-2 focus:ring-
+         +accent-primary/20 transition-all"
+      74                  placeholder="••••••••"
+      75                />
+      76              </label>
+     ...
+       88              <button
+       89                type="submit"
+       90                disabled={loading}
+       91 -              className="mt-2 bg-gradient-to-r from-teal to-teal-light hover:from-teal-dark
+          -hover:to-teal
+       92 -                         disabled:opacity-40 disabled:cursor-not-allowed
+       93 -                         text-white font-semibold text-base rounded-xl py-4 transition-all shadow-lg
+          -hover:shadow-teal/25"
+       91 +              className="mt-2 btn-primary justify-center py-4"
+       92              >
+       93                {loading ? "Ingresando..." : "Ingresar"}
+       94              </button>
+       95            </form>
+       96          </div>
+       97
+       98 -        <p className="text-center text-sm text-gray-500 mt-8">
+       98 +        <p className="text-center text-sm text-subtle mt-8">
+       99            Aplicación local — los datos nunca salen del servidor.
+      100          </p>
+      101
+      102 -        <div className="mt-8">
+      103 -          <Footer />
+      102 +        {/* Footer branding */}
+      103 +        <div className="mt-8 text-center">
+      104 +          <p className="text-xs" style={{ color: "#4b5563", fontWeight: 500, letterSpacing: "0.03em"
+          +}}>
+      105 +            DANILO SOSA | TEXO SISTEMAS
+      106 +          </p>
+      107          </div>
+      108        </div>
+      109      </main>
+
+● Write(frontend\src\app\dashboard\page.tsx)
+  ⎿  Added 56 lines, removed 61 lines
+        2
+        3  import { useAuth } from "@/hooks/useAuth";
+        4  import Link from "next/link";
+        5 +import Sidebar from "@/components/Sidebar";
+        6 +import Header from "@/components/Header";
+        7  import Footer from "@/components/Footer";
+        8
+        9  export default function DashboardPage() {
+       10    const { user, loading, logout } = useAuth();
+       11
+       12    if (loading) return (
+       13 -    <div className="min-h-screen bg-base flex items-center justify-center">
+       14 -      <p className="text-gray-400 text-sm">Cargando...</p>
+       13 +    <div className="min-h-screen bg-primary flex items-center justify-center">
+       14 +      <p className="text-muted text-sm">Cargando...</p>
+       15      </div>
+       16    );
+       17    if (!user) return null;
+       18
+       19    return (
+       20 -    <div className="min-h-screen bg-base">
+       21 -      {/* Topbar */}
+       22 -      <header className="border-b border-teal-dark bg-teal-dark">
+       23 -        <div className="max-w-5xl mx-auto px-8 py-5 flex items-center justify-between">
+       24 -          <div className="flex items-center gap-3">
+       25 -            <div className="w-9 h-9 rounded-lg bg-gold/20 flex items-center justify-center">
+       26 -              <svg className="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24
+          -24">
+       27 -                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+       28 -                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0
+          -012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2
+          -2h-2a2 2 0 01-2-2z" />
+       29 -              </svg>
+       20 +    <div className="container">
+       21 +      {/* Sidebar */}
+       22 +      <Sidebar activeSection="dashboard" />
+       23 +
+       24 +      {/* Main Content */}
+       25 +      <div className="main-content">
+       26 +        {/* Header */}
+       27 +        <Header
+       28 +          sessionBadge="Dashboard"
+       29 +          userName={user.nombre}
+       30 +          userRole="Admin"
+       31 +        />
+       32 +
+       33 +        {/* Contenido */}
+       34 +        <main className="flex-1 overflow-y-auto px-8 py-12">
+       35 +          <div className="mb-12">
+       36 +            <p className="section-label mb-3 block">Panel Principal</p>
+       37 +            <h1 className="text-4xl font-semibold text-white mb-2">
+       38 +              Bienvenido, {user.nombre}
+       39 +            </h1>
+       40 +            <p className="text-lg text-muted max-w-2xl">
+       41 +              Sistema de análisis conversacional de datos comerciales. Seleccione una opción para
+          +comenzar.
+       42 +            </p>
+       43 +          </div>
+       44 +
+       45 +          {/* Tarjeta de acción principal */}
+       46 +          <div className="card bg-gradient-to-br from-accent-primary/10 to-accent-secondary/5
+          +border-accent-primary/20 p-8">
+       47 +            <div className="flex items-start justify-between">
+       48 +              <div>
+       49 +                <h2 className="text-xl font-semibold text-white mb-2">Nueva Sesión de Análisis</h2>
+       50 +                <p className="text-secondary text-base mb-6 max-w-lg">
+       51 +                  Creá una nueva sesión para subir tus archivos Excel y analizar los datos cruzados
+          +entre ERP, DNIT y Marketing.
+       52 +                </p>
+       53 +                <Link
+       54 +                  href="/sesion/nueva"
+       55 +                  className="btn-primary inline-flex"
+       56 +                >
+       57 +                  <span className="text-2xl leading-none">+</span>
+       58 +                  Crear Nueva Sesión
+       59 +                </Link>
+       60 +              </div>
+       61 +              <div className="w-20 h-20 rounded-2xl bg-accent-primary/20 flex items-center
+          +justify-center shrink-0">
+       62 +                <span className="text-5xl">📊</span>
+       63 +              </div>
+       64              </div>
+       65 -            <div>
+       66 -              <span className="font-bold text-white text-lg tracking-tight">AI Data Chat</span>
+       67 -              <p className="text-xs text-teal-100/70">Sistema de Análisis de Datos</p>
+       68 -            </div>
+       65            </div>
+       66 -          <div className="flex items-center gap-6">
+       67 -            <span className="text-sm text-white/90 font-medium">{user.nombre}</span>
+       66 +
+       67 +          {/* Sección de logout */}
+       68 +          <div className="mt-8 flex items-center gap-4">
+       69              <button
+       70                onClick={logout}
+       71 -              className="text-sm text-white/70
+          - hover:text-white transition-colors border border-white/20 px-4 py-1.5 rounded-lg hover:bg-white/10"
+       71 +              className="text-sm text-muted
+          + hover:text-white transition-colors border border-white/20 px-4 py-2 rounded-lg hover:bg-white/10"
+       72              >
+       73                Cerrar sesión
+       74              </button>
+       75            </div>
+       76 -        </div>
+       77 -      </header>
+       76 +        </main>
+       77
+       78 -      {/* Contenido */}
+       79 -      <main className="max-w-5xl mx-auto px-8 py-16 flex-1">
+       80 -        <div className="mb-12">
+       81 -          <p className="section-label text-gold mb-3">Panel Principal</p>
+       82 -          <h1 className="text-4xl font-bold text-white mb-2">
+       83 -            Bienvenido, {user.nombre}
+       84 -          </h1>
+       85 -          <p className="text-lg text-gray-400 max-w-2xl">
+       86 -            Sistema de análisis conversacional de datos comerciales. Seleccione una opción para
+          -comenzar.
+       87 -          </p>
+       88 -        </div>
+       89 -
+       90 -        {/* Tarjeta de acción principal */}
+       91 -        <div className="bg-gradient-to-br from-teal/20 to-teal-dark/10 border border-teal/30
+          -rounded-2xl p-8 hover:border-teal/50 transition-all duration-300">
+       92 -          <div className="flex items-start justify-between">
+       93 -            <div>
+       94 -              <h2 className="text-xl font-semibold text-white mb-2">Nueva Sesión de Análisis</h2>
+       95 -              <p className="text-gray-300 text-base mb-6 max-w-lg">
+       96 -                Creá una nueva sesión para subir tus archivos Excel y analizar los datos cruzados
+          -entre ERP, DNIT y Marketing.
+       97 -              </p>
+       98 -              <Link
+       99 -                href="/sesion/nueva"
+      100 -                className="inline-flex items-center gap-3 bg-teal hover:bg-teal-light transition-all
+          -duration-300
+      101 -                           text-white font-semibold text-base rounded-xl px-8 py-4 shadow-lg
+          -hover:shadow-teal/25"
+      102 -              >
+      103 -                <span className="text-2xl leading-none">+</span>
+      104 -                Crear Nueva Sesión
+      105 -              </Link>
+      106 -            </div>
+      107 -            <div className="w-20 h-20 rounded-2xl bg-teal/20 flex items-center justify-center
+          -shrink-0">
+      108 -              <svg className="w-10 h-10 text-teal-light" fill="none" stroke="currentColor" viewBox="0
+          - 0 24 24">
+      109 -                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+      110 -                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0
+          -012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2
+          -2h-2a2 2 0 01-2-2z" />
+      111 -              </svg>
+      112 -            </div>
+      113 -          </div>
+      114 -        </div>
+      115 -      </main>
+      116 -
+      117 -      <Footer />
+       78 +        {/* Footer */}
+       79 +        <Footer />
+       80 +      </div>
+       81      </div>
+       82    );
+       83  }
+
+● Write(frontend\src\app\sesion\nueva\page.tsx)
+  ⎿  Added 81 lines, removed 90 lines
+       5  import { useAuth } from "@/hooks/useAuth";
+       6  import { useSesion } from "@/hooks/useSesion";
+       7  import DropZone from "@/components/DropZone";
+       8 +import Sidebar from "@/components/Sidebar";
+       9 +import Header from "@/components/Header";
+      10  import Footer from "@/components/Footer";
+      11
+      12  const FUENTES = [
+     ...
+      22    const [creando, setCreando] = useState(false);
+      23
+      24    if (authLoading) return (
+      25 -    <div className="min-h-screen bg-base flex items-center justify-center">
+      26 -      <p className="text-gray-400 text-sm">Cargando...</p>
+      25 +    <div className="min-h-screen bg-primary flex items-center justify-center">
+      26 +      <p className="text-muted text-sm">Cargando...</p>
+      27      </div>
+      28    );
+      29    if (!user) return null;
+     ...
+       54    };
+       55
+       56    return (
+       57 -    <div className="min-h-screen bg-base">
+       58 -      {/* Topbar */}
+       59 -      <header className="border-b border-teal-dark bg-teal-dark">
+       60 -        <div className="max-w-5xl mx-auto px-8 py-4 flex items-center justify-between">
+       61 -          <div className="flex items-center gap-3">
+       62 -            <button
+       63 -              onClick={() => router.push("/dashboard")}
+       64 -              className="text-gray-300 hover:text-white transition-colors p-2 hover:bg-white/10
+          -rounded-lg"
+       65 -            >
+       66 -              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       67 -                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7
+          -7-7" />
+       68 -              </svg>
+       69 -            </button>
+       70 -            <div>
+       71 -              <span className="text-sm text-white/90 block font-medium">Nueva sesión de
+          -análisis</span>
+       72 -              {sesion && (
+       73 -                <span className="text-xs text-gold font-medium">✓ Sesión #{sesion.id} creada</span>
+       57 +    <div className="container">
+       58 +      {/* Sidebar */}
+       59 +      <Sidebar activeSection="upload" />
+       60 +
+       61 +      {/* Main Content */}
+       62 +      <div className="main-content">
+       63 +        {/* Header */}
+       64 +        <Header
+       65 +          sessionBadge="Importar Datos"
+       66 +          sessionNumber={sesion ? `Sesión #${sesion.id}` : "Excel → JARVIS"}
+       67 +          userName={user.nombre}
+       68 +          userRole="Admin"
+       69 +        />
+       70 +
+       71 +        <main className="flex-1 overflow-y-auto px-8 py-12">
+       72 +          <p className="section-label mb-3 block">Carga de Datos</p>
+       73 +          <h1 className="text-3xl font-semibold text-white mb-2">Nueva sesión de análisis</h1>
+       74 +          <p className="text-base text-muted mb-10 max-w-2xl">
+       75 +            Subí los archivos Excel de cada fuente. La IA detectará automáticamente qué columna
+          +contiene el nombre del cliente.
+       76 +          </p>
+       77 +
+       78 +          {/* Nombre de sesión */}
+       79 +          <div className="bg-tertiary border border-subtle rounded-xl p-6 mb-10">
+       80 +            <label className="block text-sm font-medium text-secondary mb-3">Nombre de la sesión
+          +(opcional)</label>
+       81 +            <div className="flex items-center gap-3">
+       82 +              <input
+       83 +                type="text"
+       84 +                placeholder="Ej: Análisis Trimestre 1, Auditoría 2024..."
+       85 +                value={nombreSesion}
+       86 +                onChange={(e) => setNombreSesion(e.target.value)}
+       87 +                disabled={!!sesion}
+       88 +                className="flex-1 bg-white/4 border border-light rounded-lg px-4 py-3 text-base
+          +text-white
+       89 +                           placeholder-subtle focus:outline-none focus:border-accent-primary
+          +focus:ring-2 focus:ring-accent-primary/20
+       90 +                           disabled:opacity-50 transition-all"
+       91 +              />
+       92 +              {!sesion && (
+       93 +                <button
+       94 +                  onClick={handleCrearSesion}
+       95 +                  disabled={!nombreSesion.trim() || creando}
+       96 +                  className="btn-primary disabled:opacity-40 py-3 px-6"
+       97 +                >
+       98 +                  {creando ? "Creando..." : "Crear sesión"}
+       99 +                </button>
+      100                )}
+      101              </div>
+      102            </div>
+      103 -        </div>
+      104 -      </header>
+      103
+      104 -      <main className="max-w-5xl mx-auto px-8 py-12">
+      105 -        <p className="section-label text-gold mb-3">Carga de Datos</p>
+      106 -        <h1 className="text-3xl font-bold text-white mb-2">Nueva sesión de análisis</h1>
+      107 -        <p className="text-base text-gray-300 mb-10 max-w-2xl">
+      108 -          Subí los archivos Excel de cada fuente. La IA detectará automáticamente qué columna
+          -contiene el nombre del cliente.
+      109 -        </p>
+      104 +          {error && (
+      105 +            <div className="bg-danger/10 border border-danger/30 rounded-xl px-6 py-4 mb-8">
+      106 +              <p className="text-danger font-medium">{error}</p>
+      107 +            </div>
+      108 +          )}
+      109
+      110 -        {/* Nombre de sesión */}
+      111 -        <div className="bg-surface border border-border rounded-xl p-6 mb-10">
+      112 -          <label className="block text-sm font-medium text-white mb-3">Nombre de la sesión
+          -(opcional)</label>
+      113 -          <div className="flex items-center gap-3">
+      114 -            <input
+      115 -              type="text"
+      116 -              placeholder="Ej: Análisis Trimestre 1, Auditoría 2024..."
+      117 -              value={nombreSesion}
+      118 -              onChange={(e) => setNombreSesion(e.target.value)}
+      119 -              disabled={!!sesion}
+      120 -              className="flex-1 bg-panel border border-border rounded-lg px-4 py-3 text-base
+          -text-white
+      121 -                         placeholder-gray-500 focus:outline-none focus:border-teal focus:ring-2
+          -focus:ring-teal/20
+      122 -                         disabled:opacity-50 transition-all"
+      123 -            />
+      124 -            {!sesion && (
+      125 -              <button
+      126 -                onClick={handleCrearSesion}
+      127 -                disabled={!nombreSesion.trim() || creando}
+      128 -                className="bg-teal hover:bg-teal-light disabled:opacity-40 text-white font-semibold
+          -text-base
+      129 -                           rounded-lg px-6 py-3 transition-all whitespace-nowrap"
+      130 -              >
+      131 -                {creando ? "Creando..." : "Crear sesión"}
+      132 -              </button>
+      133 -            )}
+      110 +          {/* Drop zones */}
+      111 +          <p className="section-label text-subtle mb-4 block">Fuentes de datos disponibles</p>
+      112 +          <div className="grid grid-cols-3 gap-6 mb-10">
+      113 +            {FUENTES.map((f) => (
+      114 +              <DropZone
+      115 +                key={f.tipo}
+      116 +                fuenteTipo={f.tipo}
+      117 +                label={f.label}
+      118 +                descripcion={f.descripcion}
+      119 +                archivo={archivos[f.tipo] ?? null}
+      120 +                uploading={uploadingTipo === f.tipo}
+      121 +                onFile={(file) => handleFile(f.tipo, file)}
+      122 +              />
+      123 +            ))}
+      124            </div>
+      125 -        </div>
+      125
+      126 -        {error && (
+      127 -          <div className="bg-danger/10 border border-danger/30 rounded-xl px-6 py-4 mb-8">
+      128 -            <p className="text-danger font-medium">{error}</p>
+      126 +          {/* Footer de acción */}
+      127 +          <div className="flex flex-col items-start gap-4 pt-8 border-t border-light">
+      128 +            <button
+      129 +              onClick={handleConfirmar}
+      130 +              disabled={!puedeConfirmar}
+      131 +              className="btn-primary disabled:opacity-40 py-4 px-8"
+      132 +            >
+      133 +              Confirmar y continuar al cruce de datos →
+      134 +            </button>
+      135 +            {!puedeConfirmar && (
+      136 +              <p className="text-sm text-subtle">Subí al menos un archivo para continuar.</p>
+      137 +            )}
+      138            </div>
+      139 -        )}
+      139
+      140 -        {/* Drop zones */}
+      141 -        <p className="section-label text-gray-400 mb-4">Fuentes de datos disponibles</p>
+      142 -        <div className="grid grid-cols-3 gap-6 mb-10">
+      143 -          {FUENTES.map((f) => (
+      144 -            <DropZone
+      145 -              key={f.tipo}
+      146 -              fuenteTipo={f.tipo}
+      147 -              label={f.label}
+      148 -              descripcion={f.descripcion}
+      149 -              archivo={archivos[f.tipo] ?? null}
+      150 -              uploading={uploadingTipo === f.tipo}
+      151 -              onFile={(file) => handleFile(f.tipo, file)}
+      152 -            />
+      153 -          ))}
+      154 -        </div>
+      155 -
+      156 -        {/* Footer de acción */}
+      157 -        <div className="flex flex-col items-start gap-4 pt-8 border-t border-border">
+      158 -          <button
+      159 -            onClick={handleConfirmar}
+      160 -            disabled={!puedeConfirmar}
+      161 -            className="bg-gradient-to-r from-teal to-teal-light hover:from-teal-dark hover:to-teal
+      162 -                       disabled:opacity-40 disabled:cursor-not-allowed
+      163 -                       text-white font-semibold text-base rounded-xl px-8 py-4 transition-all
+          -shadow-lg hover:shadow-teal/25"
+      164 -          >
+      165 -            Confirmar y continuar al cruce de datos →
+      166 -          </button>
+      167 -          {!puedeConfirmar && (
+      168 -            <p className="text-sm text-gray-500">Subí al menos un archivo para continuar.</p>
+      169 -          )}
+      170 -        </div>
+      171 -
+      172 -        <Footer />
+      173 -      </main>
+      140 +          <Footer />
+      141 +        </main>
+      142 +      </div>
+      143      </div>
+      144    );
+      145  }
+
+● Write(frontend\src\app\sesion\[id]\matches\page.tsx)
+  ⎿  Added 106 lines, removed 117 lines
+       4  import { useAuth } from "@/hooks/useAuth";
+       5  import { useMatches } from "@/hooks/useMatches";
+       6  import SeccionMatches from "@/components/SeccionMatches";
+       7 +import Sidebar from "@/components/Sidebar";
+       8 +import Header from "@/components/Header";
+       9  import Footer from "@/components/Footer";
+      10
+      11  export default function MatchesPage({ params }: { params: { id: string } }) {
+     ...
+      13    const { matches, loading, cruzando, error, dudososPendientes, ejecutarCruce, actualizarMatch } =
+          useMatches(sesionId);
+      14
+      15    if (authLoading || loading) return (
+      16 -    <div className="min-h-screen bg-base flex items-center justify-center">
+      17 -      <p className="text-gray-400 text-sm">Cargando...</p>
+      16 +    <div className="min-h-screen bg-primary flex items-center justify-center">
+      17 +      <p className="text-muted text-sm">Cargando...</p>
+      18      </div>
+      19    );
+      20    if (!user) return null;
+     ...
+       27    const puedeIrAlChat   = hayMatches && dudososPendientes === 0;
+       28
+       29    return (
+       30 -    <div className="min-h-screen bg-base">
+       31 -      {/* Topbar */}
+       32 -      <header className="border-b border-teal-dark bg-teal-dark sticky top-0 z-10">
+       33 -        <div className="max-w-4xl mx-auto px-8 py-5 flex items-center justify-between">
+       34 -          <div className="flex items-center gap-3">
+       35 -            <button
+       36 -              onClick={() => router.push(`/sesion/${sesionId}/nueva`)}
+       37 -              className="text-white/70 hover:text-white transition-colors p-2 hover:bg-white/10
+          -rounded-lg"
+       38 -            >
+       39 -              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+       40 -                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7
+          -7-7" />
+       41 -              </svg>
+       42 -            </button>
+       43 -            <div>
+       44 -              <p className="section-label text-gold mb-0.5">Revisión de Matches</p>
+       45 -              <p className="text-sm text-white/90 font-medium">Sesión #{sesionId}</p>
+       30 +    <div className="container">
+       31 +      {/* Sidebar */}
+       32 +      <Sidebar sesionId={sesionId} activeSection="matches" />
+       33 +
+       34 +      {/* Main Content */}
+       35 +      <div className="main-content">
+       36 +        {/* Header */}
+       37 +        <Header
+       38 +          sessionBadge="Revisión de Matches"
+       39 +          sessionNumber={`Sesión #${sesionId}`}
+       40 +          userName={user.nombre}
+       41 +          userRole="Admin"
+       42 +        />
+       43 +
+       44 +        <main className="flex-1 overflow-y-auto px-8 py-12">
+       45 +          {error && (
+       46 +            <div className="bg-danger/10 border border-danger/30 rounded-xl px-6 py-4 mb-8">
+       47 +              <p className="text-danger font-medium">{error}</p>
+       48              </div>
+       49 -          </div>
+       49 +          )}
+       50
+       51 -          {/* Semáforo resumen */}
+       52 -          {hayMatches && (
+       53 -            <div className="flex items-center gap-4">
+       54 -              <div className="flex items-center gap-2 bg-green/10 border border-green/30 rounded-lg
+          -px-3 py-1.5">
+       55 -                <span className="text-lg">✓</span>
+       56 -                <span className="text-sm font-semibold text-green">{automaticos.length +
+          -corregidos.length}</span>
+       51 +          {/* Estado inicial: no hay matches aún */}
+       52 +          {!hayMatches && (
+       53 +            <div className="card bg-gradient-to-br from-accent-primary/10 to-accent-secondary/5
+          +border-accent-primary/20 p-10">
+       54 +              <div>
+       55 +                <p className="section-label mb-2 block">Estado del Cruce</p>
+       56 +                <p className="text-white font-semibold text-lg">No se ejecutó el cruce de datos
+          +todavía</p>
+       57 +                <p className="text-secondary text-base mt-2 max-w-xl">
+       58 +                  El motor analizará los archivos subidos en 3 capas: match exacto → fuzzy →
+          +semántico.
+       59 +                </p>
+       60                </div>
+       61 -              <div className="flex items-center gap-2 bg-warning/10 border border-warning/30
+          -rounded-lg px-3 py-1.5">
+       62 -                <span className="text-lg">⚠</span>
+       63 -                <span className="text-sm font-semibold text-warning">{dudosos.length}</span>
+       64 -              </div>
+       65 -              <div className="flex items-center gap-2 bg-danger/10 border border-danger/30 rounded-lg
+          - px-3 py-1.5">
+       66 -                <span className="text-lg">✗</span>
+       67 -                <span className="text-sm font-semibold text-danger">{sinMatch.length}</span>
+       68 -              </div>
+       61                <button
+       62                  onClick={ejecutarCruce}
+       63                  disabled={cruzando}
+       64 -                className="ml-2 text-sm text-white/80 hover:text-white border border-white/20
+          -hover:border-white/40
+       65 -                           rounded-lg px-4 py-2 transition-colors disabled:opacity-40"
+       64 +                className="btn-primary mt-6"
+       65                >
+       66 -                {cruzando ? "Recalculando..." : "↺ Recalcular"}
+       66 +                {cruzando && <div className="w-5 h-5 border-2 border-white border-t-transparent
+          +rounded-full animate-spin" />}
+       67 +                {cruzando ? "Cruzando datos..." : "Ejecutar cruce de datos"}
+       68                </button>
+       69              </div>
+       70            )}
+       71 -        </div>
+       72 -      </header>
+       71
+       72 -      <main className="max-w-4xl mx-auto px-8 py-12">
+       73 -        {error && (
+       74 -          <div className="bg-danger/10 border border-danger/30 rounded-xl px-6 py-4 mb-8">
+       75 -            <p className="text-danger font-medium">{error}</p>
+       76 -          </div>
+       77 -        )}
+       72 +          {hayMatches && (
+       73 +            <>
+       74 +              {/* Semáforo resumen */}
+       75 +              <div className="flex items-center gap-4 mb-8">
+       76 +                <div className="flex items-center gap-2 bg-success/10 border border-success/30
+          +rounded-lg px-4 py-2">
+       77 +                  <span className="text-lg">✓</span>
+       78 +                  <span className="text-sm font-semibold text-success">{automaticos.length +
+          +corregidos.length}</span>
+       79 +                </div>
+       80 +                <div className="flex items-center gap-2 bg-warning/10 border border-warning/30
+          +rounded-lg px-4 py-2">
+       81 +                  <span className="text-lg">⚠</span>
+       82 +                  <span className="text-sm font-semibold text-warning">{dudosos.length}</span>
+       83 +                </div>
+       84 +                <div className="flex items-center gap-2 bg-danger/10 border border-danger/30
+          +rounded-lg px-4 py-2">
+       85 +                  <span className="text-lg">✗</span>
+       86 +                  <span className="text-sm font-semibold text-danger">{sinMatch.length}</span>
+       87 +                </div>
+       88 +                <button
+       89 +                  onClick={ejecutarCruce}
+       90 +                  disabled={cruzando}
+       91 +                  className="ml-2 text-sm text-secondary hover:text-white transition-colors border
+          +border-white/20 hover:border-white/40
+       92 +                             rounded-lg px-4 py-2 disabled:opacity-40"
+       93 +                >
+       94 +                  {cruzando ? "Recalculando..." : "↺ Recalcular"}
+       95 +                </button>
+       96 +              </div>
+       97
+       98 -        {/* Estado inicial: no hay matches aún */}
+       99 -        {!hayMatches && (
+      100 -          <div className="bg-gradient-to-br from-teal/10 to-teal-dark/5 border border-teal/30
+          -rounded-2xl p-10 flex flex-col items-start gap-6">
+      101 -            <div>
+      102 -              <p className="section-label text-gold mb-2">Estado del Cruce</p>
+      103 -              <p className="text-white font-semibold text-lg">No se ejecutó el cruce de datos
+          -todavía</p>
+      104 -              <p className="text-gray-300 text-base mt-2 max-w-xl">
+      105 -                El motor analizará los archivos subidos en 3 capas: match exacto → fuzzy → semántico.
+      106 -              </p>
+      107 -            </div>
+       98 +              {/* Dudosos primero — requieren acción */}
+       99 +              <SeccionMatches
+      100 +                titulo="⚠  Matches dudosos — requieren tu confirmación"
+      101 +                color="#f59e0b"
+      102 +                bgHeader="rgba(245, 158, 11, 0.08)"
+      103 +                matches={dudosos}
+      104 +                emptyMsg="No hay matches dudosos. ¡Podés continuar al chat!"
+      105 +                onConfirmar={(id) => actualizarMatch(id, { estado: "auto_confirmado" })}
+      106 +                onRechazar={(id) => actualizarMatch(id, { estado: "sin_match" })}
+      107 +              />
+      108 +
+      109 +              <SeccionMatches
+      110 +                titulo="✓  Matches automáticos"
+      111 +                color="#10b981"
+      112 +                bgHeader="rgba(16, 185, 129, 0.08)"
+      113 +                matches={[...automaticos, ...corregidos]}
+      114 +                emptyMsg="No hay matches automáticos aún."
+      115 +                onDeshacer={(id) => actualizarMatch(id, { estado: "dudoso" })}
+      116 +              />
+      117 +
+      118 +              <SeccionMatches
+      119 +                titulo="✗  Sin match"
+      120 +                color="#ef4444"
+      121 +                bgHeader="rgba(239, 68, 68, 0.08)"
+      122 +                matches={sinMatch}
+      123 +                emptyMsg="Todas las empresas pudieron cruzarse."
+      124 +              />
+      125 +            </>
+      126 +          )}
+      127 +
+      128 +          {/* Footer de acción */}
+      129 +          <div className="mt-8 pt-8 border-t border-light flex flex-col items-start gap-4 mb-8">
+      130 +            {dudososPendientes > 0 && (
+      131 +              <div className="bg-warning/10 border border-warning/30 rounded-xl px-6 py-4">
+      132 +                <p className="text-warning font-medium text-base">
+      133 +                  Quedan {dudososPendientes} match{dudososPendientes > 1 ? "es" : ""}
+          +dudoso{dudososPendientes > 1 ? "s" : ""} por resolver.
+      134 +                </p>
+      135 +              </div>
+      136 +            )}
+      137              <button
+      138 -              onClick={ejecutarCruce}
+      139 -              disabled={cruzando}
+      140 -              className="bg-gradient-to-r from-teal to-teal-light hover:from-teal-dark hover:to-teal
+      141 -                         disabled:opacity-40 disabled:cursor-not-allowed
+      142 -                         text-white font-semibold text-base rounded-xl px-8 py-4 transition-all
+          -shadow-lg hover:shadow-teal/25
+      143 -                         flex items-center gap-3"
+      138 +              onClick={() => router.push(`/sesion/${sesionId}/chat`)}
+      139 +              disabled={!puedeIrAlChat}
+      140 +              className="btn-primary disabled:opacity-40 py-4 px-8"
+      141              >
+      142 -              {cruzando && <div className="w-5 h-5 border-2 border-white border-t-transparent
+          -rounded-full animate-spin" />}
+      143 -              {cruzando ? "Cruzando datos..." : "Ejecutar cruce de datos"}
+      142 +              Ir al chat con IA →
+      143              </button>
+      144            </div>
+      145 -        )}
+      145
+      146 -        {hayMatches && (
+      147 -          <>
+      148 -            {/* Dudosos primero — requieren acción */}
+      149 -            <SeccionMatches
+      150 -              titulo="⚠  Matches dudosos — requieren tu confirmación"
+      151 -              color="#eab308"
+      152 -              bgHeader="rgba(234,179,8,0.08)"
+      153 -              matches={dudosos}
+      154 -              emptyMsg="No hay matches dudosos. ¡Podés continuar al chat!"
+      155 -              onConfirmar={(id) => actualizarMatch(id, { estado: "auto_confirmado" })}
+      156 -              onRechazar={(id) => actualizarMatch(id, { estado: "sin_match" })}
+      157 -            />
+      158 -
+      159 -            <SeccionMatches
+      160 -              titulo="✓  Matches automáticos"
+      161 -              color="#22c55e"
+      162 -              bgHeader="rgba(34,197,94,0.08)"
+      163 -              matches={[...automaticos, ...corregidos]}
+      164 -              emptyMsg="No hay matches automáticos aún."
+      165 -              onDeshacer={(id) => actualizarMatch(id, { estado: "dudoso" })}
+      166 -            />
+      167 -
+      168 -            <SeccionMatches
+      169 -              titulo="✗  Sin match"
+      170 -              color="#ef4444"
+      171 -              bgHeader="rgba(239,68,68,0.08)"
+      172 -              matches={sinMatch}
+      173 -              emptyMsg="Todas las empresas pudieron cruzarse."
+      174 -            />
+      175 -          </>
+      176 -        )}
+      177 -
+      178 -        {/* Footer de acción */}
+      179 -        <div className="mt-8 pt-8 border-t border-border flex flex-col items-start gap-4 mb-8">
+      180 -          {dudososPendientes > 0 && (
+      181 -            <div className="bg-warning/10 border border-warning/30 rounded-xl px-6 py-4">
+      182 -              <p className="text-warning font-medium text-base">
+      183 -                Quedan {dudososPendientes} match{dudososPendientes > 1 ? "es" : ""}
+          -dudoso{dudososPendientes > 1 ? "s" : ""} por resolver.
+      184 -              </p>
+      185 -            </div>
+      186 -          )}
+      187 -          <button
+      188 -            onClick={() => router.push(`/sesion/${sesionId}/chat`)}
+      189 -            disabled={!puedeIrAlChat}
+      190 -            className="bg-gradient-to-r from-teal to-teal-light hover:from-teal-dark hover:to-teal
+      191 -                       disabled:opacity-40 disabled:cursor-not-allowed
+      192 -                       text-white font-semibold text-base rounded-xl px-8 py-4 transition-all
+          -shadow-lg hover:shadow-teal/25"
+      193 -          >
+      194 -            Ir al chat con IA →
+      195 -          </button>
+      196 -        </div>
+      197 -
+      198 -        <Footer />
+      199 -      </main>
+      146 +          <Footer />
+      147 +        </main>
+      148 +      </div>
+      149      </div>
+      150    );
+      151  }
+
+● Ahora actualizo los componentes restantes (DropZone y MensajeChat):
+
+● Write(frontend\src\components\DropZone.tsx)
+  ⎿  Added 19 lines, removed 25 lines
+      12    onFile: (file: File) => void;
+      13  }
+      14
+      15 -const FUENTE_COLOR: Record<string, string> = {
+      16 -  erp:       "text-teal",
+      17 -  dnit:      "text-gold",
+      18 -  marketing: "text-coral",
+      19 -};
+      20 -
+      15  const FUENTE_BADGE: Record<string, string> = {
+      16 -  erp:       "bg-teal/20 text-teal-light",
+      17 -  dnit:      "bg-gold/20 text-gold",
+      18 -  marketing: "bg-coral/20 text-coral",
+      16 +  erp:       "bg-accent-primary/20 text-accent-primary",
+      17 +  dnit:      "bg-warning/20 text-warning",
+      18 +  marketing: "bg-danger/20 text-danger",
+      19  };
+      20
+      21  const FUENTE_BORDER: Record<string, string> = {
+      22 -  erp:       "hover:border-teal/50 hover:bg-teal/5",
+      23 -  dnit:      "hover:border-gold/50 hover:bg-gold/5",
+      24 -  marketing: "hover:border-coral/50 hover:bg-coral/5",
+      22 +  erp:       "hover:border-accent-primary/50 hover:bg-accent-primary/5",
+      23 +  dnit:      "hover:border-warning/50 hover:bg-warning/5",
+      24 +  marketing: "hover:border-danger/50 hover:bg-danger/5",
+      25  };
+      26
+      27  export default function DropZone({ fuenteTipo, label, descripcion, archivo, uploading, onFile }:
+          Props) {
+     ...
+      50    const errorIA = archivo?.columnas_detectadas_json?.error;
+      51
+      52    // Clase dinámica de la zona de drop según estado
+      53 -  let dropClass = `border-border bg-panel ${FUENTE_BORDER[fuenteTipo]}`;
+      54 -  if (dragging) dropClass = "border-teal bg-teal/10";
+      55 -  else if (archivo) dropClass = "border-green/50 bg-green/5";
+      53 +  let dropClass = `border-light bg-white/4 ${FUENTE_BORDER[fuenteTipo]}`;
+      54 +  if (dragging) dropClass = "border-accent-primary bg-accent-primary/10";
+      55 +  else if (archivo) dropClass = "border-success/50 bg-success/5";
+      56
+      57    return (
+      58      <div className="flex flex-col gap-3">
+      59        {/* Badge de fuente */}
+      60 -      <span className={`self-start text-xs font-bold uppercase tracking-wider px-3 py-1
+         - rounded-lg ${FUENTE_BADGE[fuenteTipo]}`}>
+      60 +      <span className={`self-start text-xs font-bold uppercase tracking-wider px-3 py-1.5
+         + rounded-lg ${FUENTE_BADGE[fuenteTipo]}`}>
+      61          {label}
+      62        </span>
+      63 -      <p className="text-sm text-gray-400 leading-relaxed">{descripcion}</p>
+      63 +      <p className="text-sm text-muted leading-relaxed">{descripcion}</p>
+      64
+      65        {/* Zona de drop */}
+      66        <div
+     ...
+      81
+      82          {uploading ? (
+      83            <>
+      84 -            <div className="w-6 h-6 border-2 border-teal
+         - border-t-transparent rounded-full animate-spin" />
+      85 -            <p className="text-sm text-gray-300">Procesando con IA...</p>
+      84 +            <div className="w-6 h-6 border-2 border-accent-primary
+         + border-t-transparent rounded-full animate-spin" />
+      85 +            <p className="text-sm text-secondary">Procesando con IA...</p>
+      86            </>
+      87          ) : archivo ? (
+      88            <>
+      89 -            <svg className="w-7 h-7 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      89 +            <svg className="w-7 h-7 text-success
+         +" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      90                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6
+          2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      91              </svg>
+      92              <div className="flex flex-col items-center gap-1">
+      93                <p className="text-base font-medium text-white truncate max-w-full
+          px-2">{archivo.nombre_archivo}</p>
+      94                {columna ? (
+      95 -                <p className="text-sm text-gray-400">
+      96 -                  Columna detectada: <span className="text-gold font-medium">{columna}</span>
+      95 +                <p className="text-sm text-muted">
+      96 +                  Columna detectada: <span className="text-warning font-medium">{columna}</span>
+      97                  </p>
+      98                ) : errorIA ? (
+      99                  <p className="text-sm text-warning">IA no disponible — verificar manualmente</p>
+     ...
+      102            </>
+      103          ) : (
+      104            <>
+      105 -            <svg className="w-10 h-10 text-gray-500
+          -" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      105 +            <svg className="w-10 h-10 text-muted
+          +" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      106                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+      107                  d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414
+           5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      108              </svg>
+      109 -            <p className="text-sm text-gray-400">
+      109 +            <p className="text-sm text-muted">
+      110                Arrastrá un Excel o{" "}
+      111 -              <span className={`font-semibold ${FUENTE_COLOR[fuenteTipo]}`}>hacé click</span>
+      111 +              <span className="font-semibold text-accent-primary">hacé click</span>
+      112              </p>
+      113            </>
+      114          )}
+
+● Write(frontend\src\components\MensajeChat.tsx)
+  ⎿  Added 10 lines, removed 10 lines
+      16      <div className={`flex mb-4 ${esUsuario ? "justify-end" : "justify-start"}`}>
+      17        {/* Avatar IA */}
+      18        {!esUsuario && (
+      19 -        <div className="w-9 h-9 rounded-full bg-teal
+         -/20 flex items-center justify-center shrink-0 mr-3 mt-0.5">
+      20 -          <svg className="w-5 h-5 text-teal-light
+         -" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      19 +        <div className="w-9 h-9 rounded-full bg-accent-primary
+         +/20 flex items-center justify-center shrink-0 mr-3 mt-0.5">
+      20 +          <svg className="w-5 h-5 text-accent-primary
+         +" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      21              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      22                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h16a2 2 0
+          012 2v10a2 2 0 01-2 2h-2" />
+      23            </svg>
+     ...
+      29            px-5 py-4 text-base leading-relaxed whitespace-pre-wrap break-words
+      30            ${mensaje.grafico_json ? "w-full max-w-3xl" : "max-w-[72%]"}
+      31            ${esUsuario
+      32 -            ? "bg-gradient-to-r from-teal to-teal-light text-white rounded-2xl rounded-tr-sm shadow-lg"
+      33 -            : "bg-panel text-gray-100 rounded-2xl rounded-tl-sm border border-border shadow-md"
+      32 +            ? "bg-gradient-executive text-white rounded-2xl rounded-tr-sm shadow-md"
+      33 +            : "bg-tertiary text-secondary rounded-2xl rounded-tl-sm border border-subtle shadow-md"
+      34            }
+      35          `}
+      36        >
+     ...
+      38
+      39          {/* Gráfico Plotly con tema oscuro */}
+      40          {mensaje.grafico_json && (
+      41 -          <div className="mt-4 rounded-xl overflow-hidden border border-teal/30 shadow-xl">
+      41 +          <div className="mt-4 rounded-xl overflow-hidden border border-accent-primary/30 shadow-lg">
+      42              <Plot
+      43                data={(mensaje.grafico_json as { data: Plotly.Data[] }).data}
+      44                layout={{
+      45                  ...(mensaje.grafico_json as { layout: Partial<Plotly.Layout> }).layout,
+      46                  autosize: true,
+      47 -                paper_bgcolor: "#151922",
+      48 -                plot_bgcolor: "#151922",
+      47 +                paper_bgcolor: "#121829",
+      48 +                plot_bgcolor: "#121829",
+      49                  margin: { t: 40, r: 20, b: 50, l: 55 },
+      50 -                font: { color: "#a0aec0", family: "Segoe UI, system-ui, sans-serif", size: 13 },
+      50 +                font: { color: "#c5cad4", family: "-apple-system, Inter
+         +, system-ui, sans-serif", size: 13 },
+      51                  xaxis: {
+      52                    ...(mensaje.grafico_json as { layout: { xaxis?: object } }).layout?.xaxis,
+      53                    gridcolor: "#2d3548",
+      54                    linecolor: "#2d3548",
+      55                    tickcolor: "#4b5563",
+      56 -                  tickfont: { color: "#a0aec0" },
+      56 +                  tickfont: { color: "#c5cad4" },
+      57                  },
+      58                  yaxis: {
+      59                    ...(mensaje.grafico_json as { layout: { yaxis?: object } }).layout?.yaxis,
+      60                    gridcolor: "#2d3548",
+      61                    linecolor: "#2d3548",
+      62                    tickcolor: "#4b5563",
+      63 -                  tickfont: { color: "#a0aec0" },
+      63 +                  tickfont: { color: "#c5cad4" },
+      64                  },
+      65                  title: {
+      66                    ...(typeof (mensaje.grafico_json as { layout: { title?: unknown } }).layout?.title
+          === "string"
+
+● Read 1 file (ctrl+o to expand)
+
+● Update(frontend\src\components\SeccionMatches.tsx)
+  ⎿  Added 2 lines, removed 2 lines
+      29          style={{ background: bgHeader }}
+      30        >
+      31          <span className="text-base font-bold tracking-tight" style={{ color }}>{titulo}</span>
+      32 -        <span className="text-sm font-bold bg-white/10 text-white rounded-full px-4 py-1.5">
+      32 +        <span className="text-sm font-bold bg-white/10 text-secondary rounded-full px-4 py-1.5">
+      33            {matches.length}
+      34          </span>
+      35        </div>
+      36
+      37        {/* Filas */}
+      38        {matches.length === 0 ? (
+      39 -        <p className="px-6 py-4 text-sm text-gray-400">{emptyMsg}</p>
+      39 +        <p className="px-6 py-4 text-sm text-muted">{emptyMsg}</p>
+      40        ) : (
+      41          <div className="divide-y divide-border/30">
+      42            {matches.map((m) => (
+
+● Read 1 file (ctrl+o to expand)
+
+● Update(frontend\src\components\MatchRow.tsx)
+  ⎿  Added 3 lines, removed 3 lines
+      13    if (score === null) return null;
+      14    const pct = Math.round(score * 100);
+      15    const cls = pct >= 85
+      16 -    ? "bg-green/10 text-green border-green/30"
+      16 +    ? "bg-success/10 text-success border-success/30"
+      17      : pct >= 60
+      18 -    ? "bg-gold/10 text-gold border-gold/30"
+      19 -    : "bg-coral/10 text-coral border-coral/30";
+      18 +    ? "bg-warning/10 text-warning border-warning/30"
+      19 +    : "bg-danger/10 text-danger border-danger/30";
+      20    return (
+      21      <span className={`text-sm font-bold border rounded-lg px-2 py-1 ${cls}`}>
+      22        {pct}%
+
+● Ahora agrego algunas clases utilitarias adicionales para los colores y actualizo el tailwind.config:
+
+● Read 1 file (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+  9 tasks (8 done, 1 in progress, 0 open)
+  ✔ Crear variables CSS base del nuevo diseño ejecutivo
+  ✔ Crear componente Sidebar reutilizable
+  ✔ Crear componente Header reutilizable
+  ✔ Actualizar página de chat con nuevo diseño
+  ✔ Actualizar página de login con nuevo diseño
+  ✔ Actualizar página de dashboard con nuevo diseño
+  ✔ Actualizar página de nueva sesión con nuevo diseño
+  ✔ Actualizar página de matches con nuevo diseño
+  ◼ Actualizar componentes restantes

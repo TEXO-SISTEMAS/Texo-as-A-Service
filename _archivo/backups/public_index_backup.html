@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Texo as a Service — Salud Financiera</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --bg: #eef0f5;
+  --white: #ffffff;
+  --surface: #ffffff;
+  --border: #e2e4e9;
+  --border2: #c8cdd8;
+  --text: #0f1117;
+  --muted: #6b7280;
+  --muted2: #9ca3af;
+  --accent: #1a1a2e;
+  --accent-mid: #2a2a4a;
+  --yellow: #f0f040;
+  --brick:  #e85d26;
+  --nasta:  #6c3fc5;
+  --lupe:   #0ea5b0;
+  --omd:    #d4900a;
+  --roger:  #d42b4f;
+  --row:    #16a34a;
+  --cc:     #e85d26;
+  --dc:     #6c3fc5;
+  --green:  #16a34a;
+  --red:    #d42b4f;
+  --warn:   #d4900a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:17px;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:60px;
+  background:var(--accent);
+  flex-shrink:0;gap:16px;
+}
+.topbar-left{display:flex;align-items:center;gap:20px}
+.logo{font-size:22px;font-weight:800;letter-spacing:.01em;color:#fff}
+.logo span{color:#f0f040;font-weight:300}
+.topbar-right{display:flex;align-items:center;gap:10px}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:6px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s;letter-spacing:.02em}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:#f0f040;color:#0f1117}
+.btn-primary:hover{background:#e8e830}
+.btn-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.35)}
+.btn-outline:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6)}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(212,43,79,.3);padding:3px 8px;font-size:11px;border-radius:4px}
+.btn-danger:hover{background:rgba(212,43,79,.08)}
+
+/* ── LAYOUT ── */
+.layout{display:flex;flex:1;overflow:hidden}
+
+
+/* ── MAIN ── */
+.main{flex:1;overflow-y:auto;padding:0 44px;padding-bottom:0}
+.main::-webkit-scrollbar{width:5px}
+.main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── SECTION LABEL/HEADING (estilo informe ejecutivo) ── */
+.sec-block{margin-bottom:12px}
+.sec-label{
+  font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted2);margin-bottom:8px;
+}
+.sec-heading{
+  font-size:32px;font-weight:900;letter-spacing:-.03em;line-height:1.05;
+  color:var(--text);margin-bottom:10px;
+}
+.sec-bar{width:44px;height:3px;background:var(--accent);border-radius:2px;margin-bottom:24px}
+
+/* Legacy section-title (used internamente) */
+.section-title{
+  font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted2);margin-bottom:16px;padding-bottom:12px;
+  border-bottom:2px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+}
+.section-title span{color:var(--text);font-weight:600;letter-spacing:0;text-transform:none;font-size:15px;opacity:.65}
+.section-desc{font-size:15px;color:var(--muted);font-weight:400;margin-top:-10px;margin-bottom:20px;line-height:1.5;max-width:860px;font-style:italic}
+
+/* ── DIVIDER BAND (banda teal de sección) ── */
+.divider-band{
+  background:var(--accent);color:#fff;
+  margin:32px -44px;padding:36px 44px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.divider-band-title{font-size:28px;font-weight:900;letter-spacing:-.02em;color:var(--yellow)}
+.divider-band-sub{font-size:13px;color:rgba(255,255,255,.45);margin-top:4px;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+.divider-band-stat{text-align:right}
+.divider-band-stat-val{font-size:36px;font-weight:900;letter-spacing:-.03em;color:#fff}
+.divider-band-stat-label{font-size:11px;color:rgba(255,255,255,.45);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:36px}
+.kpi{
+  background:var(--white);border:1px solid var(--border);border-radius:14px;
+  padding:24px 26px;position:relative;overflow:hidden;
+  transition:box-shadow .2s,transform .2s;
+}
+.kpi:hover{box-shadow:0 10px 32px rgba(0,0,0,.1);transform:translateY(-2px)}
+.kpi-accent{border-top:3px solid var(--kpi-color,var(--accent))}
+.kpi-mint{background:#f4f5f8;border:1px solid var(--border)}
+.kpi-label{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px}
+.kpi-value{font-size:40px;font-weight:900;line-height:1;margin-bottom:8px;letter-spacing:-.03em;color:var(--text)}
+.kpi-sub{font-size:12px;color:var(--muted);font-weight:500;line-height:1.4}
+.kpi-pos{color:var(--green)}
+.kpi-neg{color:var(--red)}
+.kpi-neutral{color:var(--warn)}
+
+/* ── CHARTS ── */
+.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:36px}
+.charts-grid.triple{grid-template-columns:repeat(3,1fr)}
+.chart-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:26px 28px;transition:box-shadow .2s}
+.chart-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.08)}
+.chart-card.wide{grid-column:span 2}
+.chart-title{font-size:17px;font-weight:800;margin-bottom:4px;letter-spacing:-.02em;color:var(--text)}
+.chart-subtitle{font-size:11px;color:var(--muted2);margin-bottom:20px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.chart-wrap{position:relative;height:260px}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:32px}
+table{width:100%;border-collapse:collapse}
+thead th{
+  padding:12px 16px;text-align:right;font-size:14px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  background:#f8f9fb;border-bottom:1.5px solid var(--border);white-space:nowrap;
+}
+thead th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#fafbfc}
+tbody td{padding:13px 16px;text-align:right;white-space:nowrap;font-size:17px}
+tbody td:first-child{text-align:left;font-weight:600}
+.ag-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:9px;vertical-align:middle}
+.val-pos{color:var(--green);font-weight:600}
+.val-neg{color:var(--red);font-weight:600}
+
+/* ── AGENCIA CARDS ── */
+.agencia-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:32px}
+.agencia-card{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.agencia-card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.agencia-card-head .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.agencia-card-head h4{font-size:22px;font-weight:800;flex:1;letter-spacing:-.01em}
+.ebitda-badge{font-size:16px;font-weight:700;padding:4px 10px;border-radius:5px}
+.agencia-card-body{padding:14px 20px}
+.agencia-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:16px}
+.agencia-row:last-child{border:none}
+.agencia-row-label{color:var(--muted);font-weight:500}
+.agencia-row-val{font-weight:700;font-size:17px}
+.bar-mini{height:5px;background:var(--border);border-radius:3px;margin-top:10px;overflow:hidden}
+.bar-mini-fill{height:100%;border-radius:3px}
+
+/* ── FOOTER ── */
+.footer{
+  flex-shrink:0;
+  background:var(--accent);
+  color:rgba(255,255,255,.5);
+  font-size:14px;font-weight:500;
+  padding:12px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  letter-spacing:.03em;
+}
+.footer strong{color:rgba(255,255,255,.85)}
+
+/* ── HERO SECTION ── */
+.hero-section{
+  background:linear-gradient(135deg,#0b0f1a 0%,#1a1a2e 55%,#0d1535 100%);
+  border-radius:0;margin:0 -44px 0;padding:56px 44px 44px;
+  color:#fff;position:relative;overflow:hidden;
+  margin-bottom:0;
+}
+.hero-section::before{
+  content:'';position:absolute;top:-100px;right:-60px;
+  width:420px;height:420px;
+  background:radial-gradient(circle,rgba(240,240,64,.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+.hero-section::after{
+  content:'';position:absolute;bottom:-80px;left:40%;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(14,165,176,.07) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+/* Hero badge */
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+  border-radius:100px;padding:8px 20px;
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,255,255,.8);margin-bottom:28px;
+}
+
+/* Hero main content */
+.hero-main{display:flex;align-items:flex-start;justify-content:space-between;gap:32px;margin-bottom:36px;position:relative}
+.hero-title-block{}
+.hero-company{font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px}
+.hero-product{font-size:60px;font-weight:900;letter-spacing:-.04em;line-height:.95;color:#fff;margin-bottom:6px}
+.hero-product-sub{font-size:48px;font-weight:300;letter-spacing:-.02em;line-height:1;color:#f0f040}
+.hero-tagline{font-size:12px;color:rgba(255,255,255,.4);margin-top:16px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.hero-status-block{display:flex;flex-direction:column;align-items:flex-end;gap:10px;padding-top:8px}
+.hero-pill{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:100px;font-size:12px;font-weight:700;letter-spacing:.04em}
+.pill-green{background:rgba(22,163,74,.2);color:#4ade80;border:1px solid rgba(22,163,74,.4)}
+.pill-yellow{background:rgba(212,144,10,.2);color:#fbbf24;border:1px solid rgba(212,144,10,.4)}
+.pill-red{background:rgba(212,43,79,.2);color:#f87171;border:1px solid rgba(212,43,79,.4)}
+.pill-gray{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.18)}
+
+/* Agency chips strip */
+.hero-agencies{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:36px;position:relative;border-top:1px solid rgba(255,255,255,.12);padding-top:28px}
+.hero-agency-chip{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);font-size:13px;font-weight:700;letter-spacing:.03em;transition:background .15s;flex:1;min-width:140px}
+.hero-agency-chip:hover{background:rgba(255,255,255,.12)}
+.chip-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.chip-name{flex:1;font-size:14px;font-weight:800;letter-spacing:.02em}
+.chip-ebitda{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.chip-status{font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;letter-spacing:.06em;text-transform:uppercase}
+
+/* CEO question cards */
+.hero-questions-label{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:14px}
+.hero-questions{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;position:relative}
+.hero-q{
+  background:rgba(255,255,255,.06);border-radius:14px;
+  padding:24px 22px;
+  border:1px solid rgba(255,255,255,.1);
+  border-top:3px solid var(--hq-color,rgba(255,255,255,.25));
+  transition:background .2s,transform .2s;
+}
+.hero-q:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
+.hero-q-green{--hq-color:#4ade80}
+.hero-q-yellow{--hq-color:#fbbf24}
+.hero-q-red{--hq-color:#f87171}
+.hero-q-icon{font-size:22px;margin-bottom:14px;display:block;line-height:1}
+.hero-q-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px}
+.hero-q-answer{font-size:14px;font-weight:700;color:#fff;line-height:1.45;margin-bottom:8px}
+.hero-q-sub{font-size:12px;color:rgba(255,255,255,.38);line-height:1.55;margin-bottom:14px}
+.hero-q-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:.04em}
+.badge-green{background:rgba(22,163,74,.22);color:#4ade80}
+.badge-yellow{background:rgba(212,144,10,.22);color:#fbbf24}
+.badge-red{background:rgba(212,43,79,.22);color:#f87171}
+
+/* Post-hero padding */
+.post-hero{padding-top:40px;padding-left:44px;padding-right:44px;margin:0 -44px}
+
+/* ── INSIGHTS PANEL ── */
+.insights-header{
+  font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted2);margin-bottom:14px;
+  display:flex;align-items:center;gap:12px;
+}
+.insights-header::after{content:'';flex:1;height:1px;background:var(--border)}
+.insights-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:32px}
+.insight-card{
+  border-radius:12px;padding:18px 20px;
+  display:flex;gap:14px;align-items:flex-start;
+  border:none;border-left:4px solid transparent;
+}
+.insight-red{background:rgba(212,43,79,.055);border-left-color:var(--red)}
+.insight-yellow{background:rgba(212,144,10,.055);border-left-color:var(--warn)}
+.insight-green{background:rgba(22,163,74,.055);border-left-color:var(--green)}
+.insight-blue{background:rgba(14,165,176,.055);border-left-color:var(--lupe)}
+.insight-icon-wrap{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+}
+.insight-red .insight-icon-wrap{background:rgba(212,43,79,.14)}
+.insight-yellow .insight-icon-wrap{background:rgba(212,144,10,.14)}
+.insight-green .insight-icon-wrap{background:rgba(22,163,74,.14)}
+.insight-blue .insight-icon-wrap{background:rgba(14,165,176,.14)}
+.insight-body{flex:1;min-width:0}
+.insight-tag{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.insight-tag-red{color:var(--red)}
+.insight-tag-yellow{color:var(--warn)}
+.insight-tag-green{color:var(--green)}
+.insight-tag-blue{color:var(--lupe)}
+.insight-text{font-size:13.5px;color:var(--text);line-height:1.5;font-weight:600}
+.insight-detail{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+
+/* ── NARRATIVE ── */
+.section-narrative{
+  background:linear-gradient(90deg,#f1f3f8 0%,#f8f9fb 100%);
+  border-left:4px solid var(--accent);border-radius:0 12px 12px 0;
+  padding:16px 22px;margin:-4px 0 28px;
+  font-size:13.5px;color:var(--text);line-height:1.75;font-weight:500;
+}
+.narrative-accent{font-weight:700}
+.narrative-green{color:var(--green)}
+.narrative-red{color:var(--red)}
+.narrative-yellow{color:var(--warn)}
+
+/* ── FULLSCREEN ── */
+body.fullscreen .topbar,
+body.fullscreen .footer { display:none !important; }
+body.fullscreen .layout { height:100vh; }
+body.fullscreen .main { padding:0 44px; }
+.btn-fs { background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.35);padding:8px 14px;font-size:13px; }
+.btn-fs:hover { background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6); }
+.fullscreen-bar {
+  display:none;position:fixed;top:0;left:0;right:0;z-index:999;
+  background:rgba(15,17,23,.92);backdrop-filter:blur(8px);
+  padding:10px 28px;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+body.fullscreen .fullscreen-bar { display:flex; }
+.fullscreen-bar-logo { font-size:15px;font-weight:700;color:#fff;letter-spacing:.01em; }
+.fullscreen-bar-logo span { color:#f0f040;font-weight:300; }
+.fullscreen-bar-right { display:flex;gap:10px;align-items:center; }
+body.fullscreen .main { padding-top:64px; }
+
+/* ── PDF LOADING ── */
+.pdf-overlay {
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(15,17,23,.7);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;flex-direction:column;gap:14px;color:#fff;
+  font-size:15px;font-weight:600;letter-spacing:.02em;
+}
+.pdf-overlay.show { display:flex; }
+.pdf-spinner {
+  width:36px;height:36px;border:3px solid rgba(255,255,255,.2);
+  border-top-color:#f0f040;border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── PRINT ── */
+@media print {
+  .topbar,.footer,.chat-sidebar,.toast,.fullscreen-bar { display:none !important; }
+  body { overflow:visible !important; }
+  .layout { display:block !important;height:auto !important; }
+  .main { overflow:visible !important;padding:20px !important; }
+  .charts-grid { break-inside:avoid; }
+  .card { break-inside:avoid; }
+}
+
+/* ── NO DATA ── */
+.no-data{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 44px;text-align:center;color:var(--muted);gap:14px}
+.no-data-icon{font-size:56px;opacity:.3}
+.no-data h3{font-size:22px;font-weight:800;color:var(--text);opacity:.4;letter-spacing:-.02em}
+.no-data p{font-size:13px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:70px;right:28px;background:var(--text);color:#fff;border-radius:8px;padding:13px 20px;font-size:12px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.2);z-index:999;transform:translateY(60px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.error{background:var(--red)}
+.toast.success{background:var(--green)}
+
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@keyframes chart-pulse{0%,100%{box-shadow:0 0 0 0 rgba(26,26,46,0)}40%{box-shadow:0 0 0 6px rgba(26,26,46,.18),0 0 24px rgba(26,26,46,.1)}}
+.chart-highlight{animation:chart-pulse 1s ease 3;border:2px solid var(--accent) !important;transition:border .2s}
+
+/* ── CHAT SIDEBAR ── */
+.chat-sidebar{
+  width:0;overflow:hidden;flex-shrink:0;
+  border-left:0px solid var(--border);
+  transition:width .28s cubic-bezier(.4,0,.2,1), border-color .28s;
+  background:var(--white);display:flex;position:relative;
+}
+.chat-sidebar.open{border-left:1px solid var(--border)}
+.chat-sidebar.resizing{transition:none}
+.chat-sidebar-inner{
+  flex:1;min-width:0;display:flex;flex-direction:column;height:100%;overflow:hidden;position:relative;
+}
+.chat-resize-handle{
+  position:absolute;left:0;top:0;bottom:0;width:5px;
+  cursor:col-resize;z-index:20;
+  background:transparent;
+  transition:background .2s;
+}
+.chat-resize-handle:hover,.chat-resize-handle.dragging{background:var(--accent);opacity:.25}
+
+.chat-header{
+  background:var(--accent);color:#fff;
+  padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;
+}
+.chat-header-icon{width:32px;height:32px;border-radius:8px;background:#f0f040;color:#0f1117;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:800}
+.chat-header-text{flex:1}
+.chat-header-title{font-size:15px;font-weight:700}
+.chat-header-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
+.chat-close{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;padding:0 2px;line-height:1;transition:color .15s}
+.chat-close:hover{color:#fff}
+
+.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.chat-msg{max-width:90%;line-height:1.55;font-size:13.5px;border-radius:12px;padding:10px 13px}
+.chat-msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.chat-msg.assistant{align-self:flex-start;background:#f4f5f7;color:var(--text);border-bottom-left-radius:4px;white-space:pre-wrap}
+.chat-msg.typing{align-self:flex-start;background:#f4f5f7;padding:13px;display:flex;gap:5px;align-items:center}
+.chat-dot{width:6px;height:6px;border-radius:50%;background:var(--muted2);animation:bounce .9s infinite}
+.chat-dot:nth-child(2){animation-delay:.15s}
+.chat-dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+.chat-input-row{
+  display:flex;gap:8px;padding:10px 12px;
+  border-top:1px solid var(--border);flex-shrink:0;background:var(--white);
+}
+.chat-input{
+  flex:1;border:1.5px solid var(--border);border-radius:8px;
+  padding:8px 11px;font-family:'Inter',sans-serif;font-size:13.5px;
+  resize:none;outline:none;line-height:1.4;max-height:100px;overflow-y:auto;
+  transition:border-color .15s;
+}
+.chat-input:focus{border-color:var(--accent)}
+.chat-send{
+  width:36px;height:36px;border-radius:8px;border:none;
+  background:var(--accent);color:#f0f040;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  flex-shrink:0;transition:opacity .15s;align-self:flex-end;
+}
+.chat-send:disabled{opacity:.4;cursor:default}
+.chat-disclaimer{font-size:11px;color:var(--muted2);text-align:center;padding:0 12px 9px;flex-shrink:0;line-height:1.4}
+.chat-chart-wrap{width:100%;height:190px;position:relative;margin-top:10px;background:#fff;border-radius:8px;padding:8px;border:1px solid var(--border)}
+
+/* markdown rendered inside chat */
+.chat-msg.rendered{white-space:normal}
+.chat-msg.rendered p{margin:0 0 8px}
+.chat-msg.rendered p:last-child{margin-bottom:0}
+.chat-msg.rendered h1,.chat-msg.rendered h2,.chat-msg.rendered h3{font-size:13.5px;font-weight:700;margin:10px 0 4px}
+.chat-msg.rendered ul,.chat-msg.rendered ol{padding-left:18px;margin:4px 0 8px}
+.chat-msg.rendered li{margin-bottom:3px}
+.chat-msg.rendered strong{font-weight:700}
+.chat-msg.rendered em{font-style:italic}
+.chat-msg.rendered hr{border:none;border-top:1px solid var(--border);margin:8px 0}
+.chat-msg.rendered table{border-collapse:collapse;width:100%;margin:8px 0;font-size:12.5px}
+.chat-msg.rendered th{background:rgba(0,0,0,.06);font-weight:700;padding:5px 8px;border:1px solid var(--border2);text-align:left}
+.chat-msg.rendered td{padding:5px 8px;border:1px solid var(--border2)}
+.chat-msg.rendered code{background:rgba(0,0,0,.07);border-radius:3px;padding:1px 5px;font-family:'DM Mono',monospace;font-size:12px}
+.btn-ai{background:rgba(240,240,64,.15);color:#f0f040;border:1px solid rgba(240,240,64,.3)}
+.btn-ai:hover{background:rgba(240,240,64,.25)}
+.btn-ai.active{background:#f0f040;color:#0f1117}
+
+/* historial panel */
+.chat-hist-panel{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background:var(--white);display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+  z-index:10;
+}
+.chat-hist-panel.open{transform:translateX(0)}
+.chat-sidebar-inner{position:relative}
+.chat-hist-header{
+  background:var(--accent);color:#fff;
+  padding:14px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.chat-hist-header h3{font-size:15px;font-weight:700;flex:1}
+.chat-hist-list{flex:1;overflow-y:auto;padding:12px}
+.chat-hist-list::-webkit-scrollbar{width:4px}
+.chat-hist-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.chat-hist-empty{color:var(--muted2);font-size:13px;text-align:center;padding:40px 20px}
+.chat-hist-item{
+  padding:12px 14px;border:1px solid var(--border);border-radius:8px;
+  margin-bottom:8px;cursor:pointer;transition:background .15s;
+}
+.chat-hist-item:hover{background:#f8f9fb}
+.chat-hist-item-title{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-hist-item-date{font-size:11.5px;color:var(--muted2)}
+.chat-hist-item-del{
+  float:right;background:none;border:none;color:var(--muted2);
+  cursor:pointer;font-size:14px;padding:0 2px;line-height:1;
+  transition:color .15s;margin-top:-2px;
+}
+.chat-hist-item-del:hover{color:var(--red)}
+.chat-hist-actions{padding:12px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:6px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .15s}
+.btn-sm-primary{background:var(--accent);color:#f0f040}
+.btn-sm-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text)}
+.btn-sm-outline:hover{background:#f4f5f7}
+.chat-saving{font-size:11px;color:var(--muted2);padding:0 14px 6px;text-align:right;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- FULLSCREEN BAR (visible solo en modo presentación) -->
+<div class="fullscreen-bar" id="fullscreenBar">
+  <div class="fullscreen-bar-logo">Texo as a Service <span>/ Salud Financiera</span></div>
+  <div class="fullscreen-bar-right">
+    <button class="btn btn-fs" onclick="exportPDF()">↓ Exportar PDF</button>
+    <button class="btn btn-fs" onclick="toggleFullscreen()">✕ Salir</button>
+  </div>
+</div>
+
+<!-- PDF OVERLAY -->
+<div class="pdf-overlay" id="pdfOverlay">
+  <div class="pdf-spinner"></div>
+  <span>Generando PDF...</span>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">Texo as a Service <span>/ Salud Financiera</span></div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-ai" id="btnChat" onclick="toggleChat()">✦ Asistente IA</button>
+    <button class="btn btn-outline" id="btnDetails" onclick="toggleDetails()">☰ Detalles</button>
+    <button class="btn btn-outline" onclick="triggerUpload()">↑ Cargar Excel</button>
+    <button class="btn btn-primary" onclick="refreshData()" id="btnRefresh">⟳ Actualizar</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileSelect(event)" style="display:none">
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <div class="main" id="main">
+    <div class="no-data" id="noData">
+      <div class="no-data-icon">📊</div>
+      <h3>Sin datos cargados</h3>
+      <p>Subí un archivo Excel para comenzar</p>
+      <button class="btn btn-primary" style="margin-top:12px;background:var(--accent);color:#fff" onclick="triggerUpload()">↑ Cargar Excel</button>
+    </div>
+    <div id="dashboard" style="display:none"></div>
+  </div>
+
+  <!-- CHAT SIDEBAR -->
+  <div class="chat-sidebar" id="chatSidebar">
+    <div class="chat-resize-handle" id="chatResizeHandle"></div>
+    <div class="chat-sidebar-inner">
+      <div class="chat-header">
+        <div class="chat-header-icon">IA</div>
+        <div class="chat-header-text">
+          <div class="chat-header-title">Asistente Financiero</div>
+          <div class="chat-header-sub">Texo as a Service · Salud Financiera</div>
+        </div>
+        <button class="chat-close" onclick="openHistorial()" style="font-size:12px;font-weight:700;letter-spacing:.05em;padding:4px 8px;border-radius:5px;background:rgba(255,255,255,.12);margin-right:4px">Historial</button>
+        <button class="chat-close" onclick="newChat()" title="Nueva conversación" style="font-size:18px;line-height:1;margin-right:2px">+</button>
+        <button class="chat-close" onclick="toggleChat()" title="Cerrar">✕</button>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-msg assistant rendered">Hola, soy tu asistente de Salud Financiera de <strong>Texo as a Service</strong>. Puedo ayudarte a interpretar los datos de rentabilidad, EBITDA, eficiencia, innovación y concentración de las agencias. ¿En qué te puedo ayudar?</div>
+      </div>
+      <div class="chat-saving" id="chatSaving"></div>
+      <div class="chat-disclaimer">Responde exclusivamente sobre Salud Financiera de Texo as a Service</div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Consultá sobre los datos financieros..." onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
+        <button class="chat-send" id="chatSend" onclick="sendChat()">➤</button>
+      </div>
+
+      <!-- PANEL HISTORIAL -->
+      <div class="chat-hist-panel" id="chatHistPanel">
+        <div class="chat-hist-header">
+          <h3>Historial de conversaciones</h3>
+          <button class="chat-close" onclick="closeHistorial()">✕</button>
+        </div>
+        <div class="chat-hist-list" id="chatHistList">
+          <div class="chat-hist-empty">Cargando...</div>
+        </div>
+        <div class="chat-hist-actions">
+          <button class="btn-sm btn-sm-outline" onclick="newChat();closeHistorial()">+ Nueva</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span>Texo as a Service — Salud Financiera</span>
+  <span><strong>Danilo Sosa</strong> | Texo Sistemas</span>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS = {BRICK:'#e85d26',NASTA:'#6c3fc5',LUPE:'#0ea5b0',OMD:'#d4900a',ROGER:'#d42b4f',ROW:'#16a34a'};
+const agColor = n => COLORS[n] || '#6b7280';
+
+const fmt = v => {
+  if(v==null) return '—';
+  const n=parseFloat(v); if(isNaN(n)) return '—';
+  if(Math.abs(n)>=1e9) return (n/1e9).toFixed(1)+'B';
+  if(Math.abs(n)>=1e6) return (n/1e6).toFixed(1)+'M';
+  if(Math.abs(n)>=1e3) return (n/1e3).toFixed(1)+'K';
+  return n.toFixed(0);
+};
+const fmtPct = v => v!=null?(parseFloat(v)*100).toFixed(1)+'%':'—';
+
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show '+type;
+  setTimeout(()=>t.className='toast',3500);
+}
+
+function triggerUpload(){ document.getElementById('fileInput').click() }
+
+async function handleFileSelect(e){
+  const file=e.target.files[0]; if(!file) return; e.target.value='';
+  const btn=document.getElementById('btnRefresh');
+  btn.innerHTML='<span class="spinner"></span> Subiendo...'; btn.disabled=true;
+  const form=new FormData(); form.append('archivo',file);
+  try {
+    const r=await fetch('/api/upload',{method:'POST',body:form});
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||'Error al subir');
+    showToast(`✓ ${data.agencias} agencias cargadas`,'success');
+    await loadUploads(); await loadDashboard(data.fileId);
+  } catch(err){ showToast('✗ '+err.message,'error'); }
+  finally{ btn.innerHTML='⟳ Actualizar'; btn.disabled=false; }
+}
+
+async function refreshData(){
+  const btn=document.getElementById('btnRefresh');
+  btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
+  await loadUploads(); await loadLatest();
+  btn.innerHTML='⟳ Actualizar'; btn.disabled=false;
+}
+
+let activeId=null;
+
+async function loadUploads(){
+  const r=await fetch('/api/uploads');
+  const uploads=await r.json();
+  return uploads;
+}
+
+async function deleteUpload(id){
+  if(!confirm('¿Eliminar este upload?')) return;
+  await fetch('/api/uploads/'+id,{method:'DELETE'});
+  if(activeId===id){ activeId=null; showNoData(); }
+  await loadUploads();
+  showToast('Upload eliminado','success');
+}
+
+async function loadLatest(){
+  try {
+    const r=await fetch('/api/latest');
+    const data=await r.json();
+    if(data.empty || data.error || !data.agencias?.length){ showNoData(); return; }
+    renderDashboard(data);
+  } catch(e){ showNoData(); }
+}
+
+async function loadDashboard(id){
+  activeId=id;
+  const r=await fetch('/api/uploads/'+id);
+  const data=await r.json();
+  renderDashboard(data);
+  await loadUploads();
+}
+
+function showNoData(){
+  document.getElementById('noData').style.display='flex';
+  document.getElementById('dashboard').style.display='none';
+}
+
+const charts={};
+function destroyCharts(){ Object.values(charts).forEach(c=>c.destroy()); Object.keys(charts).forEach(k=>delete charts[k]); }
+
+// Chart.js defaults para look limpio
+const FONT = { family: 'Inter', size: 12 };
+const TICK_COLOR = '#9ca3af';
+const GRID_COLOR = '#f0f1f3';
+
+function baseOpts(pct=false){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0f1117', titleFont:{...FONT,weight:'700'}, bodyFont:FONT, padding:10, cornerRadius:6,
+      callbacks:{ label: c => ' '+fmt(c.raw)+(pct?'%':'') }
+    }},
+    scales:{
+      x:{ grid:{color:GRID_COLOR}, border:{display:false}, ticks:{color:TICK_COLOR,font:FONT} },
+      y:{ grid:{color:GRID_COLOR}, border:{display:false}, ticks:{color:TICK_COLOR,font:FONT, callback:v=>fmt(v)+(pct?'%':'')} }
+    }
+  };
+}
+
+function renderDashboard(data){
+  window._dashData = data;
+  destroyCharts();
+  const ag=data.agencias;
+  document.getElementById('noData').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+
+  const names=ag.map(a=>a.nombre);
+  const colors=ag.map(a=>agColor(a.nombre));
+
+  const totalFact  =ag.reduce((s,a)=>s+parseFloat(a.facturacion_total||0),0);
+  const totalRev   =ag.reduce((s,a)=>s+parseFloat(a.revenue_total||0),0);
+  const totalEBITDA=ag.reduce((s,a)=>s+parseFloat(a.ebitda||0),0);
+  const totalRRHH  =ag.reduce((s,a)=>s+parseFloat(a.gastos_rrhh||0),0);
+  const totalPers  =ag.reduce((s,a)=>s+parseFloat(a.cantidad_personas||0),0);
+  const totalCC    =ag.reduce((s,a)=>s+parseFloat(a.facturacion_cc||0),0);
+  const totalDC    =ag.reduce((s,a)=>s+parseFloat(a.facturacion_dc||0),0);
+  const margen     =totalFact>0?totalEBITDA/totalFact:0;
+  const totalEgresos      =ag.reduce((s,a)=>s+parseFloat(a.total_egresos||0),0);
+  const rendInversion     =totalEgresos>0?totalEBITDA/totalEgresos:0;
+  const totalInnovacion   =ag.reduce((s,a)=>s+parseFloat(a.aporte_innovacion||0),0);
+  const totalEbitdaDC     =ag.reduce((s,a)=>s+parseFloat(a.ebitda_dc||0),0);
+  const totalEbitdaCC     =ag.reduce((s,a)=>s+parseFloat(a.ebitda_cc||0),0);
+
+  const CC_LABELS = ['Creatividad','Social Media','PR/Influencer','Activación','Otras Innov.','Asesorías','Branding','Estrategias'];
+  const CC_KEYS   = ['cc_creatividad','cc_social_media','cc_pr_influencer','cc_activacion_prod','cc_otras_innovaciones','cc_asesorias','cc_branding','cc_estrategias'];
+  const CC_COLORS = ['#e85d26','#0ea5b0','#6c3fc5','#d4900a','#16a34a','#d42b4f','#f59e0b','#64748b'];
+
+  const focoInfo = ag.map(a => {
+    let maxVal=0, maxName='—';
+    CC_KEYS.forEach((k,i)=>{ const v=parseFloat(a[k]||0); if(v>maxVal){maxVal=v;maxName=CC_LABELS[i];} });
+    const ccTot=parseFloat(a.facturacion_cc||0);
+    return { name: maxName, pct: ccTot>0?maxVal/ccTot:0 };
+  });
+
+  // ── ANÁLISIS EJECUTIVO ────────────────────────────────────────────────────
+  const agSanas       = ag.filter(a=>parseFloat(a.ebitda)>0).length;
+  const agEBITDANeg   = ag.filter(a=>parseFloat(a.ebitda)<0);
+  const agDep3709     = ag.filter(a=>parseFloat(a.ebitda_sin3709)<0 && parseFloat(a.ebitda)>=0);
+  const saludStatus   = agSanas===ag.length?'green':agSanas>=ag.length-1?'yellow':'red';
+  const saludLabel    = agSanas===ag.length?'✓ Grupo saludable':agSanas>=ag.length-1?'⚠ Mayoría sana, con alertas':'✗ Riesgo en el grupo';
+  const saludPill     = agSanas===ag.length?'pill-green':agSanas>=ag.length-1?'pill-yellow':'pill-red';
+
+  const mejorPC       = [...ag].sort((a,b)=>parseFloat(b.percapita_ebitda)-parseFloat(a.percapita_ebitda))[0];
+  const mejorInnov    = [...ag].sort((a,b)=>parseFloat(b.aporte_innovacion)-parseFloat(a.aporte_innovacion))[0];
+  const concIdx       = focoInfo.reduce((mi,fi,i)=>fi.pct>focoInfo[mi].pct?i:mi,0);
+  const agMayorConc   = ag[concIdx];
+  const concPctVal    = Math.round(focoInfo[concIdx].pct*100);
+  const pcMejor       = Math.round(parseFloat(mejorPC.percapita_ebitda)/1e3);
+  const pcPromedio    = Math.round(ag.reduce((s,a)=>s+parseFloat(a.percapita_ebitda),0)/ag.length/1e3);
+
+  // 4 preguntas CEO
+  const qSalud = agSanas===ag.length
+    ? {ans:'Sí, todas las agencias generan ganancias', sub:`Margen consolidado: ${fmtPct(margen)}`, badge:'badge-green', label:'Sanos'}
+    : {ans:`${agEBITDANeg.map(a=>a.nombre).join(' y ')} opera${agEBITDANeg.length>1?'n':''} en pérdida`, sub:`${agSanas} de ${ag.length} agencias con EBITDA positivo`, badge:'badge-red', label:'Con riesgo'};
+
+  const qRiesgo = agDep3709.length>0
+    ? {ans:`${agDep3709.map(a=>a.nombre).join(' y ')} depende${agDep3709.length>1?'n':''} del crédito 3709`, sub:'Sin ese beneficio fiscal, el resultado sería negativo', badge:'badge-yellow', label:'Dependencia fiscal'}
+    : concPctVal>=70
+    ? {ans:`${agMayorConc.nombre} concentra el ${concPctVal}% de su CC en un solo servicio`, sub:'Alta dependencia de un tipo de ingreso', badge:'badge-yellow', label:'Concentración alta'}
+    : {ans:'Sin dependencias críticas detectadas', sub:'Diversificación saludable en el grupo', badge:'badge-green', label:'Bajo riesgo'};
+
+  const qPotencial = {
+    ans:`${mejorPC.nombre} es la más productiva por persona`,
+    sub:`${pcMejor}M Gs. por empleado — ${pcMejor>pcPromedio?Math.round(pcMejor/Math.max(pcPromedio,1))+'x':'igual al'} el promedio`,
+    badge:'badge-green', label:'Mayor eficiencia'
+  };
+
+  const qIntervencion = agEBITDANeg.length>0
+    ? {ans:`${agEBITDANeg.map(a=>a.nombre).join(' y ')} necesita${agEBITDANeg.length>1?'n':''} atención urgente`, sub:'EBITDA negativo — revisar estructura de ingresos y costos', badge:'badge-red', label:'Prioridad alta'}
+    : agDep3709.length>0
+    ? {ans:`Reducir dependencia del crédito 3709 en ${agDep3709.map(a=>a.nombre).join(' y ')}`, sub:'Estrategia de diversificación de ingresos necesaria', badge:'badge-yellow', label:'Prioridad media'}
+    : {ans:'Escalar el modelo de eficiencia de '+mejorPC.nombre, sub:'Replicar su productividad en agencias con mayor dotación', badge:'badge-green', label:'Oportunidad'};
+
+  // Insights automáticos
+  const insights=[];
+  if(agEBITDANeg.length>0) insights.push({tipo:'red',tag:'Riesgo',icon:'🔴',
+    texto:`${agEBITDANeg.map(a=>a.nombre).join(' y ')} opera${agEBITDANeg.length>1?'n':''} en pérdida operativa`,
+    detalle:'EBITDA negativo — requiere revisión inmediata de ingresos y costos'});
+  if(agDep3709.length>0) insights.push({tipo:'red',tag:'Riesgo fiscal',icon:'🔴',
+    texto:`${agDep3709.map(a=>a.nombre).join(' y ')} solo es rentable gracias al crédito 3709`,
+    detalle:'Sin ese beneficio, el resultado sería negativo. Riesgo ante cambio de política fiscal'});
+  if(concPctVal>=70) insights.push({tipo:'yellow',tag:'Tensión',icon:'🟡',
+    texto:`${agMayorConc.nombre} concentra el ${concPctVal}% de su CC en ${focoInfo[concIdx].name}`,
+    detalle:'Dependencia crítica — si ese servicio cae, arrastra la mayor parte del CC'});
+  else if(concPctVal>=50) insights.push({tipo:'yellow',tag:'Atención',icon:'🟡',
+    texto:`${agMayorConc.nombre} tiene concentración moderada (${concPctVal}%) en ${focoInfo[concIdx].name}`,
+    detalle:'Monitorear diversificación para evitar dependencia de un solo tipo de ingreso'});
+  if(pcMejor>pcPromedio*1.8) insights.push({tipo:'green',tag:'Oportunidad',icon:'🟢',
+    texto:`${mejorPC.nombre} genera ${pcMejor}M Gs. por persona — ${Math.round(pcMejor/Math.max(pcPromedio,1))}x el promedio`,
+    detalle:'Su modelo de eficiencia puede replicarse en agencias con mayor dotación'});
+  insights.push({tipo:'green',tag:'Potencial',icon:'🟢',
+    texto:`${mejorInnov.nombre} lidera en servicios de innovación con ${fmt(parseFloat(mejorInnov.aporte_innovacion))} Miles de Gs.`,
+    detalle:'Social Media, PR/Influencer e Innovación — los servicios de mayor crecimiento del mercado'});
+  if(margen<0.05) insights.push({tipo:'yellow',tag:'Atención',icon:'🟡',
+    texto:`El margen consolidado del grupo es bajo: ${fmtPct(margen)}`,
+    detalle:'Se factura mucho pero queda poco — revisar eficiencia operativa y estructura de costos'});
+  if(rendInversion>0.2) insights.push({tipo:'blue',tag:'Fortaleza',icon:'⚡',
+    texto:`El grupo convierte el ${(rendInversion*100).toFixed(0)}% de sus egresos en EBITDA`,
+    detalle:`Cada 100 Gs. invertidos generan ${(rendInversion*100).toFixed(0)} Gs. de ganancia operativa`});
+
+  // Narrativas por sección
+  const rentTop=[...ag].sort((a,b)=>parseFloat(b.ebitda)-parseFloat(a.ebitda));
+  const rentNarr = agEBITDANeg.length===0
+    ? `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> y <span class="narrative-green narrative-accent">${rentTop[1].nombre}</span> son las más rentables del grupo. Todas las agencias generan ganancia operativa positiva.`
+    : `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> lidera la rentabilidad. <span class="narrative-red narrative-accent">${agEBITDANeg.map(a=>a.nombre).join(' y ')}</span> opera${agEBITDANeg.length>1?'n':''} en pérdida — requiere${agEBITDANeg.length>1?'n':''} atención.`;
+
+  const dep3709Narr = agDep3709.length===0
+    ? 'Todas las agencias mantienen rentabilidad sin depender del crédito fiscal. El resultado del grupo es estructuralmente sólido.'
+    : `<span class="narrative-red narrative-accent">${agDep3709.map(a=>a.nombre).join(' y ')}</span> solo ${agDep3709.length>1?'son':'es'} rentable${agDep3709.length>1?'s':''} gracias al crédito 3709. Sin ese beneficio, su resultado sería negativo. El grupo tiene <span class="narrative-yellow narrative-accent">dependencia fiscal que debe gestionarse</span>.`;
+
+  const eficNarr = `<span class="narrative-green narrative-accent">${mejorPC.nombre}</span> es la agencia más productiva: genera <span class="narrative-accent">${pcMejor}M Gs. por persona</span>. ${pcMejor>pcPromedio*1.5?`Esto es ${Math.round(pcMejor/Math.max(pcPromedio,1))}x el promedio del grupo (${pcPromedio}M Gs.), lo que indica un modelo de eficiencia diferencial.`:'El grupo mantiene niveles de productividad similares.'}`;
+
+  const innovNarr = `<span class="narrative-green narrative-accent">${mejorInnov.nombre}</span> lidera el aporte de innovación con ${fmt(parseFloat(mejorInnov.aporte_innovacion))} Miles de Gs. en Social Media, PR e Innovaciones. Estos servicios representan el <span class="narrative-accent">${fmtPct(totalFact>0?totalInnovacion/totalFact:0)}</span> de la facturación total — el motor de crecimiento del grupo.`;
+
+  const concNarr = concPctVal>=70
+    ? `<span class="narrative-red narrative-accent">${agMayorConc.nombre}</span> tiene dependencia crítica: el <span class="narrative-accent">${concPctVal}%</span> de su CC viene de un solo servicio (${focoInfo[concIdx].name}). Ante cualquier cambio en ese rubro, la caída sería significativa.`
+    : concPctVal>=50
+    ? `<span class="narrative-yellow narrative-accent">${agMayorConc.nombre}</span> muestra concentración moderada (${concPctVal}% en ${focoInfo[concIdx].name}). Se recomienda diversificar para reducir el riesgo de dependencia.`
+    : 'El grupo mantiene una distribución de servicios saludable. Ninguna agencia tiene dependencia crítica en un solo tipo de ingreso.';
+
+  document.getElementById('dashboard').innerHTML = `
+  <!-- HERO -->
+  <div class="hero-section">
+    <div class="hero-badge">Informe Ejecutivo · ${data.fecha_corte || 'Período actual'}</div>
+    <div class="hero-main">
+      <div class="hero-title-block">
+        <div class="hero-company">Texo as a Service</div>
+        <div class="hero-product">Salud</div>
+        <div class="hero-product-sub">Financiera</div>
+        <div class="hero-tagline">${ag.length} agencias · ${Math.round(totalPers)} personas · ${fmt(totalFact)} Miles de Gs.</div>
+      </div>
+      <div class="hero-status-block">
+        <span class="hero-pill ${saludPill}">${saludLabel}</span>
+        ${agDep3709.length>0?`<span class="hero-pill pill-yellow">⚠ ${agDep3709.length} con dependencia 3709</span>`:''}
+        ${agEBITDANeg.length>0?`<span class="hero-pill pill-red">✗ ${agEBITDANeg.length} en pérdida</span>`:''}
+      </div>
+    </div>
+    <div class="hero-agencies">${ag.map(a=>{
+      const eb=parseFloat(a.ebitda||0);
+      const isPos=eb>=0;
+      const isDep=parseFloat(a.ebitda_sin3709||0)<0&&isPos;
+      const sc=!isPos?'#f87171':isDep?'#fbbf24':'#4ade80';
+      const sl=!isPos?'pérdida':isDep?'dep. 3709':'✓ sana';
+      const bg=!isPos?'rgba(212,43,79,.18)':isDep?'rgba(212,144,10,.18)':'rgba(22,163,74,.18)';
+      return `<div class="hero-agency-chip">
+        <div class="chip-dot" style="background:${agColor(a.nombre)}"></div>
+        <span class="chip-name">${a.nombre}</span>
+        <span class="chip-ebitda" style="color:${sc}">${fmt(eb)}</span>
+        <span class="chip-status" style="background:${bg};color:${sc}">${sl}</span>
+      </div>`;
+    }).join('')}</div>
+    <div class="hero-questions-label">Cuatro preguntas que el directorio necesita responder</div>
+    <div class="hero-questions">
+      <div class="hero-q hero-q-${qSalud.badge==='badge-green'?'green':qSalud.badge==='badge-red'?'red':'yellow'}">
+        <div class="hero-q-icon">💚</div>
+        <div class="hero-q-label">¿Estamos sanos?</div>
+        <div class="hero-q-answer">${qSalud.ans}</div>
+        <div class="hero-q-sub">${qSalud.sub}</div>
+        <div class="hero-q-badge ${qSalud.badge}">${qSalud.label}</div>
+      </div>
+      <div class="hero-q hero-q-${qRiesgo.badge==='badge-green'?'green':qRiesgo.badge==='badge-red'?'red':'yellow'}">
+        <div class="hero-q-icon">⚠️</div>
+        <div class="hero-q-label">¿Dónde está el riesgo?</div>
+        <div class="hero-q-answer">${qRiesgo.ans}</div>
+        <div class="hero-q-sub">${qRiesgo.sub}</div>
+        <div class="hero-q-badge ${qRiesgo.badge}">${qRiesgo.label}</div>
+      </div>
+      <div class="hero-q hero-q-green">
+        <div class="hero-q-icon">🚀</div>
+        <div class="hero-q-label">¿Dónde está el potencial?</div>
+        <div class="hero-q-answer">${qPotencial.ans}</div>
+        <div class="hero-q-sub">${qPotencial.sub}</div>
+        <div class="hero-q-badge ${qPotencial.badge}">${qPotencial.label}</div>
+      </div>
+      <div class="hero-q hero-q-${qIntervencion.badge==='badge-green'?'green':qIntervencion.badge==='badge-red'?'red':'yellow'}">
+        <div class="hero-q-icon">🎯</div>
+        <div class="hero-q-label">¿Dónde intervenir?</div>
+        <div class="hero-q-answer">${qIntervencion.ans}</div>
+        <div class="hero-q-sub">${qIntervencion.sub}</div>
+        <div class="hero-q-badge ${qIntervencion.badge}">${qIntervencion.label}</div>
+      </div>
+    </div>
+  </div>
+  <div class="post-hero">
+
+  <!-- INSIGHTS -->
+  <div class="insights-header">Tensiones · Insights · Prioridades</div>
+  <div class="insights-grid">${insights.map(ins=>`
+    <div class="insight-card insight-${ins.tipo}">
+      <div class="insight-icon-wrap">${ins.icon}</div>
+      <div class="insight-body">
+        <div class="insight-tag insight-tag-${ins.tipo}">${ins.tag}</div>
+        <div class="insight-text">${ins.texto}</div>
+        <div class="insight-detail">${ins.detalle}</div>
+      </div>
+    </div>`).join('')}
+  </div>
+
+  <!-- BANDA CONSOLIDADO -->
+  <div class="divider-band">
+    <div>
+      <div class="divider-band-title">Resumen Consolidado</div>
+      <div class="divider-band-sub">Grupo · ${ag.length} agencias · ${data.fecha_corte || 'Período actual'}</div>
+    </div>
+    <div class="divider-band-stat">
+      <div class="divider-band-stat-val">${fmt(totalFact)}</div>
+      <div class="divider-band-stat-label">Total Facturación · Miles de Gs.</div>
+    </div>
+  </div>
+
+  <!-- CONSOLIDADO -->
+    <div class="sec-block">
+      <div class="sec-label">Datos del grupo</div>
+      <div class="sec-heading">Consolidado General</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi kpi-mint kpi-accent" style="--kpi-color:var(--accent)">
+        <div class="kpi-label">Facturación Total</div>
+        <div class="kpi-value">${fmt(totalFact)}</div>
+        <div class="kpi-sub">Miles de Gs. · todas las arenas</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:var(--accent)">
+        <div class="kpi-label">Revenue Total</div>
+        <div class="kpi-value">${fmt(totalRev)}</div>
+        <div class="kpi-sub">Miles de Gs.</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:${totalEBITDA>=0?'#16a34a':'#d42b4f'}">
+        <div class="kpi-label">EBITDA Consolidado</div>
+        <div class="kpi-value ${totalEBITDA>=0?'kpi-pos':'kpi-neg'}">${fmt(totalEBITDA)}</div>
+        <div class="kpi-sub">Margen: ${fmtPct(margen)}</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:#d4900a">
+        <div class="kpi-label">Total RRHH</div>
+        <div class="kpi-value">${fmt(totalRRHH)}</div>
+        <div class="kpi-sub">${Math.round(totalPers)} personas promedio</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:#e85d26">
+        <div class="kpi-label">Creación de Contenido</div>
+        <div class="kpi-value">${fmt(totalCC)}</div>
+        <div class="kpi-sub">${fmtPct(totalFact>0?totalCC/totalFact:0)} del total · CC</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:#6c3fc5">
+        <div class="kpi-label">Distribución de Contenido</div>
+        <div class="kpi-value">${fmt(totalDC)}</div>
+        <div class="kpi-sub">${fmtPct(totalFact>0?totalDC/totalFact:0)} del total · DC</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:${rendInversion>=0?'#16a34a':'#d42b4f'}">
+        <div class="kpi-label">Rendimiento de Inversión</div>
+        <div class="kpi-value ${rendInversion>=0?'kpi-pos':'kpi-neg'}">${(rendInversion*100).toFixed(1)}%</div>
+        <div class="kpi-sub">EBITDA / Total Egresos</div>
+      </div>
+      <div class="kpi kpi-mint kpi-accent" style="--kpi-color:var(--accent)">
+        <div class="kpi-label">Aporte de Innovación</div>
+        <div class="kpi-value">${fmt(totalInnovacion)}</div>
+        <div class="kpi-sub">${fmtPct(totalFact>0?totalInnovacion/totalFact:0)} · Innov.+PR+SM</div>
+      </div>
+    </div>
+
+  <div id="detailsPanel" style="display:none">
+    <div id="sec-1" class="sec-block">
+      <div class="sec-label">01 · Rentabilidad</div>
+      <div class="sec-heading">¿Quién gana y quién pierde?</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="section-narrative">${rentNarr}</div>
+    <div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">EBITDA DC vs CC</div><div class="chart-subtitle">Resultado operativo por arena y agencia</div><div class="chart-wrap"><canvas id="cEbitdaDCCC"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Margen EBITDA %</div><div class="chart-subtitle">EBITDA / Facturación</div><div class="chart-wrap"><canvas id="cMargen"></canvas></div></div>
+    </div>
+
+    <div id="sec-2" class="sec-block">
+      <div class="sec-label">02 · Sin 3709</div>
+      <div class="sec-heading">¿La rentabilidad es real?</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="section-narrative">${dep3709Narr}</div>
+    <div class="charts-grid">
+      <div class="chart-card wide"><div class="chart-title">EBITDA — Con vs Sin 3709</div><div class="chart-subtitle">Impacto del cliente 3709 por agencia</div><div class="chart-wrap"><canvas id="cEbitda"></canvas></div></div>
+    </div>
+
+    <div id="sec-3" class="sec-block">
+      <div class="sec-label">03 · Eficiencia</div>
+      <div class="sec-heading">¿Quién hace más con menos?</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="section-narrative">${eficNarr}</div>
+    <div class="charts-grid triple">
+      <div class="chart-card"><div class="chart-title">Rendimiento de Inversión</div><div class="chart-subtitle">EBITDA / Total Egresos</div><div class="chart-wrap"><canvas id="cRendInv"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">EBITDA Per Cápita</div><div class="chart-subtitle">Millones de Gs. por persona</div><div class="chart-wrap"><canvas id="cPC"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Dotación por Agencia</div><div class="chart-subtitle">Personas promedio</div><div class="chart-wrap"><canvas id="cPers"></canvas></div></div>
+    </div>
+
+    <div id="sec-4" class="sec-block">
+      <div class="sec-label">04 · Innovación</div>
+      <div class="sec-heading">¿Quién construye el negocio del futuro?</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="section-narrative">${innovNarr}</div>
+    <div class="charts-grid">
+      <div class="chart-card wide"><div class="chart-title">Innovación por Agencia</div><div class="chart-subtitle">Otras Innov. · PR/Influencer · Social Media</div><div class="chart-wrap"><canvas id="cInnov"></canvas></div></div>
+    </div>
+
+    <div id="sec-5" class="sec-block">
+      <div class="sec-label">05 · Expertise Foco</div>
+      <div class="sec-heading">¿En qué se especializa cada agencia?</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="section-narrative">Cada agencia tiene un área donde concentra su fortaleza comercial. Esta sección muestra esa especialización dentro de la arena CC, permitiendo identificar si hay superposición entre agencias o si cada una tiene un rol diferenciado dentro del grupo.</div>
+    <div class="charts-grid">
+      <div class="chart-card wide"><div class="chart-title">Expertise Foco por Agencia</div><div class="chart-subtitle">Distribución CC normalizada — sub-arena dominante = foco</div><div class="chart-wrap"><canvas id="cFoco"></canvas></div></div>
+    </div>
+
+    <div id="sec-6" class="sec-block">
+      <div class="sec-label">06 · Concentración de Fee</div>
+      <div class="sec-heading">¿Cuán vulnerables somos?</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="section-narrative">${concNarr}</div>
+    <div class="charts-grid">
+      <div class="chart-card wide"><div class="chart-title">Concentración de Fee por Agencia</div><div class="chart-subtitle">% sub-arena CC dominante sobre total CC — verde &lt;50% · amarillo 50–70% · rojo ≥70%</div><div class="chart-wrap"><canvas id="cConc"></canvas></div></div>
+    </div>
+
+    <div id="sec-comp" class="sec-block">
+      <div class="sec-label">Análisis complementario</div>
+      <div class="sec-heading">Datos de soporte</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card"><div class="chart-title">Facturación por Agencia</div><div class="chart-subtitle">Con 3709 incluido · Miles de Gs.</div><div class="chart-wrap"><canvas id="cFact"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Revenue por Agencia</div><div class="chart-subtitle">Miles de Gs.</div><div class="chart-wrap"><canvas id="cRev"></canvas></div></div>
+    </div>
+    <div class="charts-grid triple" style="margin-top:0">
+      <div class="chart-card"><div class="chart-title">Mix CC / DC</div><div class="chart-subtitle">Distribución consolidada</div><div class="chart-wrap"><canvas id="cCCDC"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Sub-Arenas CC</div><div class="chart-subtitle">Por agencia · apilado</div><div class="chart-wrap"><canvas id="cCC"></canvas></div></div>
+      <div class="chart-card"><div class="chart-title">Sub-Arenas DC</div><div class="chart-subtitle">OFF · ON · Performance</div><div class="chart-wrap"><canvas id="cDC"></canvas></div></div>
+    </div>
+    <div class="charts-grid" style="margin-top:0">
+      <div class="chart-card wide"><div class="chart-title">Egresos por Agencia</div><div class="chart-subtitle">RRHH · Comerciales · Administrativos · Miles de Gs.</div><div class="chart-wrap"><canvas id="cEgr"></canvas></div></div>
+    </div>
+
+    <div class="sec-block" style="margin-top:8px">
+      <div class="sec-label">Tabla detallada</div>
+      <div class="sec-heading">Detalle por Agencia</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Agencia</th><th>Facturación</th><th>Revenue</th>
+        <th>EBITDA c/3709</th><th>EBITDA s/3709</th><th>EBITDA DC</th><th>EBITDA CC</th>
+        <th>Rend. Inv.</th><th>Innovación</th><th>% CC</th><th>% DC</th>
+        <th>Personas</th><th>Per Cápita</th>
+      </tr></thead>
+      <tbody>${ag.map(a=>{
+        const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);
+        const m=f>0?e/f:0;
+        const eg=parseFloat(a.total_egresos||0);
+        const ri=eg>0?e/eg:0;
+        const edc=parseFloat(a.ebitda_dc||0), ecc=parseFloat(a.ebitda_cc||0);
+        return `<tr>
+          <td><span class="ag-dot" style="background:${agColor(a.nombre)}"></span>${a.nombre}</td>
+          <td>${fmt(a.facturacion_total)}</td><td>${fmt(a.revenue_total)}</td>
+          <td class="${e>=0?'val-pos':'val-neg'}">${fmt(a.ebitda)}</td>
+          <td class="${parseFloat(a.ebitda_sin3709||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_sin3709)}</td>
+          <td class="${edc>=0?'val-pos':'val-neg'}">${fmt(edc)}</td>
+          <td class="${ecc>=0?'val-pos':'val-neg'}">${fmt(ecc)}</td>
+          <td class="${ri>=0?'val-pos':'val-neg'}">${(ri*100).toFixed(1)}%</td>
+          <td>${fmt(a.aporte_innovacion)}</td>
+          <td>${fmtPct(a.facturacion_pct_cc)}</td><td>${fmtPct(a.facturacion_pct_dc)}</td>
+          <td>${parseFloat(a.cantidad_personas||0).toFixed(1)}</td>
+          <td class="${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${Math.round(parseFloat(a.percapita_ebitda||0)/1e3)}M</td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table></div>
+
+    <div class="sec-block" style="margin-top:32px">
+      <div class="sec-label">Vista individual</div>
+      <div class="sec-heading">Por Agencia</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="agencia-cards">
+      ${ag.map((a,idx)=>{
+        const e=parseFloat(a.ebitda||0),f=parseFloat(a.facturacion_total||0);
+        const m=f>0?e/f:0,pcc=parseFloat(a.facturacion_pct_cc||0);
+        const col=agColor(a.nombre);
+        const fi=focoInfo[idx];
+        const concColor=fi.pct>=0.7?'#d42b4f':fi.pct>=0.5?'#d4900a':'#16a34a';
+        return `<div class="agencia-card" style="border-top:3px solid ${col}">
+          <div class="agencia-card-head">
+            <div class="dot" style="background:${col}"></div>
+            <h4>${a.nombre}</h4>
+            <span class="ebitda-badge" style="background:${e>=0?'#dcfce7':'#fee2e2'};color:${e>=0?'#15803d':'#b91c1c'}">${fmt(a.ebitda)}</span>
+          </div>
+          <div class="agencia-card-body">
+            <div class="agencia-row"><span class="agencia-row-label">Facturación</span><span class="agencia-row-val">${fmt(a.facturacion_total)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Revenue</span><span class="agencia-row-val">${fmt(a.revenue_total)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">EBITDA sin 3709</span><span class="agencia-row-val ${parseFloat(a.ebitda_sin3709||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_sin3709)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">EBITDA DC</span><span class="agencia-row-val ${parseFloat(a.ebitda_dc||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_dc)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">EBITDA CC</span><span class="agencia-row-val ${parseFloat(a.ebitda_cc||0)>=0?'val-pos':'val-neg'}">${fmt(a.ebitda_cc)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Rend. Inversión</span><span class="agencia-row-val ${(parseFloat(a.total_egresos||0)>0?parseFloat(a.ebitda||0)/parseFloat(a.total_egresos||0):0)>=0?'val-pos':'val-neg'}">${parseFloat(a.total_egresos||0)>0?((parseFloat(a.ebitda||0)/parseFloat(a.total_egresos||0))*100).toFixed(1)+'%':'—'}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Aporte Innovación</span><span class="agencia-row-val">${fmt(a.aporte_innovacion)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Expertise Foco</span><span class="agencia-row-val" style="color:${col}">${fi.name}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Concentración Fee</span><span class="agencia-row-val" style="color:${concColor}">${(fi.pct*100).toFixed(1)}%</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Margen</span><span class="agencia-row-val ${m>=0?'val-pos':'val-neg'}">${fmtPct(m)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">RRHH</span><span class="agencia-row-val">${fmt(a.gastos_rrhh)}</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Per Cápita</span><span class="agencia-row-val ${parseFloat(a.percapita_ebitda||0)>=0?'val-pos':'val-neg'}">${Math.round(parseFloat(a.percapita_ebitda||0)/1e3)}M</span></div>
+            <div class="agencia-row"><span class="agencia-row-label">Personas</span><span class="agencia-row-val">${parseFloat(a.cantidad_personas||0).toFixed(1)}</span></div>
+            <div class="agencia-row" style="display:block">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                <span class="agencia-row-label">CC ${fmtPct(pcc)}</span>
+                <span class="agencia-row-label">DC ${fmtPct(parseFloat(a.facturacion_pct_dc||0))}</span>
+              </div>
+              <div class="bar-mini">
+                <div class="bar-mini-fill" style="width:${(pcc*100).toFixed(1)}%;background:${col}"></div>
+              </div>
+            </div>
+          </div>
+        </div>`;}).join('')}
+    </div>
+    <div style="height:32px"></div>
+  </div>
+  </div>
+  `;
+
+  // ── CHARTS ──
+  const o = baseOpts();
+
+  charts.fact = new Chart(document.getElementById('cFact'),{type:'bar',
+    data:{labels:names,datasets:[{data:ag.map(a=>parseFloat(a.facturacion_total||0)),
+      backgroundColor:colors, borderRadius:5, borderSkipped:false}]},
+    options:{...o}
+  });
+
+  charts.rev = new Chart(document.getElementById('cRev'),{type:'bar',
+    data:{labels:names,datasets:[{data:ag.map(a=>parseFloat(a.revenue_total||0)),
+      backgroundColor:colors, borderRadius:5, borderSkipped:false}]},
+    options:{...o}
+  });
+
+  charts.ebitda = new Chart(document.getElementById('cEbitda'),{type:'bar',
+    data:{labels:names,datasets:[
+      {label:'Con 3709',data:ag.map(a=>parseFloat(a.ebitda||0)),backgroundColor:'#1a1a2e',borderRadius:4},
+      {label:'Sin 3709',data:ag.map(a=>parseFloat(a.ebitda_sin3709||0)),backgroundColor:'#6c3fc5',borderRadius:4}
+    ]},
+    options:{...o,plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:16,boxWidth:12,boxHeight:12}},
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+  });
+
+  const margenes=ag.map(a=>{const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);return f>0?e/f*100:0;});
+  charts.margen = new Chart(document.getElementById('cMargen'),{type:'bar',
+    data:{labels:names,datasets:[{data:margenes,
+      backgroundColor:margenes.map(m=>m>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...baseOpts(true),plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}}}
+  });
+
+  const totalCC2=ag.reduce((s,a)=>s+parseFloat(a.facturacion_cc||0),0);
+  const totalDC2=ag.reduce((s,a)=>s+parseFloat(a.facturacion_dc||0),0);
+  charts.ccdc = new Chart(document.getElementById('cCCDC'),{type:'doughnut',
+    data:{labels:['Creación de Contenido','Distribución de Contenido'],
+      datasets:[{data:[totalCC2,totalDC2],backgroundColor:['#e85d26','#6c3fc5'],borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{display:true,position:'bottom',labels:{color:'#6b7280',font:FONT,padding:14,boxWidth:12}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.label+': '+fmt(c.raw)}}}}
+  });
+
+  charts.cc = new Chart(document.getElementById('cCC'),{type:'bar',
+    data:{labels:names,datasets:[
+      {label:'Creatividad',data:ag.map(a=>parseFloat(a.cc_creatividad||0)),backgroundColor:'#e85d26',borderRadius:3},
+      {label:'Social Media',data:ag.map(a=>parseFloat(a.cc_social_media||0)),backgroundColor:'#0ea5b0',borderRadius:3},
+      {label:'PR/Influencer',data:ag.map(a=>parseFloat(a.cc_pr_influencer||0)),backgroundColor:'#6c3fc5',borderRadius:3},
+      {label:'Activación',data:ag.map(a=>parseFloat(a.cc_activacion_prod||0)),backgroundColor:'#d4900a',borderRadius:3},
+      {label:'Otras Innov.',data:ag.map(a=>parseFloat(a.cc_otras_innovaciones||0)),backgroundColor:'#16a34a',borderRadius:3},
+    ]},
+    options:{...o,scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+      y:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+  });
+
+  charts.dc = new Chart(document.getElementById('cDC'),{type:'bar',
+    data:{labels:names,datasets:[
+      {label:'OFF',data:ag.map(a=>parseFloat(a.dc_off||0)),backgroundColor:'#d4900a',borderRadius:3},
+      {label:'ON',data:ag.map(a=>parseFloat(a.dc_on||0)),backgroundColor:'#0ea5b0',borderRadius:3},
+      {label:'Performance',data:ag.map(a=>parseFloat(a.dc_performance||0)),backgroundColor:'#16a34a',borderRadius:3},
+    ]},
+    options:{...o,scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+      y:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+  });
+
+  charts.egr = new Chart(document.getElementById('cEgr'),{type:'bar',
+    data:{labels:names,datasets:[
+      {label:'RRHH',data:ag.map(a=>parseFloat(a.gastos_rrhh||0)),backgroundColor:'#1a1a2e',borderRadius:3},
+      {label:'Comerciales',data:ag.map(a=>parseFloat(a.gastos_comerciales||0)),backgroundColor:'#6c3fc5',borderRadius:3},
+      {label:'Administrativos',data:ag.map(a=>parseFloat(a.gastos_admin||0)),backgroundColor:'#d4900a',borderRadius:3},
+    ]},
+    options:{...o,indexAxis:'y',
+      scales:{
+        x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}},
+        y:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:TICK_COLOR,font:{...FONT,weight:'600'}}}
+      },
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:14,boxWidth:12,boxHeight:12}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+  });
+
+  const pcVals=ag.map(a=>parseFloat(a.percapita_ebitda||0)/1e3);
+  charts.pc = new Chart(document.getElementById('cPC'),{type:'bar',
+    data:{labels:names,datasets:[{data:pcVals,
+      backgroundColor:pcVals.map(v=>v>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...o, scales:{...o.scales, y:{...o.scales.y, ticks:{...o.scales.y.ticks, callback:v=>Math.round(v)+'M'}}},
+      plugins:{...o.plugins, tooltip:{...o.plugins.tooltip, callbacks:{label:c=>Math.round(c.raw)+'M Miles de Gs.'}}}}
+  });
+
+  charts.pers = new Chart(document.getElementById('cPers'),{type:'bar',
+    data:{labels:names,datasets:[{data:ag.map(a=>parseFloat(a.cantidad_personas||0)),
+      backgroundColor:colors,borderRadius:5,borderSkipped:false}]},
+    options:{...o,plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+' personas'}}}}
+  });
+
+  charts.foco = new Chart(document.getElementById('cFoco'),{type:'bar',
+    data:{labels:names,datasets:CC_KEYS.map((k,i)=>({
+      label:CC_LABELS[i],
+      data:ag.map(a=>{ const cc=parseFloat(a.facturacion_cc||0); return cc>0?parseFloat(a[k]||0)/cc*100:0; }),
+      backgroundColor:CC_COLORS[i], borderRadius:3,
+    }))},
+    options:{...baseOpts(true),scales:{
+      x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+      y:{stacked:true,max:100,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>v+'%'}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(1)+'%'}}}}
+  });
+
+  const concVals = focoInfo.map(f=>f.pct*100);
+  charts.conc = new Chart(document.getElementById('cConc'),{type:'bar',
+    data:{labels:names,datasets:[{
+      data:concVals,
+      backgroundColor:concVals.map(v=>v>=70?'#d42b4f':v>=50?'#d4900a':'#16a34a'),
+      borderRadius:5,borderSkipped:false
+    }]},
+    options:{...baseOpts(true),
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:(c,i)=>focoInfo[c.dataIndex].name+': '+c.raw.toFixed(1)+'%'}}},
+      scales:{
+        x:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+        y:{max:100,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>v+'%'}}
+      }
+    }
+  });
+
+  charts.ebitdaDCCC = new Chart(document.getElementById('cEbitdaDCCC'),{type:'bar',
+    data:{labels:names,datasets:[
+      {label:'EBITDA DC',data:ag.map(a=>parseFloat(a.ebitda_dc||0)),backgroundColor:'#6c3fc5',borderRadius:4},
+      {label:'EBITDA CC',data:ag.map(a=>parseFloat(a.ebitda_cc||0)),backgroundColor:'#e85d26',borderRadius:4},
+    ]},
+    options:{...o,plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:16,boxWidth:12,boxHeight:12}},
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+  });
+
+  const rendVals=ag.map(a=>{const e=parseFloat(a.ebitda||0),eg=parseFloat(a.total_egresos||0);return eg>0?e/eg*100:0;});
+  charts.rendInv = new Chart(document.getElementById('cRendInv'),{type:'bar',
+    data:{labels:names,datasets:[{data:rendVals,
+      backgroundColor:rendVals.map(v=>v>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...baseOpts(true),plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}}}
+  });
+
+  charts.innov = new Chart(document.getElementById('cInnov'),{type:'bar',
+    data:{labels:names,datasets:[
+      {label:'Otras Innov.',data:ag.map(a=>parseFloat(a.cc_otras_innovaciones||0)),backgroundColor:'#16a34a',borderRadius:3},
+      {label:'PR/Influencer',data:ag.map(a=>parseFloat(a.cc_pr_influencer||0)),backgroundColor:'#6c3fc5',borderRadius:3},
+      {label:'Social Media',data:ag.map(a=>parseFloat(a.cc_social_media||0)),backgroundColor:'#0ea5b0',borderRadius:3},
+    ]},
+    options:{...o,scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+      y:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+  });
+}
+
+window.addEventListener('DOMContentLoaded',async()=>{ await loadUploads(); await loadLatest(); });
+
+// ── DETALLES ────────────────────────────────────────────────────────────────
+let detailsOpen = false;
+function toggleDetails() {
+  detailsOpen = !detailsOpen;
+  const panel = document.getElementById('detailsPanel');
+  const btn   = document.getElementById('btnDetails');
+  if (!panel) return;
+  panel.style.display = detailsOpen ? 'block' : 'none';
+  btn.classList.toggle('active', detailsOpen);
+  btn.textContent = detailsOpen ? '✕ Cerrar detalles' : '☰ Detalles';
+  if (detailsOpen) {
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    setTimeout(() => { Object.values(charts).forEach(c => { try { c.resize(); } catch(e){} }); }, 100);
+  }
+}
+
+// ── FULLSCREEN ──────────────────────────────────────────────────────────────
+function toggleFullscreen() {
+  document.body.classList.toggle('fullscreen');
+  const isFs = document.body.classList.contains('fullscreen');
+  if (isFs) {
+    document.documentElement.requestFullscreen?.().catch(()=>{});
+  } else {
+    document.exitFullscreen?.().catch(()=>{});
+  }
+  // Redimensionar charts tras el cambio de layout
+  setTimeout(() => { Object.values(charts).forEach(c => c.resize()); }, 150);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (document.body.classList.contains('fullscreen')) toggleFullscreen(); } });
+
+// ── EXPORTAR PDF ─────────────────────────────────────────────────────────────
+async function exportPDF() {
+  const dashboard = document.getElementById('dashboard');
+  if (!dashboard || dashboard.style.display === 'none') {
+    showToast('No hay datos para exportar', 'error'); return;
+  }
+  const overlay = document.getElementById('pdfOverlay');
+  overlay.classList.add('show');
+  try {
+    const main = document.getElementById('main');
+    const sidebar = document.getElementById('chatSidebar');
+
+    // Ocultar sidebar
+    const prevW = sidebar.style.width;
+    sidebar.style.width = '0';
+
+    // Expandir #main para capturar todo el contenido (no solo lo visible)
+    const prevOverflow = main.style.overflow;
+    const prevHeight = main.style.height;
+    const prevMaxHeight = main.style.maxHeight;
+    main.style.overflow = 'visible';
+    main.style.height = main.scrollHeight + 'px';
+    main.style.maxHeight = 'none';
+
+    await new Promise(r => setTimeout(r, 200));
+
+    const canvas = await html2canvas(main, {
+      scale: 1.5,
+      useCORS: true,
+      backgroundColor: '#f4f5f7',
+      logging: false,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: 1280,
+      width: main.scrollWidth,
+      height: main.scrollHeight,
+    });
+
+    // Restaurar estilos
+    main.style.overflow = prevOverflow;
+    main.style.height = prevHeight;
+    main.style.maxHeight = prevMaxHeight;
+    sidebar.style.width = prevW;
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+    let posY = 0;
+    let remaining = imgH;
+    let first = true;
+    while (remaining > 0) {
+      if (!first) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, -posY, imgW, imgH);
+      posY += pageH;
+      remaining -= pageH;
+      first = false;
+    }
+
+    const fecha = new Date().toISOString().slice(0, 10);
+    pdf.save(`Salud-Financiera-${fecha}.pdf`);
+    showToast('PDF exportado correctamente', 'success');
+  } catch(e) {
+    showToast('Error al generar PDF', 'error');
+    console.error(e);
+  } finally {
+    overlay.classList.remove('show');
+  }
+}
+</script>
+
+<script>
+let chatHistory = [];
+let chatOpen = false;
+const CHAT_MIN = 360;
+const CHAT_MAX = 900;
+let chatWidth = parseInt(localStorage.getItem('chatWidth') || '520');
+
+let _sessionRestored = false;
+function toggleChat() {
+  chatOpen = !chatOpen;
+  const sidebar = document.getElementById('chatSidebar');
+  sidebar.classList.toggle('open', chatOpen);
+  if (chatOpen) {
+    sidebar.style.width = chatWidth + 'px';
+    if (!_sessionRestored) {
+      _sessionRestored = true;
+      setTimeout(() => restoreChatSession(), 350);
+    }
+  } else {
+    sidebar.style.width = '0';
+  }
+  document.getElementById('btnChat').classList.toggle('active', chatOpen);
+  if (chatOpen) setTimeout(() => document.getElementById('chatInput').focus(), 300);
+}
+
+try {
+  const handle = document.getElementById('chatResizeHandle');
+  const sidebar = document.getElementById('chatSidebar');
+  let startX, startW;
+  handle.addEventListener('mousedown', e => {
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    sidebar.classList.add('resizing');
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    function onMove(e) {
+      const delta = startX - e.clientX;
+      const w = Math.min(CHAT_MAX, Math.max(CHAT_MIN, startW + delta));
+      sidebar.style.width = w + 'px';
+      chatWidth = w;
+    }
+    function onUp() {
+      sidebar.classList.remove('resizing');
+      handle.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      localStorage.setItem('chatWidth', chatWidth);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+} catch(e) { console.warn('initResize:', e); }
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+const AGENCY_COLORS = ['#e85d26','#6c3fc5','#0ea5b0','#d4900a','#d42b4f'];
+const AGENCY_NAMES  = ['BRICK','NASTA','LUPE','OMD','ROGER'];
+const CHAT_GRID = 'rgba(0,0,0,.06)';
+const CHAT_TICK = {color:'#6b7280',font:{size:11,family:'Inter'}};
+const CHAT_BASE_OPTS = {responsive:true,maintainAspectRatio:false,animation:{duration:400},
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117'}},
+  scales:{x:{grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK},
+          y:{grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK}}};
+const LEG = {display:true,position:'top',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}};
+
+function agHighlight(ag, agency) {
+  return ag.map(a => agency && a.nombre.toUpperCase()!==agency.toUpperCase() ? 'rgba(0,0,0,.1)' : AGENCY_COLORS[AGENCY_NAMES.indexOf(a.nombre)] || '#6b7280');
+}
+
+const CHAT_CHARTS = {
+  ebitda: (ag, agency) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.ebitda/1e6),
+      backgroundColor:agency ? agHighlight(ag,agency) : ag.map(a=>a.ebitda>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  margen: (ag, agency) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{
+      data:ag.map(a=>a.revenue_total>0?a.ebitda/a.revenue_total*100:0),
+      backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}}),
+
+  sin3709: (ag, agency) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[
+      {label:'Con 3709',data:ag.map(a=>a.ebitda/1e6),backgroundColor:agency?agHighlight(ag,agency):'#16a34a',borderRadius:4},
+      {label:'Sin 3709',data:ag.map(a=>a.ebitda_sin3709/1e6),backgroundColor:agency?agHighlight(ag,agency).map(c=>c==='rgba(0,0,0,.1)'?c:'#d4900a'):'#d4900a',borderRadius:4}]},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  rendimiento: (ag, agency) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{
+      data:ag.map(a=>a.total_egresos>0?a.ebitda/a.total_egresos*100:0),
+      backgroundColor:agency?agHighlight(ag,agency):ag.map(a=>a.total_egresos>0&&a.ebitda>=0?'#16a34a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}}),
+
+  percapita: (ag, agency) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.percapita_ebitda/1e3),
+      backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>Math.round(c.raw)+'M Miles de Gs.'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  concentracion: (ag) => {
+    const CC_KEYS=['cc_creatividad','cc_social_media','cc_pr_influencer','cc_activacion_prod','cc_otras_innovaciones','cc_asesorias','cc_branding','cc_estrategias'];
+    const vals=ag.map(a=>{let mx=0;CC_KEYS.forEach(k=>{const v=parseFloat(a[k]||0);if(v>mx)mx=v;});return a.facturacion_cc>0?mx/a.facturacion_cc*100:0;});
+    return {type:'bar',data:{labels:ag.map(a=>a.nombre),datasets:[{data:vals,
+        backgroundColor:vals.map(v=>v>=70?'#d42b4f':v>=50?'#d4900a':'#16a34a'),borderRadius:5,borderSkipped:false}]},
+      options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(1)+'%'}}},
+        scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,max:100,ticks:{...CHAT_TICK,callback:v=>v+'%'}}}}};},
+
+  innovacion: (ag, agency) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[
+      {label:'Otras Innov.',data:ag.map(a=>a.cc_otras_innovaciones/1e6),backgroundColor:'#16a34a',borderRadius:3},
+      {label:'PR/Influencer',data:ag.map(a=>a.cc_pr_influencer/1e6),backgroundColor:'#6c3fc5',borderRadius:3},
+      {label:'Social Media',data:ag.map(a=>a.cc_social_media/1e6),backgroundColor:'#0ea5b0',borderRadius:3}]},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+      scales:{x:{stacked:true,grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK},
+              y:{stacked:true,grid:{color:CHAT_GRID},border:{display:false},ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  facturacion: (ag, agency) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.facturacion_total/1e6),
+      backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  // ── Gráficos por agencia específica ──────────────────────────────────────
+  cc_breakdown: (ag, agency) => {
+    const a = agency ? ag.find(x=>x.nombre.toUpperCase()===agency.toUpperCase()) : ag[0];
+    if (!a) return null;
+    const CC_LABELS=['Creatividad','Social Media','PR/Influencer','Activación','Otras Innov.','Asesorías','Branding','Estrategias'];
+    const CC_KEYS=['cc_creatividad','cc_social_media','cc_pr_influencer','cc_activacion_prod','cc_otras_innovaciones','cc_asesorias','cc_branding','cc_estrategias'];
+    const CC_COLORS=['#e85d26','#0ea5b0','#6c3fc5','#d4900a','#16a34a','#d42b4f','#1a1a2e','#9ca3af'];
+    const vals=CC_KEYS.map(k=>parseFloat(a[k]||0)/1e6);
+    return {type:'doughnut',data:{labels:CC_LABELS,datasets:[{data:vals,backgroundColor:CC_COLORS,borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+        plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10,padding:6}},
+          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(2)}M (${a.facturacion_cc>0?(c.raw*1e6/a.facturacion_cc*100).toFixed(1):'0'}%)`}}}}};},
+
+  egresos: (ag, agency) => {
+    const a = agency ? ag.find(x=>x.nombre.toUpperCase()===agency.toUpperCase()) : ag[0];
+    if (!a) return null;
+    return {type:'doughnut',
+      data:{labels:['RRHH','Comerciales','Administrativos'],
+        datasets:[{data:[a.gastos_rrhh/1e6,a.gastos_comerciales/1e6,a.gastos_admin/1e6],
+          backgroundColor:['#e85d26','#6c3fc5','#0ea5b0'],borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+        plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
+          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(2)}M Gs.`}}}}};},
+
+  dc_breakdown: (ag, agency) => {
+    const a = agency ? ag.find(x=>x.nombre.toUpperCase()===agency.toUpperCase()) : ag[0];
+    if (!a) return null;
+    return {type:'doughnut',
+      data:{labels:['OFF','ON','Performance'],
+        datasets:[{data:[a.dc_off/1e6,a.dc_on/1e6,a.dc_performance/1e6],
+          backgroundColor:['#6c3fc5','#0ea5b0','#d4900a'],borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+        plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
+          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(2)}M Gs.`}}}}};},
+
+  revenue_ebitda: (ag) => ({type:'bar',
+    data:{labels:ag.map(a=>a.nombre),datasets:[
+      {label:'Revenue',data:ag.map(a=>a.revenue_total/1e6),backgroundColor:'#1a1a2e',borderRadius:4},
+      {label:'EBITDA',data:ag.map(a=>a.ebitda/1e6),backgroundColor:'#16a34a',borderRadius:4}]},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+};
+
+let chatChartCount = 0;
+function renderChatChart(container, keyFull) {
+  const [key, agency] = keyFull.split(':');
+  const data = window._dashData;
+  if (!data?.agencias?.length || !CHAT_CHARTS[key]) return;
+  const cfg = CHAT_CHARTS[key](data.agencias, agency);
+  if (!cfg) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-chart-wrap';
+  const canvas = document.createElement('canvas');
+  canvas.id = 'chatChart_' + (chatChartCount++);
+  wrap.appendChild(canvas);
+  container.appendChild(wrap);
+  requestAnimationFrame(() => new Chart(canvas, cfg));
+}
+
+function scrollToChart(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const main = document.getElementById('main');
+  const target = el.closest?.('.chart-card') || el;
+  const offset = target.getBoundingClientRect().top + main.scrollTop - main.getBoundingClientRect().top - 24;
+  main.scrollTo({ top: offset, behavior: 'smooth' });
+  target.classList.remove('chart-highlight');
+  void target.offsetWidth;
+  target.classList.add('chart-highlight');
+  setTimeout(() => target.classList.remove('chart-highlight'), 7000);
+}
+
+function appendMsg(role, text) {
+  const wrap = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  if (role === 'assistant') {
+    const scrollMatch = text.match(/\[\[SCROLL:([^\]]+)\]\]/);
+    const chartMatch = text.match(/\[\[CHART:([^\]]+)\]\]/);
+    const clean = text.replace(/\[\[SCROLL:[^\]]+\]\]/g, '').replace(/\[\[CHART:[^\]]+\]\]/g, '').trim();
+    div.className = 'chat-msg assistant rendered';
+    div.innerHTML = marked.parse(clean);
+    if (chartMatch) renderChatChart(div, chartMatch[1]);
+    if (scrollMatch) setTimeout(() => scrollToChart(scrollMatch[1]), 400);
+  } else {
+    div.className = 'chat-msg ' + role;
+    div.textContent = text;
+  }
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  const wrap = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg typing';
+  div.id = 'chatTyping';
+  div.innerHTML = '<div class="chat-dot"></div><div class="chat-dot"></div><div class="chat-dot"></div>';
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('chatTyping');
+  if (el) el.remove();
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('chatSend').disabled = true;
+
+  appendMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+  showTyping();
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatHistory, data: window._dashData || {} })
+    });
+    const json = await resp.json();
+    removeTyping();
+    if (json.reply) {
+      chatHistory.push({ role: 'assistant', content: json.reply });
+      appendMsg('assistant', json.reply);
+      saveChatSession();
+    } else {
+      appendMsg('assistant', 'Error: ' + (json.error || 'Respuesta inválida'));
+    }
+  } catch (err) {
+    removeTyping();
+    appendMsg('assistant', 'Error de conexión. Intenta nuevamente.');
+  }
+
+  document.getElementById('chatSend').disabled = false;
+  document.getElementById('chatInput').focus();
+}
+
+function saveChatSession() {
+  try { localStorage.setItem('chatSession', JSON.stringify(chatHistory)); } catch(e) {}
+}
+
+function restoreChatSession() {
+  try {
+    const saved = localStorage.getItem('chatSession');
+    if (!saved) return;
+    const history = JSON.parse(saved);
+    if (!history?.length) return;
+    chatHistory = history;
+    const wrap = document.getElementById('chatMessages');
+    wrap.innerHTML = '';
+    chatHistory.forEach(m => appendMsg(m.role, m.content));
+    document.getElementById('chatSaving').textContent = '✓ Sesión restaurada';
+    setTimeout(() => { document.getElementById('chatSaving').textContent = ''; }, 2500);
+  } catch(e) {}
+}
+
+// ── HISTORIAL ──────────────────────────────────────────────────────────────────
+function newChat() {
+  chatHistory = [];
+  try { localStorage.removeItem('chatSession'); } catch(e) {}
+  const wrap = document.getElementById('chatMessages');
+  wrap.innerHTML = '<div class="chat-msg assistant rendered">Hola, soy tu asistente de Salud Financiera de <strong>Texo as a Service</strong>. Puedo ayudarte a interpretar los datos de rentabilidad, EBITDA, eficiencia, innovación y concentración de las agencias. ¿En qué te puedo ayudar?</div>';
+  document.getElementById('chatSaving').textContent = '';
+  document.getElementById('chatInput').focus();
+}
+
+async function openHistorial() {
+  document.getElementById('chatHistPanel').classList.add('open');
+  await loadHistorial();
+}
+
+function closeHistorial() {
+  document.getElementById('chatHistPanel').classList.remove('open');
+}
+
+async function loadHistorial() {
+  const list = document.getElementById('chatHistList');
+  list.innerHTML = '<div class="chat-hist-empty">Cargando...</div>';
+  try {
+    const resp = await fetch('/api/chat/history');
+    const items = await resp.json();
+    if (!items.length) {
+      list.innerHTML = '<div class="chat-hist-empty">No hay conversaciones guardadas</div>';
+      return;
+    }
+    const details = await Promise.all(items.map(item =>
+      fetch(`/api/chat/history/${item.id}`).then(r => r.json()).catch(() => ({ title: '—', messages: [] }))
+    ));
+    list.innerHTML = '';
+    items.forEach((item, i) => {
+      const title = details[i].title || '—';
+      const div = document.createElement('div');
+      div.className = 'chat-hist-item';
+      div.innerHTML = `
+        <button class="chat-hist-item-del" onclick="deleteHistItem(event,'${item.id}')">✕</button>
+        <div class="chat-hist-item-title">${title}</div>`;
+      div.addEventListener('click', () => loadHistItem(item.id));
+      list.appendChild(div);
+    });
+  } catch(e) {
+    list.innerHTML = '<div class="chat-hist-empty">Error al cargar el historial</div>';
+  }
+}
+
+async function loadHistItem(id) {
+  try {
+    const resp = await fetch(`/api/chat/history/${id}`);
+    const data = await resp.json();
+    chatHistory = data.messages || [];
+    const wrap = document.getElementById('chatMessages');
+    wrap.innerHTML = '';
+    chatHistory.forEach(m => {
+      const div = document.createElement('div');
+      if (m.role === 'assistant') {
+        div.className = 'chat-msg assistant rendered';
+        div.innerHTML = marked.parse(m.content);
+      } else {
+        div.className = 'chat-msg user';
+        div.textContent = m.content;
+      }
+      wrap.appendChild(div);
+    });
+    wrap.scrollTop = wrap.scrollHeight;
+    document.getElementById('chatSaving').textContent = '✓ Conversación cargada';
+    setTimeout(() => { document.getElementById('chatSaving').textContent = ''; }, 2000);
+    closeHistorial();
+  } catch(e) {
+    alert('Error al cargar la conversación');
+  }
+}
+
+async function deleteHistItem(e, id) {
+  e.stopPropagation();
+  if (!confirm('¿Eliminar esta conversación?')) return;
+  await fetch(`/api/chat/history/${id}`, { method: 'DELETE' });
+  await loadHistorial();
+}
+
+async function saveCurrentChat() {
+  if (chatHistory.length < 2) {
+    alert('No hay suficiente contenido para guardar.');
+    return;
+  }
+  const saving = document.getElementById('chatSaving');
+  saving.textContent = 'Guardando...';
+  const firstMsg = chatHistory.find(m => m.role === 'user')?.content || 'Conversación';
+  const title = firstMsg.length > 60 ? firstMsg.substring(0, 60) + '...' : firstMsg;
+  try {
+    await fetch('/api/chat/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatHistory, title })
+    });
+    saving.textContent = '✓ Guardado en Drive';
+    setTimeout(() => { saving.textContent = ''; }, 3000);
+    closeHistorial();
+  } catch(e) {
+    saving.textContent = 'Error al guardar';
+  }
+}
+</script>
+</body>
+</html>

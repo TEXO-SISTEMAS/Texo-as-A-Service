@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Data Chat - Executive Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+            background: #0a0e1a;
+            color: #e8eaed;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: linear-gradient(180deg, #121829 0%, #0d1220 100%);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: #ffffff;
+        }
+
+        .app-subtitle {
+            font-size: 13px;
+            color: #7c8597;
+            font-weight: 400;
+            margin-left: 44px;
+        }
+
+        .new-chat-btn {
+            margin: 20px 16px;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+        }
+
+        .new-chat-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+        }
+
+        .suggestions-section {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px 20px;
+        }
+
+        .suggestions-section::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .suggestions-section::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #5f6b7f;
+            margin: 20px 8px 12px;
+        }
+
+        .suggestion-item {
+            padding: 14px 12px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid transparent;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: rgba(59, 130, 246, 0.2);
+            transform: translateX(2px);
+        }
+
+        .suggestion-text {
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: #c5cad4;
+            font-weight: 400;
+        }
+
+        .sidebar-footer {
+            padding: 20px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .footer-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 8px;
+            color: #7c8597;
+            text-decoration: none;
+            font-size: 13px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .footer-link:hover {
+            background: rgba(255, 255, 255, 0.04);
+            color: #a8b1c0;
+        }
+
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
+            background: #0d1220;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 20px 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(18, 24, 41, 0.6);
+            backdrop-filter: blur(10px);
+        }
+
+        .session-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .session-badge {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .session-number {
+            font-size: 15px;
+            color: #9ca3af;
+            font-weight: 400;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-role {
+            font-size: 13px;
+            color: #7c8597;
+            font-weight: 500;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .chat-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .empty-state {
+            max-width: 680px;
+            text-align: center;
+        }
+
+        .welcome-icon {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto 28px;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 0%, #c5cad4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: #7c8597;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+
+        .capabilities-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .capability-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .capability-card:hover {
+            background: rgba(59, 130, 246, 0.06);
+            border-color: rgba(59, 130, 246, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .capability-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .capability-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .capability-desc {
+            font-size: 12px;
+            color: #7c8597;
+            line-height: 1.5;
+        }
+
+        /* Input Area */
+        .input-section {
+            padding: 24px 32px 28px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(18, 24, 41, 0.4);
+        }
+
+        .input-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .input-container {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 16px 60px 16px 20px;
+            transition: all 0.2s;
+        }
+
+        .input-container:focus-within {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .chat-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            line-height: 1.5;
+        }
+
+        .chat-input::placeholder {
+            color: #5f6b7f;
+        }
+
+        .send-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .input-note {
+            text-align: center;
+            font-size: 11px;
+            color: #5f6b7f;
+            margin-top: 12px;
+        }
+
+        .footer-branding {
+            text-align: center;
+            padding: 16px;
+            font-size: 12px;
+            color: #4b5563;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-section">
+                    <div class="logo-icon">📊</div>
+                    <div class="app-title">AI Data Chat</div>
+                </div>
+                <div class="app-subtitle">Análisis Inteligente</div>
+            </div>
+
+            <button class="new-chat-btn">
+                <span>➕</span>
+                Nueva conversación
+            </button>
+
+            <div class="suggestions-section">
+                <div class="section-label">Consultas Ejecutivas</div>
+                
+                <div class="suggestion-item">
+                    <div class="suggestion-text">¿Cuáles son las empresas con mayor facturación?</div>
+                </div>
+
+                <div class="suggestion-item">
+                    <div class="suggestion-text">Mostrá un gráfico comparando inversión en marketing vs facturación</div>
+                </div>
+
+                <div class="suggestion-item">
+                    <div class="suggestion-text">¿Qué empresas aparecen en las 3 fuentes?</div>
+                </div>
+
+                <div class="suggestion-item">
+                    <div class="suggestion-text">¿Cuáles están en DNIT pero no facturaron nada?</div>
+                </div>
+
+                <div class="section-label">Análisis Avanzado</div>
+
+                <div class="suggestion-item">
+                    <div class="suggestion-text">Top 10 clientes por ROI en el último trimestre</div>
+                </div>
+
+                <div class="suggestion-item">
+                    <div class="suggestion-text">Tendencias de inversión publicitaria por sector</div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="#" class="footer-link">
+                    <span>📈</span>
+                    Ver matches
+                </a>
+                <a href="#" class="footer-link">
+                    <span>🎯</span>
+                    Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="chat-header">
+                <div class="session-info">
+                    <span class="session-badge">Chat con IA</span>
+                    <span class="session-number">Sesión #19</span>
+                </div>
+                <div class="user-info">
+                    <span class="user-role">Admin</span>
+                    <div class="user-avatar">A</div>
+                </div>
+            </div>
+
+            <div class="chat-body">
+                <div class="empty-state">
+                    <div class="welcome-icon">💬</div>
+                    <h1 class="welcome-title">Bienvenido, Admin</h1>
+                    <p class="welcome-subtitle">
+                        Realizá consultas estratégicas sobre tus datos de negocio. 
+                        El sistema analizará información de ERP, AdLens y DNIT para brindarte insights accionables.
+                    </p>
+
+                    <div class="capabilities-grid">
+                        <div class="capability-card">
+                            <div class="capability-icon">📊</div>
+                            <div class="capability-title">Análisis de Datos</div>
+                            <div class="capability-desc">Consultas complejas entre múltiples fuentes</div>
+                        </div>
+                        <div class="capability-card">
+                            <div class="capability-icon">📈</div>
+                            <div class="capability-title">Visualizaciones</div>
+                            <div class="capability-desc">Gráficos ejecutivos personalizados</div>
+                        </div>
+                        <div class="capability-card">
+                            <div class="capability-icon">🎯</div>
+                            <div class="capability-title">Insights Estratégicos</div>
+                            <div class="capability-desc">Recomendaciones basadas en datos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-section">
+                <div class="input-wrapper">
+                    <div class="input-container">
+                        <textarea 
+                            class="chat-input" 
+                            placeholder="Escribí tu pregunta... (Enter para enviar, Shift+Enter para nueva línea)"
+                            rows="1"
+                        ></textarea>
+                        <button class="send-btn">
+                            <span style="font-size: 18px;">➤</span>
+                        </button>
+                    </div>
+                    <div class="input-note">
+                        Los datos nunca salen del servidor local.
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-branding">
+                DANILO SOSA | TEXO SISTEMAS
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-resize textarea
+        const textarea = document.querySelector('.chat-input');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+        });
+
+        // Enter to send, Shift+Enter for new line
+        textarea.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                // Aquí iría la lógica para enviar el mensaje
+                console.log('Enviando:', this.value);
+            }
+        });
+
+        // Click suggestions
+        document.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', function() {
+                textarea.value = this.querySelector('.suggestion-text').textContent;
+                textarea.focus();
+            });
+        });
+
+        // Click capabilities
+        document.querySelectorAll('.capability-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const title = this.querySelector('.capability-title').textContent;
+                console.log('Capability selected:', title);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+Lee el archivo CONTEXTO.md antes de empezar.
+
+El proyecto ya funciona. Ahora mejorá el diseño visual de toda la app.
+
+El estilo debe transmitir: herramienta profesional de análisis de datos, 
+sobria, confiable. No colorida ni llamativa.
+
+Paleta sugerida:
+- Fondo: gris muy oscuro (#0f1117)
+- Acento principal: azul (#3b82f6)
+- Éxito/confirmado: verde (#22c55e)
+- Advertencia/dudoso: amarillo (#eab308)
+- Error/sin match: rojo (#ef4444)
+- Tipografía: Inter o similar sans-serif
+
+Aplicar a:
+1. Página de login — centrada, limpia, logo o nombre del proyecto
+2. Pantalla de subida de Excel — iconos de archivo, estados claros
+3. Pantalla de revisión de matches — semáforo visual muy claro
+4. Interfaz de chat — diferenciación clara entre usuario e IA
+5. Gráficos Plotly — tema oscuro consistente con la app
+
+Usá Tailwind CSS. No cambies ninguna lógica, solo estilos y estructura visual.
+
+IMPORTANTE: Antes de implementar, describime cómo quedaría cada pantalla 
+en texto (una línea por pantalla) para confirmar la dirección. 
+No escribas código hasta que yo confirme.
