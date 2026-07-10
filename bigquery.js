@@ -7,12 +7,12 @@
 //   3. Application Default Credentials (gcloud auth) si nada de lo anterior está seteado.
 
 const { BigQuery } = require('@google-cloud/bigquery');
-const NAME_CORRECTIONS = require('./name_corrections');
+const CORRECTIONS = require('./name_corrections');
 
-function fixName(raw) {
-  const s = (raw || '').toString().trim();
-  return NAME_CORRECTIONS[s] || s;
-}
+function fixName(raw)     { const s = (raw||'').toString().trim(); return CORRECTIONS.anunciantes[s] || s; }
+function fixRubro(raw)    { const s = (raw||'').toString().trim(); return CORRECTIONS.rubros[s]      || s; }
+function fixAgencia(raw)  { const s = (raw||'').toString().trim(); return CORRECTIONS.agencias[s]    || s; }
+function fixMedio(raw)    { const s = (raw||'').toString().trim(); return CORRECTIONS.medios[s]      || s; }
 
 const PROJECT_ID = process.env.GCP_PROJECT_ID || 'adlenslooker';
 const DATASET    = process.env.GCP_DATASET    || 'adlensmedios';
@@ -194,7 +194,7 @@ async function buildAdlensData() {
     sumRango += rango;
     sumFact  += (+row.facturacion || 0);
     empresaMap[nombre] = {
-      rubro: row.rubroprincipal || '',
+      rubro: fixRubro(row.rubroprincipal),
       cluster: row.Cluster != null ? parseInt(row.Cluster) : null,
       tipo_cluster: row.tipodecluster != null ? String(row.tipodecluster) : '',
       puntaje_total: punt,
@@ -266,13 +266,13 @@ async function buildAdlensData() {
   });
 
   // ── Breakdowns de medios (share relativo a su propio total)
-  const mkList = (rows, keyName, n) => {
+  const mkList = (rows, keyName, n, fixFn) => {
     const tot = rows.reduce((s,r)=>s+(+r.v||0),0) || 1;
-    return rows.slice(0, n||rows.length).map(r => ({ [keyName]:(r.k||'').toString(), inversion:Math.round(+r.v||0), share:r2((+r.v||0)/tot*100) }));
+    return rows.slice(0, n||rows.length).map(r => ({ [keyName]: fixFn ? fixFn(r.k) : (r.k||'').toString(), inversion:Math.round(+r.v||0), share:r2((+r.v||0)/tot*100) }));
   };
-  const media_mix = mkList(medioRows, 'medio');
+  const media_mix = mkList(medioRows, 'medio', null, fixMedio);
   const por_grupo_empresarial = mkList(grupoRows, 'grupo', 8);
-  const por_agencia = mkList(agenciaRows, 'agencia', 12);
+  const por_agencia = mkList(agenciaRows, 'agencia', 12, fixAgencia);
   const por_sector = mkList(sectorRows, 'sector', 12);
 
   const mesMap = {}; mesRows.forEach(r => { mesMap[+r.k] = +r.v||0; });
@@ -364,12 +364,12 @@ async function buildAdlensData() {
     estacionalidad, clusters, scores_globales, scatter_data, empresas_lista,
     evolucion: evolucionRows.map(r => ({ ano: +r.k, inversion: +r.v })),
     cluster_grupo: clusterGrupoRows.map(r => ({ cluster: +r.cluster, grupo: r.grupo, v: +r.v })),
-    cluster_agencia: clusterAgenciaRows.map(r => ({ cluster: +r.cluster, agencia: r.agencia, v: +r.v })),
+    cluster_agencia: clusterAgenciaRows.map(r => ({ cluster: +r.cluster, agencia: fixAgencia(r.agencia), v: +r.v })),
     rada_dims: radaDimRows.map(r => ({ dimension: r.Dimension, avg: +r.avg_score, n: +r.n })),
     submetricas: radaMetricRows[0] || null,
     submetricas_por_empresa,
     trade_data,
-    por_rubro: (() => { const tot = rubroRows.reduce((s,r)=>s+(+r.v||0),0)||1; return rubroRows.map(r=>({ rubro:r.k, inversion:+r.v, share:r2((+r.v/tot)*100) })); })(),
+    por_rubro: (() => { const tot = rubroRows.reduce((s,r)=>s+(+r.v||0),0)||1; return rubroRows.map(r=>({ rubro:fixRubro(r.k), inversion:+r.v, share:r2((+r.v/tot)*100) })); })(),
     fuente: 'bigquery',
     generado_en: new Date().toISOString(),
   };
