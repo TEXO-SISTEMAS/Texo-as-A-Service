@@ -86,6 +86,16 @@ body{display:flex;flex-direction:column;min-height:100vh}
 .ic-text strong{color:var(--text)}
 .sec.alt .insight-card{background:#fff}
 
+/* FILTER BAR */
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:10px;margin-bottom:14px}
+.filter-bar label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);display:block;margin-bottom:4px}
+.filter-bar select{padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;background:#fff;color:var(--text);min-width:140px;cursor:pointer}
+.filter-bar input[type=range]{width:130px;cursor:pointer;accent-color:var(--accent)}
+.fb-inv{display:flex;align-items:center;gap:8px}
+.fb-inv-label{font-size:11px;color:var(--text);font-weight:700;min-width:70px}
+.fb-reset{padding:7px 14px;font-size:11px;font-weight:600;background:var(--bg);color:var(--muted);border:1.5px solid var(--border);border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;align-self:flex-end}
+.fb-reset:hover{background:#e5e7eb;color:var(--text)}
+
 /* TWO/THREE COLUMN GRIDS */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
@@ -372,9 +382,36 @@ body{display:flex;flex-direction:column;min-height:100vh}
           </div>
         </div>
 
-        <div class="card" style="max-width:900px;margin:0 auto">
-          <div class="scatter-wrap" id="scatterWrap"></div>
-          <div class="scatter-legend" id="scatterLegend"></div>
+        <div style="max-width:900px;margin:0 auto">
+          <div class="filter-bar" id="overviewFilterBar">
+            <div><label for="ovEmpresa">Empresa</label>
+              <select id="ovEmpresa" onchange="_applyOverviewFilters()"><option value="">Todas</option></select>
+            </div>
+            <div><label for="ovSegmento">Segmento</label>
+              <select id="ovSegmento" onchange="_applyOverviewFilters()">
+                <option value="">Todos</option>
+                <option value="0">0 · Emergentes</option>
+                <option value="1">1 · Operativas</option>
+                <option value="2">2 · Creativas</option>
+                <option value="3">3 · Líderes</option>
+                <option value="4">4 · En transición</option>
+              </select>
+            </div>
+            <div><label for="ovRubro">Rubro Principal</label>
+              <select id="ovRubro" onchange="_applyOverviewFilters()"><option value="">Todos</option></select>
+            </div>
+            <div><label>Inversión Mínima</label>
+              <div class="fb-inv">
+                <input type="range" id="ovInvMin" min="0" max="100" value="0" step="1" oninput="_applyOverviewFilters();_ovInvLabel()">
+                <span class="fb-inv-label" id="ovInvLabel">USD 0</span>
+              </div>
+            </div>
+            <button class="fb-reset" onclick="_resetOverviewFilters()">Limpiar</button>
+          </div>
+          <div class="card">
+            <div class="scatter-wrap" id="scatterWrap"></div>
+            <div class="scatter-legend" id="scatterLegend"></div>
+          </div>
         </div>
       </div>
 
@@ -470,6 +507,20 @@ body{display:flex;flex-direction:column;min-height:100vh}
         <div class="sec-bar"></div>
         <div class="sec-desc">Cada empresa fue clasificada en uno de 5 clusters según sus dimensiones de madurez de marketing.</div>
 
+        <div class="filter-bar" style="max-width:340px">
+          <div><label for="segClusterFilter">Segmento</label>
+            <select id="segClusterFilter" onchange="_applySegFilter()">
+              <option value="">Todos los segmentos</option>
+              <option value="0">0 · Emergentes</option>
+              <option value="1">1 · Operativas</option>
+              <option value="2">2 · Creativas</option>
+              <option value="3">3 · Líderes</option>
+              <option value="4">4 · En transición</option>
+            </select>
+          </div>
+          <button class="fb-reset" onclick="document.getElementById('segClusterFilter').value='';_applySegFilter()">Limpiar</button>
+        </div>
+
         <!-- 5 cluster radar cards -->
         <div class="cluster-radar-grid" id="clusterRadarGrid"></div>
 
@@ -506,6 +557,31 @@ body{display:flex;flex-direction:column;min-height:100vh}
             <div class="sec-label">Segmentación de Empresas</div>
             <div class="sec-heading">Posicionamiento Estratégico</div>
             <div class="sec-bar"></div>
+            <div class="filter-bar">
+              <div><label for="whlEmpresa">Empresa</label>
+                <select id="whlEmpresa" onchange="_applyWheelFilters()"><option value="">Todas</option></select>
+              </div>
+              <div><label for="whlSegmento">Segmento</label>
+                <select id="whlSegmento" onchange="_applyWheelFilters()">
+                  <option value="">Todos</option>
+                  <option value="0">0 · Emergentes</option>
+                  <option value="1">1 · Operativas</option>
+                  <option value="2">2 · Creativas</option>
+                  <option value="3">3 · Líderes</option>
+                  <option value="4">4 · En transición</option>
+                </select>
+              </div>
+              <div><label for="whlRubro">Rubro Principal</label>
+                <select id="whlRubro" onchange="_applyWheelFilters()"><option value="">Todos</option></select>
+              </div>
+              <div><label>Inversión Mínima</label>
+                <div class="fb-inv">
+                  <input type="range" id="whlInvMin" min="0" max="100" value="0" step="1" oninput="_applyWheelFilters();_whlInvLabel()">
+                  <span class="fb-inv-label" id="whlInvLabel">USD 0</span>
+                </div>
+              </div>
+              <button class="fb-reset" onclick="_resetWheelFilters()">Limpiar</button>
+            </div>
             <div class="card">
               <div class="scatter-wrap" id="scatterWrap2"></div>
               <div class="scatter-legend" id="scatterLegend2"></div>
@@ -1484,7 +1560,7 @@ function renderClusterRadars(clusters) {
         </div>
         <div style="font-weight:700;color:var(--text);min-width:28px;text-align:right">${(c.scores[d]||0).toFixed(0)}%</div>
       </div>`).join('');
-    return `<div class="crc" style="border-top-color:${c.color}">
+    return `<div class="crc" data-cluster="${cid}" style="border-top-color:${c.color}">
       <div><div class="crc-id">${c.id}</div>
       <div class="crc-name">${c.nombre}</div>
       <span class="crc-badge" style="background:${c.color}22;color:${c.color}">${c.cantidad} empresas</span></div>
@@ -1503,7 +1579,7 @@ function renderClusterRadars(clusters) {
 function renderClusterTable(clusters) {
   const dims=['Estructura','Cultura','Ejecucion','Competitividad','Inversion'];
   document.getElementById('clusterTbody').innerHTML = clusters.sort((a,b)=>b.inversion-a.inversion).map((c,i) =>
-    `<tr>
+    `<tr data-cluster="${c.id}">
       <td><span class="cluster-chip" style="background:${CLUSTER_COLORS[c.id]}22;color:${CLUSTER_COLORS[c.id]}">${c.id}</span></td>
       <td style="text-align:left;font-weight:600">${c.nombre}</td>
       <td>${c.cantidad}</td>
@@ -1978,6 +2054,12 @@ function renderDashboard(data) {
     document.getElementById('heroGenDate').textContent = 'Actualizado: ' + new Date(data.generado_en).toLocaleDateString('es-PY', {day:'numeric',month:'short',year:'numeric'});
   }
 
+  // Store raw data for client-side filtering
+  _rawScatterData = data.scatter_data || [];
+  _rawTopAnunciantes = data.top_anunciantes || [];
+  _populateFilterOptions();
+  _initInvSlider();
+
   // Overview tab
   renderScatter(data.scatter_data);
   // MKT Wheel tab (segunda instancia del scatter)
@@ -2030,6 +2112,101 @@ function renderDashboard(data) {
   renderTrade(data);
 
   document.getElementById('dashboard').style.display = 'block';
+}
+
+// ── OVERVIEW / WHEEL / SEG FILTERS ───────────────────────────────────────────
+let _rawScatterData = [];
+let _rawTopAnunciantes = [];
+let _ovInvMax = 0;
+
+function _populateFilterOptions() {
+  if (!_rawScatterData.length) return;
+  const names  = [...new Set(_rawScatterData.map(d => d.nombre))].sort((a,b)=>a.localeCompare(b));
+  const rubros = [...new Set(_rawScatterData.map(d => d.rubro).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const empHTML  = '<option value="">Todas</option>'  + names.map(n  => `<option value="${n}">${n}</option>`).join('');
+  const rubHTML  = '<option value="">Todos</option>'  + rubros.map(r => `<option value="${r}">${r}</option>`).join('');
+  ['ovEmpresa',  'whlEmpresa' ].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=empHTML; });
+  ['ovRubro',    'whlRubro'   ].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML=rubHTML; });
+}
+
+function _initInvSlider() {
+  if (!_rawScatterData.length) return;
+  _ovInvMax = Math.max(..._rawScatterData.map(d => d.inversion || 0));
+  ['ovInvMin','whlInvMin'].forEach(id => { const el=document.getElementById(id); if(el) el.value=0; });
+  _ovInvLabel(); _whlInvLabel();
+}
+
+function _invFromSlider(id) {
+  const el = document.getElementById(id);
+  return el ? (+el.value / 100) * _ovInvMax : 0;
+}
+
+function _ovInvLabel() {
+  const v = _invFromSlider('ovInvMin');
+  const lbl = document.getElementById('ovInvLabel');
+  if (lbl) lbl.textContent = v > 0 ? 'USD ' + (v>=1000?(v/1000).toFixed(0)+'K':v.toFixed(0)) : 'USD 0';
+}
+
+function _whlInvLabel() {
+  const v = _invFromSlider('whlInvMin');
+  const lbl = document.getElementById('whlInvLabel');
+  if (lbl) lbl.textContent = v > 0 ? 'USD ' + (v>=1000?(v/1000).toFixed(0)+'K':v.toFixed(0)) : 'USD 0';
+}
+
+function _filterScatter(empId, segId, rubroId, invMinId) {
+  const emp   = document.getElementById(empId)?.value   || '';
+  const seg   = document.getElementById(segId)?.value   || '';
+  const rubro = document.getElementById(rubroId)?.value || '';
+  const invMin = _invFromSlider(invMinId);
+  return _rawScatterData.filter(d => {
+    if (emp   && d.nombre  !== emp)    return false;
+    if (seg   !== '' && d.cluster !== +seg) return false;
+    if (rubro && d.rubro   !== rubro)  return false;
+    if (invMin > 0 && (d.inversion||0) < invMin) return false;
+    return true;
+  });
+}
+
+function _filterTop(scatterFiltered) {
+  const names = new Set(scatterFiltered.map(d => d.nombre));
+  const filtered = _rawTopAnunciantes.filter(a => names.has(a.nombre));
+  return filtered.length ? filtered : _rawTopAnunciantes;
+}
+
+function _applyOverviewFilters() {
+  const filtered = _filterScatter('ovEmpresa','ovSegmento','ovRubro','ovInvMin');
+  renderScatter(filtered, 'scatterWrap');
+  renderTopAnunciantesShort(_filterTop(filtered));
+}
+
+function _resetOverviewFilters() {
+  ['ovEmpresa','ovSegmento','ovRubro'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const sl = document.getElementById('ovInvMin'); if(sl){ sl.value=0; _ovInvLabel(); }
+  renderScatter(_rawScatterData, 'scatterWrap');
+  renderTopAnunciantesShort(_rawTopAnunciantes);
+}
+
+function _applyWheelFilters() {
+  const filtered = _filterScatter('whlEmpresa','whlSegmento','whlRubro','whlInvMin');
+  renderScatter(filtered, 'scatterWrap2');
+  renderAnunciantesTable(_filterTop(filtered));
+}
+
+function _resetWheelFilters() {
+  ['whlEmpresa','whlSegmento','whlRubro'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const sl = document.getElementById('whlInvMin'); if(sl){ sl.value=0; _whlInvLabel(); }
+  renderScatter(_rawScatterData, 'scatterWrap2');
+  renderAnunciantesTable(_rawTopAnunciantes);
+}
+
+function _applySegFilter() {
+  const seg = document.getElementById('segClusterFilter')?.value ?? '';
+  document.querySelectorAll('#clusterRadarGrid .crc').forEach(el => {
+    el.style.display = (seg === '' || el.dataset.cluster === seg) ? '' : 'none';
+  });
+  document.querySelectorAll('#clusterTbody tr').forEach(el => {
+    el.style.display = (seg === '' || el.dataset.cluster === seg) ? '' : 'none';
+  });
 }
 
 // ── LOAD ──────────────────────────────────────────────────────────────────────
