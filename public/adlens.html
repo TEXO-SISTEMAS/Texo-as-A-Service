@@ -2181,14 +2181,25 @@ function _filterTop(scatterFiltered) {
   return filtered.length ? filtered : _rawTopAnunciantes;
 }
 
+// Índice scatter para lookup rápido de cluster y rubro por nombre de empresa
+function _scatterIndex() {
+  const idx = {};
+  _rawScatterData.forEach(d => { idx[d.nombre] = d; });
+  return idx;
+}
+
 function _aggregateEvolucion(emp, seg, rubro) {
   if (!emp && seg === '' && !rubro) return null;
   if (!_rawEvolucionDetalle.length) return null;
+  const scIdx = (seg !== '' || rubro) ? _scatterIndex() : null;
   const byAno = {};
   _rawEvolucionDetalle.forEach(d => {
-    if (emp   && d.nombre  !== emp)    return;
-    if (seg !== '' && d.cluster !== +seg) return;
-    if (rubro && d.rubro   !== rubro)  return;
+    if (emp && d.nombre !== emp) return;
+    if (scIdx) {
+      const sc = scIdx[d.nombre];
+      if (seg !== '' && (!sc || sc.cluster !== +seg)) return;
+      if (rubro && (!sc || sc.rubro !== rubro)) return;
+    }
     byAno[d.ano] = (byAno[d.ano] || 0) + d.v;
   });
   const rows = Object.entries(byAno).sort(([a],[b])=>+a-+b).map(([ano,v])=>({ano:+ano,inversion:Math.round(v)}));
@@ -2198,11 +2209,15 @@ function _aggregateEvolucion(emp, seg, rubro) {
 function _aggregateEstacionalidad(emp, seg, rubro) {
   if (!emp && seg === '' && !rubro) return null;
   if (!_rawEstacionalidadDetalle.length) return null;
+  const scIdx = (seg !== '' || rubro) ? _scatterIndex() : null;
   const byMes = {};
   _rawEstacionalidadDetalle.forEach(d => {
-    if (emp   && d.nombre  !== emp)    return;
-    if (seg !== '' && d.cluster !== +seg) return;
-    if (rubro && d.rubro   !== rubro)  return;
+    if (emp && d.nombre !== emp) return;
+    if (scIdx) {
+      const sc = scIdx[d.nombre];
+      if (seg !== '' && (!sc || sc.cluster !== +seg)) return;
+      if (rubro && (!sc || sc.rubro !== rubro)) return;
+    }
     byMes[d.mes] = (byMes[d.mes] || 0) + d.v;
   });
   return Array.from({length:12}, (_,i) => ({ mes:i+1, nombre:MES_NOMBRES_B[i], inversion:Math.round(byMes[i+1]||0) }));

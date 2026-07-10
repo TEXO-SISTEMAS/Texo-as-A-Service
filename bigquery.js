@@ -150,10 +150,10 @@ async function buildAdlensData() {
     query(`SELECT a.Cluster AS cluster, m.Agencia AS agencia, ROUND(SUM(m.RANGODEINVERSION),2) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE a.Cluster IS NOT NULL AND m.Agencia IS NOT NULL GROUP BY a.Cluster, m.Agencia ORDER BY a.Cluster ASC, v DESC`),
     // Termómetro: AVG Score por Dimension (formato largo: anunciante, Dimension, Score)
     query(`SELECT Dimension, ROUND(AVG(Score),4) AS avg_score, COUNT(*) AS n FROM ${R} WHERE Dimension IS NOT NULL GROUP BY Dimension ORDER BY Dimension`).catch(()=>[]),
-    // Evolución detalle: inversión por anunciante × año × cluster × rubro (para filtros client-side)
-    query(`SELECT m.anunciante, CAST(A__O AS INT64) AS ano, a.Cluster AS cluster, a.rubroprincipal AS rubro, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE A__O IS NOT NULL GROUP BY m.anunciante, A__O, a.Cluster, a.rubroprincipal ORDER BY A__O`).catch(()=>[]),
-    // Estacionalidad detalle: inversión por anunciante × mes × cluster × rubro (para filtros client-side)
-    query(`SELECT m.anunciante, EXTRACT(MONTH FROM MES) AS mes, a.Cluster AS cluster, a.rubroprincipal AS rubro, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE MES IS NOT NULL GROUP BY m.anunciante, EXTRACT(MONTH FROM MES), a.Cluster, a.rubroprincipal ORDER BY mes`).catch(()=>[]),
+    // Evolución detalle: inversión por anunciante × año (cluster/rubro se enriquece client-side)
+    query(`SELECT m.anunciante AS nombre, A__O AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE A__O IS NOT NULL GROUP BY m.anunciante, A__O ORDER BY A__O`).catch(()=>[]),
+    // Estacionalidad detalle: inversión por anunciante × mes (cluster/rubro se enriquece client-side)
+    query(`SELECT m.anunciante AS nombre, EXTRACT(MONTH FROM MES) AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE MES IS NOT NULL GROUP BY m.anunciante, EXTRACT(MONTH FROM MES) ORDER BY k`).catch(()=>[]),
     // Sub-métricas del Termómetro: AVG de cada columna numérica de la tabla adlens
     query(`SELECT
       ROUND(AVG(nconrespectoalmarketingylapublicidadesunaempresa),2) AS vanguardia_mkt,
@@ -367,8 +367,8 @@ async function buildAdlensData() {
     media_mix, top_anunciantes, por_grupo_empresarial, por_agencia, por_sector,
     estacionalidad, clusters, scores_globales, scatter_data, empresas_lista,
     evolucion: evolucionRows.map(r => ({ ano: +r.k, inversion: +r.v })),
-    evolucion_detalle: evolucionDetalleRows.map(r => ({ nombre: fixName(r.anunciante), ano: parseInt(String(r.ano ?? r.A__O ?? r.k)), cluster: r.cluster != null ? +r.cluster : null, rubro: fixRubro(r.rubro), v: +r.v })),
-    estacionalidad_detalle: estacionalidadDetalleRows.map(r => ({ nombre: fixName(r.anunciante), mes: parseInt(String(r.mes ?? r.MES)), cluster: r.cluster != null ? +r.cluster : null, rubro: fixRubro(r.rubro), v: +r.v })),
+    evolucion_detalle: evolucionDetalleRows.map(r => ({ nombre: fixName(r.nombre || r.anunciante), ano: +r.k, v: +r.v })),
+    estacionalidad_detalle: estacionalidadDetalleRows.map(r => ({ nombre: fixName(r.nombre || r.anunciante), mes: +r.k, v: +r.v })),
     cluster_grupo: clusterGrupoRows.map(r => ({ cluster: +r.cluster, grupo: r.grupo, v: +r.v })),
     cluster_agencia: clusterAgenciaRows.map(r => ({ cluster: +r.cluster, agencia: fixAgencia(r.agencia), v: +r.v })),
     rada_dims: radaDimRows.map(r => ({ dimension: r.Dimension, avg: +r.avg_score, n: +r.n })),
