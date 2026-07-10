@@ -2057,6 +2057,10 @@ function renderDashboard(data) {
   // Store raw data for client-side filtering
   _rawScatterData = data.scatter_data || [];
   _rawTopAnunciantes = data.top_anunciantes || [];
+  _rawEvolucion = data.evolucion || [];
+  _rawEstacionalidad = data.estacionalidad || [];
+  _rawEvolucionDetalle = data.evolucion_detalle || [];
+  _rawEstacionalidadDetalle = data.estacionalidad_detalle || [];
   _populateFilterOptions();
   _initInvSlider();
 
@@ -2117,6 +2121,10 @@ function renderDashboard(data) {
 // ── OVERVIEW / WHEEL / SEG FILTERS ───────────────────────────────────────────
 let _rawScatterData = [];
 let _rawTopAnunciantes = [];
+let _rawEvolucion = [];
+let _rawEstacionalidad = [];
+let _rawEvolucionDetalle = [];
+let _rawEstacionalidadDetalle = [];
 let _ovInvMax = 0;
 
 function _populateFilterOptions() {
@@ -2173,10 +2181,44 @@ function _filterTop(scatterFiltered) {
   return filtered.length ? filtered : _rawTopAnunciantes;
 }
 
+function _aggregateEvolucion(emp, seg, rubro) {
+  if (!emp && seg === '' && !rubro) return null;
+  if (!_rawEvolucionDetalle.length) return null;
+  const byAno = {};
+  _rawEvolucionDetalle.forEach(d => {
+    if (emp   && d.nombre  !== emp)    return;
+    if (seg !== '' && d.cluster !== +seg) return;
+    if (rubro && d.rubro   !== rubro)  return;
+    byAno[d.ano] = (byAno[d.ano] || 0) + d.v;
+  });
+  const rows = Object.entries(byAno).sort(([a],[b])=>+a-+b).map(([ano,v])=>({ano:+ano,inversion:Math.round(v)}));
+  return rows.length ? rows : null;
+}
+
+function _aggregateEstacionalidad(emp, seg, rubro) {
+  if (!emp && seg === '' && !rubro) return null;
+  if (!_rawEstacionalidadDetalle.length) return null;
+  const byMes = {};
+  _rawEstacionalidadDetalle.forEach(d => {
+    if (emp   && d.nombre  !== emp)    return;
+    if (seg !== '' && d.cluster !== +seg) return;
+    if (rubro && d.rubro   !== rubro)  return;
+    byMes[d.mes] = (byMes[d.mes] || 0) + d.v;
+  });
+  return Array.from({length:12}, (_,i) => ({ mes:i+1, nombre:MES_NOMBRES_B[i], inversion:Math.round(byMes[i+1]||0) }));
+}
+
 function _applyOverviewFilters() {
+  const emp   = document.getElementById('ovEmpresa')?.value  || '';
+  const seg   = document.getElementById('ovSegmento')?.value || '';
+  const rubro = document.getElementById('ovRubro')?.value    || '';
   const filtered = _filterScatter('ovEmpresa','ovSegmento','ovRubro','ovInvMin');
   renderScatter(filtered, 'scatterWrap');
   renderTopAnunciantesShort(_filterTop(filtered));
+  const evo = _aggregateEvolucion(emp, seg, rubro);
+  renderEvolucion(evo || _rawEvolucion, 'evolucionGrid');
+  const est = _aggregateEstacionalidad(emp, seg, rubro);
+  if (est) renderEstacionalidad(est, 'estGrid');
 }
 
 function _resetOverviewFilters() {
@@ -2184,12 +2226,19 @@ function _resetOverviewFilters() {
   const sl = document.getElementById('ovInvMin'); if(sl){ sl.value=0; _ovInvLabel(); }
   renderScatter(_rawScatterData, 'scatterWrap');
   renderTopAnunciantesShort(_rawTopAnunciantes);
+  renderEvolucion(_rawEvolucion, 'evolucionGrid');
+  renderEstacionalidad(_rawEstacionalidad, 'estGrid');
 }
 
 function _applyWheelFilters() {
+  const emp   = document.getElementById('whlEmpresa')?.value  || '';
+  const seg   = document.getElementById('whlSegmento')?.value || '';
+  const rubro = document.getElementById('whlRubro')?.value    || '';
   const filtered = _filterScatter('whlEmpresa','whlSegmento','whlRubro','whlInvMin');
   renderScatter(filtered, 'scatterWrap2');
   renderAnunciantesTable(_filterTop(filtered));
+  const evo = _aggregateEvolucion(emp, seg, rubro);
+  renderEvolucion(evo || _rawEvolucion, 'evolucionGrid2');
 }
 
 function _resetWheelFilters() {
@@ -2197,6 +2246,7 @@ function _resetWheelFilters() {
   const sl = document.getElementById('whlInvMin'); if(sl){ sl.value=0; _whlInvLabel(); }
   renderScatter(_rawScatterData, 'scatterWrap2');
   renderAnunciantesTable(_rawTopAnunciantes);
+  renderEvolucion(_rawEvolucion, 'evolucionGrid2');
 }
 
 function _applySegFilter() {
