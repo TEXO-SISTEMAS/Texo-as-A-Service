@@ -7,6 +7,12 @@
 //   3. Application Default Credentials (gcloud auth) si nada de lo anterior está seteado.
 
 const { BigQuery } = require('@google-cloud/bigquery');
+const NAME_CORRECTIONS = require('./name_corrections');
+
+function fixName(raw) {
+  const s = (raw || '').toString().trim();
+  return NAME_CORRECTIONS[s] || s;
+}
 
 const PROJECT_ID = process.env.GCP_PROJECT_ID || 'adlenslooker';
 const DATASET    = process.env.GCP_DATASET    || 'adlensmedios';
@@ -179,7 +185,7 @@ async function buildAdlensData() {
   const anunciantes = {};   // nombre → inversión USD (solo > 0)
   let totalInversion = 0, sumRango = 0, sumFact = 0, totalPuntaje = 0, countPuntaje = 0;
   for (const row of adlensRows) {
-    const nombre = (row.anunciante || '').toString().trim();
+    const nombre = fixName(row.anunciante);
     if (!nombre) continue;
     const rango = +row.rango || 0;
     const invUsd = Math.round(rango * 1000);
@@ -248,7 +254,7 @@ async function buildAdlensData() {
   // top_anunciantes usa SUM(RANGODEINVERSION) de medios (igual al Looker)
   const totalRangoMedios = anunRangoRows.reduce((s,r)=>s+(+r.v||0),0);
   const top_anunciantes = anunRangoRows.map(r => {
-    const nombre = r.k;
+    const nombre = fixName(r.k);
     return {
       nombre, rango_medios: r2(+r.v||0),
       share: totalRangoMedios > 0 ? r2((+r.v||0) / totalRangoMedios * 100) : 0,
@@ -309,7 +315,7 @@ async function buildAdlensData() {
   // ── Trade data (inversionenpdv2024 + agenciatrade)
   const tradePorEmpresa = {};
   for (const row of adlensRows) {
-    const nombre = (row.anunciante || '').toString().trim();
+    const nombre = fixName(row.anunciante);
     if (!nombre || tradePorEmpresa[nombre]) continue;
     tradePorEmpresa[nombre] = {
       pdv: row.pdv2024 != null ? +row.pdv2024 : 0,
