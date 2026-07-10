@@ -150,10 +150,6 @@ async function buildAdlensData() {
     query(`SELECT a.Cluster AS cluster, m.Agencia AS agencia, ROUND(SUM(m.RANGODEINVERSION),2) AS v FROM ${M} m JOIN ${A} a USING(anunciante) WHERE a.Cluster IS NOT NULL AND m.Agencia IS NOT NULL GROUP BY a.Cluster, m.Agencia ORDER BY a.Cluster ASC, v DESC`),
     // Termómetro: AVG Score por Dimension (formato largo: anunciante, Dimension, Score)
     query(`SELECT Dimension, ROUND(AVG(Score),4) AS avg_score, COUNT(*) AS n FROM ${R} WHERE Dimension IS NOT NULL GROUP BY Dimension ORDER BY Dimension`).catch(()=>[]),
-    // Evolución detalle: inversión por anunciante × año (cluster/rubro se enriquece client-side)
-    query(`SELECT m.anunciante AS nombre, A__O AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE A__O IS NOT NULL GROUP BY m.anunciante, A__O ORDER BY A__O`).catch(()=>[]),
-    // Estacionalidad detalle: inversión por anunciante × mes (cluster/rubro se enriquece client-side)
-    query(`SELECT m.anunciante AS nombre, EXTRACT(MONTH FROM MES) AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE MES IS NOT NULL GROUP BY m.anunciante, EXTRACT(MONTH FROM MES) ORDER BY k`).catch(()=>[]),
     // Sub-métricas del Termómetro: AVG de cada columna numérica de la tabla adlens
     query(`SELECT
       ROUND(AVG(nconrespectoalmarketingylapublicidadesunaempresa),2) AS vanguardia_mkt,
@@ -178,6 +174,10 @@ async function buildAdlensData() {
       ROUND(AVG(nlaempresainvierteenresearch),2) AS inv_research,
       ROUND(AVG(nlaempresainvierteenpdv),2) AS inv_pdv
     FROM ${A} WHERE anunciante IS NOT NULL`).catch(()=>[]),
+    // Evolución detalle: inversión por anunciante × año (cluster/rubro se enriquece client-side)
+    query(`SELECT m.anunciante AS nombre, A__O AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE A__O IS NOT NULL GROUP BY m.anunciante, A__O ORDER BY A__O`).catch(()=>[]),
+    // Estacionalidad detalle: inversión por anunciante × mes (cluster/rubro se enriquece client-side)
+    query(`SELECT m.anunciante AS nombre, EXTRACT(MONTH FROM MES) AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE MES IS NOT NULL GROUP BY m.anunciante, EXTRACT(MONTH FROM MES) ORDER BY k`).catch(()=>[]),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
   const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
