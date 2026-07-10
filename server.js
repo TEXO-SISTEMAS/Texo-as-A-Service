@@ -716,19 +716,6 @@ app.get('/api/adlens/latest', requireAuth, async (req, res) => {
 // Datos en vivo desde BigQuery (mismas tablas que el Looker). Cacheado en memoria 1h.
 let _bqCache = { data: null, ts: 0 };
 const BQ_TTL = 60 * 60 * 1000;
-app.get('/api/adlens/schema', requireAuth, async (req, res) => {
-  try {
-    const bq = require('./bigquery');
-    const [adlensCols, radaCols, adlensSample] = await Promise.all([
-      bq.getColumns(bq.T_ADLENS),
-      bq.getColumns(bq.T_RADA),
-      bq.query(`SELECT * FROM \`${bq.PROJECT_ID}.${bq.DATASET}.${bq.T_ADLENS}\` LIMIT 1`),
-    ]);
-    res.json({ adlensCols, radaCols, adlensSample });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
 
 app.get('/api/adlens/bigquery', requireAuth, async (req, res) => {
   try {
