@@ -2060,6 +2060,8 @@ function renderDashboard(data) {
   _rawEvolucion = data.evolucion || [];
   _rawEstacionalidad = data.estacionalidad || [];
   _rawEvolucionDetalle = data.evolucion_detalle || [];
+  _rawEmpresasList = data.empresas_lista || [];
+  _rawClusters = data.clusters || [];
   _rawEstacionalidadDetalle = data.estacionalidad_detalle || [];
   _populateFilterOptions();
   _initInvSlider();
@@ -2125,6 +2127,8 @@ let _rawEvolucion = [];
 let _rawEstacionalidad = [];
 let _rawEvolucionDetalle = [];
 let _rawEstacionalidadDetalle = [];
+let _rawEmpresasList = [];
+let _rawClusters = [];
 let _ovInvMax = 0;
 
 function _populateFilterOptions() {
@@ -2245,6 +2249,23 @@ function _resetOverviewFilters() {
   renderEstacionalidad(_rawEstacionalidad, 'estGrid');
 }
 
+function _renderWheelRadar(emp, seg) {
+  if (emp && _rawEmpresasList.length) {
+    const empData = _rawEmpresasList.find(e => e.nombre === emp);
+    if (empData) {
+      const col = CLUSTER_COLORS[empData.cluster] ?? '#6366f1';
+      renderMultiClusterRadar([{ id: empData.cluster, scores: empData.scores, color: col, nombre: empData.nombre }]);
+      return;
+    }
+  }
+  if (seg !== '' && _rawClusters.length) {
+    const filtered = _rawClusters.filter(c => c.id === +seg);
+    renderMultiClusterRadar(filtered.length ? filtered : _rawClusters);
+    return;
+  }
+  renderMultiClusterRadar(_rawClusters);
+}
+
 function _applyWheelFilters() {
   const emp   = document.getElementById('whlEmpresa')?.value  || '';
   const seg   = document.getElementById('whlSegmento')?.value || '';
@@ -2254,6 +2275,7 @@ function _applyWheelFilters() {
   renderAnunciantesTable(_filterTop(filtered));
   const evo = _aggregateEvolucion(emp, seg, rubro);
   renderEvolucion(evo || _rawEvolucion, 'evolucionGrid2');
+  _renderWheelRadar(emp, seg);
 }
 
 function _resetWheelFilters() {
@@ -2262,6 +2284,7 @@ function _resetWheelFilters() {
   renderScatter(_rawScatterData, 'scatterWrap2');
   renderAnunciantesTable(_rawTopAnunciantes);
   renderEvolucion(_rawEvolucion, 'evolucionGrid2');
+  renderMultiClusterRadar(_rawClusters);
 }
 
 function _applySegFilter() {
