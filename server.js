@@ -131,7 +131,7 @@ app.get('/auth/google/callback', async (req, res) => {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
-    const redirectTo = (state && state.startsWith('/') && state !== '/login') ? state : '/home.html';
+    const redirectTo = (state && state.startsWith('/') && state !== '/login') ? state : '/home';
     res.redirect(redirectTo);
   } catch(e) {
     console.error('OAuth callback error:', e);
@@ -147,8 +147,18 @@ app.get('/auth/logout', (req, res) => {
 // ── PROTECCIÓN GLOBAL ─────────────────────────────────────────────────────────
 app.use(requireAuth);
 
-// ── HOME REDIRECT (antes de static para que no lo intercepte index.html) ──────
-app.get('/', (req, res) => res.redirect('/home.html'));
+// ── HOME REDIRECT ──────────────────────────────────────────────────────────────
+app.get('/', (req, res) => res.redirect('/home'));
+
+// ── CLEAN URLS: /home → /home.html, /adlens → /adlens.html, etc. ─────────────
+app.use((req, res, next) => {
+  if (!path.extname(req.path)) {
+    const htmlPath = path.join(__dirname, 'public', req.path + '.html');
+    res.sendFile(htmlPath, err => { if (err) next(); });
+  } else {
+    next();
+  }
+});
 
 // ── ARCHIVOS ESTÁTICOS (protegidos) ───────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
