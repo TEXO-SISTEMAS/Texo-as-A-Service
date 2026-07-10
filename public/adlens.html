@@ -623,6 +623,32 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- ═══ TAB: MEDIOS ═══ -->
     <div class="tab-panel" id="tab-medios">
       <div class="sec">
+        <!-- Filtros Medios -->
+        <div class="filter-bar" id="mediosFilterBar" style="margin-bottom:16px">
+          <div><label for="medGrupo">Grupo de Medios</label>
+            <select id="medGrupo" onchange="_applyMediosFilters()"><option value="">Todos</option></select>
+          </div>
+          <div><label for="medMedio">Medio</label>
+            <select id="medMedio" onchange="_applyMediosFilters()"><option value="">Todos</option></select>
+          </div>
+          <div><label for="medVehiculo">Vehículo</label>
+            <select id="medVehiculo" onchange="_applyMediosFilters()"><option value="">Todos</option></select>
+          </div>
+          <div><label for="medAnunciante">Anunciante</label>
+            <select id="medAnunciante" onchange="_applyMediosFilters()"><option value="">Todos</option></select>
+          </div>
+          <div><label for="medSegmento">Segmento</label>
+            <select id="medSegmento" onchange="_applyMediosFilters()">
+              <option value="">Todos</option>
+              <option value="0">0 · Emergentes</option>
+              <option value="1">1 · Operativas</option>
+              <option value="2">2 · Creativas</option>
+              <option value="3">3 · Líderes</option>
+              <option value="4">4 · En transición</option>
+            </select>
+          </div>
+          <button class="fb-reset" onclick="_resetMediosFilters()">Limpiar</button>
+        </div>
         <!-- Fila 1: Scatter + Media Mix -->
         <div class="two-col" style="margin-bottom:20px">
           <div class="card">
@@ -1425,11 +1451,29 @@ function renderVehiculos(data) {
     const invest = d.inversion.toLocaleString('es-PY');
     return `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:5px 8px;color:var(--muted2);font-weight:700;font-size:11px">${i+1}</td>
-      <td style="padding:5px 8px;font-weight:600;font-size:11px">${d.medio}</td>
+      <td style="padding:5px 8px;font-weight:600;font-size:11px">${d.vehiculo || d.medio || ''}</td>
       <td style="padding:5px 8px;font-weight:700;font-size:11px;text-align:right">$${invest}</td>
       <td style="padding:5px 8px;font-weight:700;font-size:11px;text-align:right;color:var(--accent)">${d.share.toFixed(1)}%</td>
     </tr>`;
   }).join('');
+}
+
+function _buildVehiculos(detalle) {
+  const total = detalle.reduce((s,d)=>s+d.v,0)||1;
+  const byVeh = {};
+  detalle.forEach(d => { if(d.vehiculo) byVeh[d.vehiculo]=(byVeh[d.vehiculo]||0)+d.v; });
+  return Object.entries(byVeh)
+    .map(([vehiculo,v])=>({ vehiculo, inversion:Math.round(v), share:Math.round(v/total*10000)/100 }))
+    .sort((a,b)=>b.inversion-a.inversion).slice(0,50);
+}
+
+function _buildMediaMix(detalle) {
+  const total = detalle.reduce((s,d)=>s+d.v,0)||1;
+  const byMedio = {};
+  detalle.forEach(d => { if(d.medio) byMedio[d.medio]=(byMedio[d.medio]||0)+d.v; });
+  return Object.entries(byMedio)
+    .map(([medio,v])=>({ medio, inversion:Math.round(v), share:Math.round(v/total*10000)/100 }))
+    .sort((a,b)=>b.inversion-a.inversion);
 }
 
 function renderAnunciantes(data) {
@@ -2062,6 +2106,7 @@ function renderDashboard(data) {
   _rawEvolucionDetalle = data.evolucion_detalle || [];
   _rawEmpresasList = data.empresas_lista || [];
   _rawClusters = data.clusters || [];
+  _rawMediosDetalle = data.medios_detalle || [];
   _rawEstacionalidadDetalle = data.estacionalidad_detalle || [];
   _populateFilterOptions();
   _initInvSlider();
@@ -2092,9 +2137,10 @@ function renderDashboard(data) {
   if (data.cluster_grupo) renderParticipacionClusters(data.cluster_grupo);
   if (data.por_rubro) renderBars('rubroBars', data.por_rubro, 'rubro', 'inversion', '#f59e0b');
   renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
-  renderVehiculos(data.media_mix);
+  renderVehiculos(_rawMediosDetalle.length ? _buildVehiculos(_rawMediosDetalle) : data.media_mix);
   document.getElementById('grupoPieWrap2').innerHTML = buildDonutHTML(data.por_grupo_empresarial, 'grupo', 6);
   renderAnunciantes(data.top_anunciantes);
+  _populateMediosFilters();
 
   // Agencias tab
   renderScatter(data.scatter_data, 'scatterWrap4');
@@ -2129,6 +2175,7 @@ let _rawEvolucionDetalle = [];
 let _rawEstacionalidadDetalle = [];
 let _rawEmpresasList = [];
 let _rawClusters = [];
+let _rawMediosDetalle = [];
 let _ovInvMax = 0;
 
 function _populateFilterOptions() {
@@ -2295,6 +2342,75 @@ function _applySegFilter() {
   document.querySelectorAll('#clusterTbody tr').forEach(el => {
     el.style.display = (seg === '' || el.dataset.cluster === seg) ? '' : 'none';
   });
+}
+
+// ── MEDIOS FILTERS ────────────────────────────────────────────────────────────
+function _populateMediosFilters() {
+  if (!_rawMediosDetalle.length) return;
+  const gms = [...new Set(_rawMediosDetalle.map(d=>d.gm).filter(Boolean))].sort();
+  const medios = [...new Set(_rawMediosDetalle.map(d=>d.medio).filter(Boolean))].sort();
+  const vehs = [...new Set(_rawMediosDetalle.map(d=>d.vehiculo).filter(Boolean))].sort();
+  const noms = [...new Set(_rawMediosDetalle.map(d=>d.nombre).filter(Boolean))].sort();
+  const fill = (id, opts) => {
+    const el = document.getElementById(id); if(!el) return;
+    el.innerHTML = '<option value="">Todos</option>' + opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+  };
+  fill('medGrupo', gms);
+  fill('medMedio', medios);
+  fill('medVehiculo', vehs);
+  fill('medAnunciante', noms);
+}
+
+function _filterMediosDetalle() {
+  const gm  = document.getElementById('medGrupo')?.value     || '';
+  const med = document.getElementById('medMedio')?.value     || '';
+  const veh = document.getElementById('medVehiculo')?.value  || '';
+  const emp = document.getElementById('medAnunciante')?.value|| '';
+  const seg = document.getElementById('medSegmento')?.value  || '';
+  const scIdx = seg !== '' ? _scatterIndex() : null;
+  return _rawMediosDetalle.filter(d => {
+    if (gm  && d.gm      !== gm)  return false;
+    if (med && d.medio   !== med) return false;
+    if (veh && d.vehiculo!== veh) return false;
+    if (emp && d.nombre  !== emp) return false;
+    if (scIdx) { const sc=scIdx[d.nombre]; if(!sc||sc.cluster!==+seg) return false; }
+    return true;
+  });
+}
+
+function _applyMediosFilters() {
+  const filtered = _filterMediosDetalle();
+  const emp = document.getElementById('medAnunciante')?.value || '';
+  const seg = document.getElementById('medSegmento')?.value  || '';
+
+  // Media mix
+  renderBars('mediaMixBars', _buildMediaMix(filtered), 'medio', 'inversion', '#1a1a2e');
+  // Vehículos
+  renderVehiculos(_buildVehiculos(filtered));
+  // Scatter (filtrar por empresa o segmento)
+  const scFiltered = _rawScatterData.filter(d => {
+    if (emp && d.nombre !== emp) return false;
+    if (seg !== '' && d.cluster !== +seg) return false;
+    return true;
+  });
+  renderScatter(scFiltered, 'scatterWrap3');
+  // Anunciantes
+  const scIdx = _scatterIndex();
+  const total = filtered.reduce((s,d)=>s+d.v,0)||1;
+  const byNom = {};
+  filtered.forEach(d=>{ byNom[d.nombre]=(byNom[d.nombre]||0)+d.v; });
+  const anunciantes = Object.entries(byNom)
+    .map(([nombre,v])=>{ const sc=scIdx[nombre]||{}; return { nombre, rango_medios:Math.round(v/1000*100)/100, share:Math.round(v/total*10000)/100, cluster:sc.cluster??null, tipo_cluster:sc.tipo_cluster||'', rubro:sc.rubro||'' }; })
+    .sort((a,b)=>b.rango_medios-a.rango_medios).slice(0,100);
+  renderAnunciantes(anunciantes);
+}
+
+function _resetMediosFilters() {
+  ['medGrupo','medMedio','medVehiculo','medAnunciante','medSegmento'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  renderBars('mediaMixBars', _buildMediaMix(_rawMediosDetalle), 'medio', 'inversion', '#1a1a2e');
+  renderVehiculos(_buildVehiculos(_rawMediosDetalle));
+  renderScatter(_rawScatterData, 'scatterWrap3');
+  renderAnunciantes(_rawTopAnunciantes);
 }
 
 // ── LOAD ──────────────────────────────────────────────────────────────────────

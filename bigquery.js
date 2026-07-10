@@ -125,7 +125,7 @@ async function buildAdlensData() {
   // 2) Breakdowns de medios (inner join con anunciantes del adlens) — por GS (guaraníes)
   const innerJoin = `JOIN (SELECT DISTINCT anunciante FROM ${A} WHERE anunciante IS NOT NULL) a USING (anunciante)`;
   const R = fq(T_RADA);
-  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows, anunRangoRows, evolucionRows, mmiClusterRows, clusterGrupoRows, rubroRows, clusterAgenciaRows, radaDimRows, radaMetricRows, evolucionDetalleRows, estacionalidadDetalleRows] = await Promise.all([
+  const [medioRows, grupoRows, agenciaRows, sectorRows, mesRows, anunMediosRows, factRows, mmiRows, anunRangoRows, evolucionRows, mmiClusterRows, clusterGrupoRows, rubroRows, clusterAgenciaRows, radaDimRows, radaMetricRows, evolucionDetalleRows, estacionalidadDetalleRows, mediosDetalleRows] = await Promise.all([
     query(`SELECT Medio AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Medio IS NOT NULL GROUP BY Medio ORDER BY v DESC`),
     query(`SELECT GrupoEmpresarial AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE GrupoEmpresarial IS NOT NULL GROUP BY GrupoEmpresarial ORDER BY v DESC`),
     query(`SELECT Agencia AS k, SUM(RANGODEINVERSION) AS v FROM ${M} ${innerJoin} WHERE Agencia IS NOT NULL GROUP BY Agencia ORDER BY v DESC`),
@@ -178,6 +178,8 @@ async function buildAdlensData() {
     query(`SELECT m.anunciante AS nombre, A__O AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE A__O IS NOT NULL GROUP BY m.anunciante, A__O ORDER BY A__O`).catch(()=>[]),
     // Estacionalidad detalle: inversión por anunciante × mes (cluster/rubro se enriquece client-side)
     query(`SELECT m.anunciante AS nombre, EXTRACT(MONTH FROM MES) AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE MES IS NOT NULL GROUP BY m.anunciante, EXTRACT(MONTH FROM MES) ORDER BY k`).catch(()=>[]),
+    // Medios detalle: inversión por anunciante × grupo × medio × vehículo (para filtros del tab Medios)
+    query(`SELECT m.anunciante AS nombre, GRUPODEMEDIOS AS gm, MEDIO AS medio, VEHICULO AS vehiculo, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE MEDIO IS NOT NULL GROUP BY m.anunciante, GRUPODEMEDIOS, MEDIO, VEHICULO`).catch(()=>[]),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
   const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
@@ -369,6 +371,7 @@ async function buildAdlensData() {
     evolucion: evolucionRows.map(r => ({ ano: +r.k, inversion: +r.v })),
     evolucion_detalle: evolucionDetalleRows.map(r => ({ nombre: fixName(r.nombre || r.anunciante), ano: +r.k, v: +r.v })),
     estacionalidad_detalle: estacionalidadDetalleRows.map(r => ({ nombre: fixName(r.nombre || r.anunciante), mes: +r.k, v: +r.v })),
+    medios_detalle: mediosDetalleRows.map(r => ({ nombre: fixName(r.nombre), gm: r.gm||'', medio: fixMedio(r.medio||''), vehiculo: (r.vehiculo||'').toString().trim(), v: +r.v })),
     cluster_grupo: clusterGrupoRows.map(r => ({ cluster: +r.cluster, grupo: r.grupo, v: +r.v })),
     cluster_agencia: clusterAgenciaRows.map(r => ({ cluster: +r.cluster, agencia: fixAgencia(r.agencia), v: +r.v })),
     rada_dims: radaDimRows.map(r => ({ dimension: r.Dimension, avg: +r.avg_score, n: +r.n })),
