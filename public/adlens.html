@@ -2373,20 +2373,23 @@ function _filterMediosDetalle() {
 
 function _applyMediosFilters() {
   const filtered = _filterMediosDetalle();
-  const emp = document.getElementById('medAnunciante')?.value || '';
-  const seg = document.getElementById('medSegmento')?.value  || '';
+  const seg = document.getElementById('medSegmento')?.value || '';
 
   // Media mix
   renderBars('mediaMixBars', _buildMediaMix(filtered), 'medio', 'inversion', '#1a1a2e');
-  // Vehículos
-  renderVehiculos(_buildVehiculos(filtered));
-  // Scatter (filtrar por empresa o segmento)
+  // Vehículos (sin columna vehiculo por ahora)
+  renderVehiculos(_buildVehiculos(filtered).length ? _buildVehiculos(filtered) : _buildMediaMix(filtered).map(d=>({...d, vehiculo:d.medio})));
+
+  // Scatter: derivar nombres de las filas filtradas + aplicar segmento
+  const anyFilter = !!(document.getElementById('medGrupo')?.value || document.getElementById('medMedio')?.value || document.getElementById('medAnunciante')?.value || seg);
+  const filteredNames = anyFilter ? new Set(filtered.map(d=>d.nombre)) : null;
   const scFiltered = _rawScatterData.filter(d => {
-    if (emp && d.nombre !== emp) return false;
+    if (filteredNames && !filteredNames.has(d.nombre)) return false;
     if (seg !== '' && d.cluster !== +seg) return false;
     return true;
   });
   renderScatter(scFiltered, 'scatterWrap3');
+
   // Anunciantes
   const scIdx = _scatterIndex();
   const total = filtered.reduce((s,d)=>s+d.v,0)||1;
