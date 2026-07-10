@@ -178,8 +178,8 @@ async function buildAdlensData() {
     query(`SELECT m.anunciante AS nombre, A__O AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE A__O IS NOT NULL GROUP BY m.anunciante, A__O ORDER BY A__O`).catch(()=>[]),
     // Estacionalidad detalle: inversión por anunciante × mes (cluster/rubro se enriquece client-side)
     query(`SELECT m.anunciante AS nombre, EXTRACT(MONTH FROM MES) AS k, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE MES IS NOT NULL GROUP BY m.anunciante, EXTRACT(MONTH FROM MES) ORDER BY k`).catch(()=>[]),
-    // Medios detalle: inversión por anunciante × grupo × medio × vehículo (para filtros del tab Medios)
-    query(`SELECT m.anunciante AS nombre, GRUPODEMEDIOS AS gm, MEDIO AS medio, VEHICULO AS vehiculo, ROUND(SUM(RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE MEDIO IS NOT NULL GROUP BY m.anunciante, GRUPODEMEDIOS, MEDIO, VEHICULO`).catch(()=>[]),
+    // Medios detalle: inversión por anunciante × grupo × medio (para filtros del tab Medios)
+    query(`SELECT m.anunciante AS nombre, m.GrupoEmpresarial AS gm, m.Medio AS medio, ROUND(SUM(m.RANGODEINVERSION),0) AS v FROM ${M} m ${innerJoin} WHERE m.Medio IS NOT NULL GROUP BY m.anunciante, m.GrupoEmpresarial, m.Medio`).catch(()=>[]),
   ]);
   const facturacionLooker = (factRows[0] && Math.round(+factRows[0].v)) || 0;
   const mmi = mmiRows[0] && mmiRows[0].v != null ? r1(+mmiRows[0].v * 100) : 0;
@@ -371,7 +371,7 @@ async function buildAdlensData() {
     evolucion: evolucionRows.map(r => ({ ano: +r.k, inversion: +r.v })),
     evolucion_detalle: evolucionDetalleRows.map(r => ({ nombre: fixName(r.nombre || r.anunciante), ano: +r.k, v: +r.v })),
     estacionalidad_detalle: estacionalidadDetalleRows.map(r => ({ nombre: fixName(r.nombre || r.anunciante), mes: +r.k, v: +r.v })),
-    medios_detalle: mediosDetalleRows.map(r => ({ nombre: fixName(r.nombre), gm: r.gm||'', medio: fixMedio(r.medio||''), vehiculo: (r.vehiculo||'').toString().trim(), v: +r.v })),
+    medios_detalle: mediosDetalleRows.map(r => ({ nombre: fixName(r.nombre), gm: r.gm||'', medio: fixMedio(r.medio||''), v: +r.v })),
     cluster_grupo: clusterGrupoRows.map(r => ({ cluster: +r.cluster, grupo: r.grupo, v: +r.v })),
     cluster_agencia: clusterAgenciaRows.map(r => ({ cluster: +r.cluster, agencia: fixAgencia(r.agencia), v: +r.v })),
     rada_dims: radaDimRows.map(r => ({ dimension: r.Dimension, avg: +r.avg_score, n: +r.n })),

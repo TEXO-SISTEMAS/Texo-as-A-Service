@@ -631,9 +631,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
           <div><label for="medMedio">Medio</label>
             <select id="medMedio" onchange="_applyMediosFilters()"><option value="">Todos</option></select>
           </div>
-          <div><label for="medVehiculo">Vehículo</label>
-            <select id="medVehiculo" onchange="_applyMediosFilters()"><option value="">Todos</option></select>
-          </div>
           <div><label for="medAnunciante">Anunciante</label>
             <select id="medAnunciante" onchange="_applyMediosFilters()"><option value="">Todos</option></select>
           </div>
@@ -2137,7 +2134,7 @@ function renderDashboard(data) {
   if (data.cluster_grupo) renderParticipacionClusters(data.cluster_grupo);
   if (data.por_rubro) renderBars('rubroBars', data.por_rubro, 'rubro', 'inversion', '#f59e0b');
   renderBars('mediaMixBars', data.media_mix, 'medio', 'inversion', '#1a1a2e');
-  renderVehiculos(_rawMediosDetalle.length ? _buildVehiculos(_rawMediosDetalle) : data.media_mix);
+  renderVehiculos(data.media_mix);
   document.getElementById('grupoPieWrap2').innerHTML = buildDonutHTML(data.por_grupo_empresarial, 'grupo', 6);
   renderAnunciantes(data.top_anunciantes);
   _populateMediosFilters();
@@ -2347,32 +2344,28 @@ function _applySegFilter() {
 // ── MEDIOS FILTERS ────────────────────────────────────────────────────────────
 function _populateMediosFilters() {
   if (!_rawMediosDetalle.length) return;
-  const gms = [...new Set(_rawMediosDetalle.map(d=>d.gm).filter(Boolean))].sort();
+  const gms   = [...new Set(_rawMediosDetalle.map(d=>d.gm).filter(Boolean))].sort();
   const medios = [...new Set(_rawMediosDetalle.map(d=>d.medio).filter(Boolean))].sort();
-  const vehs = [...new Set(_rawMediosDetalle.map(d=>d.vehiculo).filter(Boolean))].sort();
-  const noms = [...new Set(_rawMediosDetalle.map(d=>d.nombre).filter(Boolean))].sort();
+  const noms   = [...new Set(_rawMediosDetalle.map(d=>d.nombre).filter(Boolean))].sort();
   const fill = (id, opts) => {
     const el = document.getElementById(id); if(!el) return;
     el.innerHTML = '<option value="">Todos</option>' + opts.map(o=>`<option value="${o}">${o}</option>`).join('');
   };
   fill('medGrupo', gms);
   fill('medMedio', medios);
-  fill('medVehiculo', vehs);
   fill('medAnunciante', noms);
 }
 
 function _filterMediosDetalle() {
   const gm  = document.getElementById('medGrupo')?.value     || '';
   const med = document.getElementById('medMedio')?.value     || '';
-  const veh = document.getElementById('medVehiculo')?.value  || '';
   const emp = document.getElementById('medAnunciante')?.value|| '';
   const seg = document.getElementById('medSegmento')?.value  || '';
   const scIdx = seg !== '' ? _scatterIndex() : null;
   return _rawMediosDetalle.filter(d => {
-    if (gm  && d.gm      !== gm)  return false;
-    if (med && d.medio   !== med) return false;
-    if (veh && d.vehiculo!== veh) return false;
-    if (emp && d.nombre  !== emp) return false;
+    if (gm  && d.gm    !== gm)  return false;
+    if (med && d.medio !== med) return false;
+    if (emp && d.nombre!== emp) return false;
     if (scIdx) { const sc=scIdx[d.nombre]; if(!sc||sc.cluster!==+seg) return false; }
     return true;
   });
@@ -2406,7 +2399,7 @@ function _applyMediosFilters() {
 }
 
 function _resetMediosFilters() {
-  ['medGrupo','medMedio','medVehiculo','medAnunciante','medSegmento'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['medGrupo','medMedio','medAnunciante','medSegmento'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   renderBars('mediaMixBars', _buildMediaMix(_rawMediosDetalle), 'medio', 'inversion', '#1a1a2e');
   renderVehiculos(_buildVehiculos(_rawMediosDetalle));
   renderScatter(_rawScatterData, 'scatterWrap3');
