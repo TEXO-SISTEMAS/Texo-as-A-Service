@@ -722,6 +722,32 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <!-- ═══ TAB: AGENCIAS ═══ -->
     <div class="tab-panel" id="tab-agencias">
       <div class="sec">
+        <!-- Filtros Agencias -->
+        <div class="filter-bar" id="agenciasFilterBar" style="margin-bottom:16px">
+          <div><label for="agcAgencia">Agencia</label>
+            <select id="agcAgencia" onchange="_applyAgenciasFilters()"><option value="">Todas</option></select>
+          </div>
+          <div><label for="agcMedio">Medio</label>
+            <select id="agcMedio" onchange="_applyAgenciasFilters()"><option value="">Todos</option></select>
+          </div>
+          <div><label for="agcVehiculo">Vehículo</label>
+            <select id="agcVehiculo" onchange="_applyAgenciasFilters()"><option value="">Todos</option></select>
+          </div>
+          <div><label for="agcAnunciante">Anunciante</label>
+            <select id="agcAnunciante" onchange="_applyAgenciasFilters()"><option value="">Todos</option></select>
+          </div>
+          <div><label for="agcSegmento">Segmento</label>
+            <select id="agcSegmento" onchange="_applyAgenciasFilters()">
+              <option value="">Todos</option>
+              <option value="0">0 · Emergentes</option>
+              <option value="1">1 · Operativas</option>
+              <option value="2">2 · Creativas</option>
+              <option value="3">3 · Líderes</option>
+              <option value="4">4 · En transición</option>
+            </select>
+          </div>
+          <button class="fb-reset" onclick="_resetAgenciasFilters()">Limpiar</button>
+        </div>
         <!-- Fila 1: Scatter + Cluster table + Anunciantes -->
         <div class="two-col" style="margin-bottom:20px">
           <div class="card">
@@ -2147,6 +2173,7 @@ function renderDashboard(data) {
   renderInversionCluster(data.clusters, 'invClusterWrap2');
   renderAnunciantesTable(data.top_anunciantes, 'anunciantesTableWrap2');
   makeTableSortable('anunciantesTableWrap2');
+  _populateAgenciasFilters();
   makeTableSortable('invClusterWrap2');
   renderBars('agenciaBars', data.por_agencia, 'agencia', 'inversion', '#e85d26');
   if (data.cluster_agencia) renderParticipacionAgencias(data.cluster_agencia);
@@ -2414,6 +2441,97 @@ function _resetMediosFilters() {
   renderVehiculos(_buildVehiculos(_rawMediosDetalle));
   renderScatter(_rawScatterData, 'scatterWrap3');
   renderAnunciantes(_rawTopAnunciantes);
+}
+
+// ── AGENCIAS FILTERS ──────────────────────────────────────────────────────────
+function _populateAgenciasFilters() {
+  if (!_rawMediosDetalle.length) return;
+  const agcs  = [...new Set(_rawMediosDetalle.map(d=>d.agencia).filter(Boolean))].sort();
+  const medios = [...new Set(_rawMediosDetalle.map(d=>d.medio).filter(Boolean))].sort();
+  const vehs   = [...new Set(_rawMediosDetalle.map(d=>d.vehiculo).filter(Boolean))].sort();
+  const noms   = [...new Set(_rawMediosDetalle.map(d=>d.nombre).filter(Boolean))].sort();
+  const fill = (id, opts) => {
+    const el = document.getElementById(id); if(!el) return;
+    el.innerHTML = '<option value="">Todas</option>' + opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+  };
+  fill('agcAgencia', agcs);
+  fill('agcMedio', medios);
+  fill('agcVehiculo', vehs);
+  fill('agcAnunciante', noms);
+}
+
+function _filterMediosDetalleAgencias() {
+  const agc = document.getElementById('agcAgencia')?.value   || '';
+  const med = document.getElementById('agcMedio')?.value     || '';
+  const veh = document.getElementById('agcVehiculo')?.value  || '';
+  const emp = document.getElementById('agcAnunciante')?.value|| '';
+  const seg = document.getElementById('agcSegmento')?.value  || '';
+  const scIdx = seg !== '' ? _scatterIndex() : null;
+  return _rawMediosDetalle.filter(d => {
+    if (agc && d.agencia  !== agc) return false;
+    if (med && d.medio    !== med) return false;
+    if (veh && d.vehiculo !== veh) return false;
+    if (emp && d.nombre   !== emp) return false;
+    if (scIdx) { const sc=scIdx[d.nombre]; if(!sc||sc.cluster!==+seg) return false; }
+    return true;
+  });
+}
+
+function _applyAgenciasFilters() {
+  const filtered = _filterMediosDetalleAgencias();
+  const seg = document.getElementById('agcSegmento')?.value || '';
+
+  // Scatter: derivar nombres de la selección + segmento
+  const anyFilter = !!(document.getElementById('agcAgencia')?.value || document.getElementById('agcMedio')?.value || document.getElementById('agcVehiculo')?.value || document.getElementById('agcAnunciante')?.value || seg);
+  const filteredNames = anyFilter ? new Set(filtered.map(d=>d.nombre)) : null;
+  const scFiltered = _rawScatterData.filter(d => {
+    if (filteredNames && !filteredNames.has(d.nombre)) return false;
+    if (seg !== '' && d.cluster !== +seg) return false;
+    return true;
+  });
+  renderScatter(scFiltered, 'scatterWrap4');
+
+  // Agencias
+  const total = filtered.reduce((s,d)=>s+d.v,0)||1;
+  const byAgc = {};
+  filtered.forEach(d=>{ if(d.agencia) byAgc[d.agencia]=(byAgc[d.agencia]||0)+d.v; });
+  const agcList = Object.entries(byAgc)
+    .map(([agencia,v])=>({ agencia, inversion:Math.round(v), share:Math.round(v/total*10000)/100 }))
+    .sort((a,b)=>b.inversion-a.inversion).slice(0,12);
+  renderBars('agenciaBars', agcList, 'agencia', 'inversion', '#e85d26');
+
+  // Rubro bars
+  const scIdx = _scatterIndex();
+  const byRubro = {};
+  filtered.forEach(d=>{ const sc=scIdx[d.nombre]||{}; const r=sc.rubro||'Otro'; byRubro[r]=(byRubro[r]||0)+d.v; });
+  const rubroList = Object.entries(byRubro)
+    .map(([rubro,v])=>({ rubro, inversion:Math.round(v), share:Math.round(v/total*10000)/100 }))
+    .sort((a,b)=>b.inversion-a.inversion).slice(0,10);
+  renderBars('rubroBars2', rubroList, 'rubro', 'inversion', '#f59e0b');
+
+  // Anunciantes table
+  const byNom = {};
+  filtered.forEach(d=>{ byNom[d.nombre]=(byNom[d.nombre]||0)+d.v; });
+  const anunciantes = Object.entries(byNom)
+    .map(([nombre,v])=>{ const sc=scIdx[nombre]||{}; return { nombre, rango_medios:Math.round(v/1000*100)/100, share:Math.round(v/total*10000)/100, cluster:sc.cluster??null, tipo_cluster:sc.tipo_cluster||'', rubro:sc.rubro||'' }; })
+    .sort((a,b)=>b.rango_medios-a.rango_medios).slice(0,100);
+  renderAnunciantesTable(anunciantes, 'anunciantesTableWrap2');
+}
+
+function _resetAgenciasFilters() {
+  ['agcAgencia','agcMedio','agcVehiculo','agcAnunciante','agcSegmento'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  renderScatter(_rawScatterData, 'scatterWrap4');
+  renderBars('agenciaBars', _buildAgenciaList(_rawMediosDetalle), 'agencia', 'inversion', '#e85d26');
+  renderAnunciantesTable(_rawTopAnunciantes, 'anunciantesTableWrap2');
+}
+
+function _buildAgenciaList(detalle) {
+  const total = detalle.reduce((s,d)=>s+d.v,0)||1;
+  const byAgc = {};
+  detalle.forEach(d=>{ if(d.agencia) byAgc[d.agencia]=(byAgc[d.agencia]||0)+d.v; });
+  return Object.entries(byAgc)
+    .map(([agencia,v])=>({ agencia, inversion:Math.round(v), share:Math.round(v/total*10000)/100 }))
+    .sort((a,b)=>b.inversion-a.inversion).slice(0,12);
 }
 
 // ── LOAD ──────────────────────────────────────────────────────────────────────
