@@ -144,6 +144,11 @@ app.get('/auth/logout', (req, res) => {
   res.redirect('/login');
 });
 
+// ── ASSETS PÚBLICOS (accesibles sin login) ────────────────────────────────────
+app.get('/logo-impulsados.png', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/logo-impulsados.png'));
+});
+
 // ── PROTECCIÓN GLOBAL ─────────────────────────────────────────────────────────
 app.use(requireAuth);
 
