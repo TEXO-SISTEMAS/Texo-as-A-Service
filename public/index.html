@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.mini.min.js"></script>
 <style>
 :root {
   --bg: #eef0f5;
@@ -2532,31 +2533,104 @@ function fmtGs(v) {
   return n.toFixed(0);
 }
 
+function parseIngresosClient(wb, filename) {
+  const ORDEN_MES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  const AGENCIAS_EBITDA = ['BRICK','NASTA','ROGER','LUPE','OMD','AMPLIFY'];
+  const num = v => v==null ? 0 : typeof v==='number' ? v : parseFloat(v)||0;
+  const normArena = a => {
+    if (!a) return 'OTRO';
+    const s = a.toString().trim().toUpperCase();
+    if (s.includes('DISTRIBUC')||s==='DC'||s==='CD') return 'DC';
+    if (s.includes('CREAC')||s==='CC') return 'CC';
+    if (s.includes('TRADE')) return 'TRADE';
+    if (s==='BI') return 'BI';
+    return s.slice(0,30);
+  };
+
+  const wsBd = wb.Sheets['BD INGRESO'];
+  if (!wsBd) throw new Error('Hoja "BD INGRESO" no encontrada. Verificá que el archivo sea el Detalle de Ingresos correcto.');
+
+  const rows = XLSX.utils.sheet_to_json(wsBd, { header:1, defval:null }).slice(1);
+  const agencias={}, periodos={}, clientes={}, arenas={};
+
+  for (const r of rows) {
+    if (!r[0]) continue;
+    if ((r[5]||'').toString().toUpperCase()==='ANULADO') continue;
+    const ag=(r[0]||'').toString().trim(), per=(r[11]||'').toString().trim().toUpperCase();
+    const cli=(r[10]||r[9]||'').toString().trim(), are=normArena(r[19]), sub=(r[20]||'').toString().trim();
+    const fac=num(r[13]), rev=num(r[17]);
+    if (!agencias[ag]) agencias[ag]={fac:0,rev:0,tx:0};
+    agencias[ag].fac+=fac; agencias[ag].rev+=rev; agencias[ag].tx++;
+    const mes=ORDEN_MES.find(m=>per.includes(m))||per;
+    if (!periodos[mes]) periodos[mes]={fac:0,rev:0};
+    periodos[mes].fac+=fac; periodos[mes].rev+=rev;
+    if (cli) { const ck=cli.slice(0,60); if(!clientes[ck]) clientes[ck]={fac:0,rev:0}; clientes[ck].fac+=fac; clientes[ck].rev+=rev; }
+    if (!arenas[are]) arenas[are]={fac:0,rev:0,subArenas:{}};
+    arenas[are].fac+=fac; arenas[are].rev+=rev;
+    if (sub) { if(!arenas[are].subArenas[sub]) arenas[are].subArenas[sub]=0; arenas[are].subArenas[sub]+=fac; }
+  }
+
+  const totFac=Object.values(agencias).reduce((s,d)=>s+d.fac,0);
+  const totRev=Object.values(agencias).reduce((s,d)=>s+d.rev,0);
+  const totTx=Object.values(agencias).reduce((s,d)=>s+d.tx,0);
+  const agList=Object.entries(agencias).map(([n,d])=>({nombre:n,facturacion:Math.round(d.fac),revenue:Math.round(d.rev),margen:d.fac>0?+(d.rev/d.fac).toFixed(4):0,transacciones:d.tx})).sort((a,b)=>b.facturacion-a.facturacion);
+  const periodosList=ORDEN_MES.filter(m=>periodos[m]).map(m=>({mes:m,facturacion:Math.round(periodos[m].fac),revenue:Math.round(periodos[m].rev)}));
+  const topClientes=Object.entries(clientes).filter(([n])=>n.length>1).map(([n,d])=>({nombre:n,facturacion:Math.round(d.fac),revenue:Math.round(d.rev),pct:totFac>0?+(d.fac/totFac).toFixed(4):0})).sort((a,b)=>b.facturacion-a.facturacion).slice(0,20);
+  const arenasList=Object.entries(arenas).map(([n,d])=>({nombre:n,facturacion:Math.round(d.fac),revenue:Math.round(d.rev),margen:d.fac>0?+(d.rev/d.fac).toFixed(4):0,pct_fac:totFac>0?+(d.fac/totFac).toFixed(4):0,topSubArenas:Object.entries(d.subArenas).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([sn,sf])=>({nombre:sn,facturacion:Math.round(sf)}))})).sort((a,b)=>b.facturacion-a.facturacion);
+
+  const ebitda=[];
+  const wsSar=wb.Sheets['SUB ARENAS REPORT (3)'];
+  if (wsSar) {
+    const sarRows=XLSX.utils.sheet_to_json(wsSar,{header:1,defval:null});
+    for (const r of sarRows.slice(6)) {
+      if (!r[0]) continue;
+      const label=r[0].toString().trim().toUpperCase();
+      if (!AGENCIAS_EBITDA.some(a=>label===a)) continue;
+      ebitda.push({empresa:r[0].toString().trim(),facturacion:Math.round(num(r[1])),revenue:Math.round(num(r[2])),margen_rev:num(r[1])>0?+(num(r[2])/num(r[1])).toFixed(4):0,rrhh:Math.round(num(r[5])),comerciales:Math.round(num(r[6])),admin:Math.round(num(r[7])),ebitda:Math.round(num(r[8])),ebitda_sin3709:Math.round(num(r[10])),margen_ebitda:num(r[2])>0?+(num(r[8])/num(r[2])).toFixed(4):0,personas:Math.round(num(r[11])),percapita:Math.round(num(r[12]))});
+    }
+  }
+
+  const meses=periodosList.map(p=>p.mes);
+  const periodo=meses.length===0?'':meses.length===1?meses[0]:`${meses[0]} – ${meses[meses.length-1]}`;
+  return { tipo:'ingresos', nombre:filename, periodo, fecha_carga:new Date().toISOString(), totales:{facturacion:Math.round(totFac),revenue:Math.round(totRev),margen:totFac>0?+(totRev/totFac).toFixed(4):0,transacciones:totTx}, agencias:agList, periodos:periodosList, topClientes, arenas:arenasList, ebitda };
+}
+
 async function handleIngresosFileSelect(e) {
   const file = e.target.files[0]; if (!file) return; e.target.value='';
   const btn = document.getElementById('btnIngresosUpload');
-  btn.textContent = 'Subiendo...'; btn.disabled = true;
-  const form = new FormData(); form.append('archivo', file);
+  btn.textContent = 'Procesando...'; btn.disabled = true;
   try {
-    const r = await fetch('/api/upload-ingresos', { method:'POST', body:form });
+    const buffer = await file.arrayBuffer();
+    const wb = XLSX.read(buffer, { type:'array' });
+    const parsed = parseIngresosClient(wb, file.name);
+    const r = await fetch('/api/save-ingresos', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(parsed) });
     const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Error al subir');
-    showToast(`✓ Ingresos cargados — ${data.periodo}`,'success');
+    if (!r.ok) throw new Error(data.error || 'Error al guardar');
+    showToast(`✓ Ingresos cargados — ${parsed.periodo}`, 'success');
     await loadLatestIngresos();
   } catch(err) {
-    showToast('✗ '+err.message,'error');
+    showToast('✗ ' + err.message, 'error');
   } finally {
     btn.textContent = '↑ Subir Excel'; btn.disabled = false;
   }
 }
 
 async function loadLatestIngresos() {
+  const titulo = document.getElementById('ingresosTitulo');
+  const sub    = document.getElementById('ingresosSub');
   try {
     const r = await fetch('/api/latest-ingresos');
     const data = await r.json();
-    if (data.empty || data.error) return;
+    if (data.empty || data.error) {
+      if (titulo) titulo.textContent = 'Detalle de Ingresos · 2026';
+      if (sub)    sub.textContent = 'Sin datos cargados · Subí el Excel para ver los datos';
+      return;
+    }
     renderIngresos(data);
-  } catch(e) { /* sin datos, no hacer nada */ }
+  } catch(e) {
+    if (titulo) titulo.textContent = 'Detalle de Ingresos · 2026';
+    if (sub)    sub.textContent = 'Sin datos cargados';
+  }
 }
 
 function renderIngresos(d) {

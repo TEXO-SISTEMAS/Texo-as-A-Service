@@ -269,6 +269,19 @@ app.post('/api/upload-ingresos', upload.single('archivo'), async (req, res) => {
   }
 });
 
+// ── GUARDAR INGRESOS (JSON desde browser) ─────────────────────────────────────
+app.post('/api/save-ingresos', async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data || data.tipo !== 'ingresos') return res.status(400).json({ error: 'JSON inválido' });
+    await drive.saveMarketingIntel('ingresos', { ...data, uploaded_at: new Date().toISOString() });
+    res.json({ ok: true, periodo: data.periodo, agencias: data.agencias?.length });
+  } catch (err) {
+    console.error('ERROR /api/save-ingresos:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── ÚLTIMO INGRESOS ───────────────────────────────────────────────────────────
 app.get('/api/latest-ingresos', async (req, res) => {
   try {
