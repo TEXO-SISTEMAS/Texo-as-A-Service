@@ -1179,6 +1179,8 @@ function showNoData(){
 
 const charts={};
 function destroyCharts(){ Object.values(charts).forEach(c=>c.destroy()); Object.keys(charts).forEach(k=>delete charts[k]); }
+const chartsIng={};
+function destroyChartsIng(){ Object.values(chartsIng).forEach(c=>{try{c.destroy();}catch(e){}}); Object.keys(chartsIng).forEach(k=>delete chartsIng[k]); }
 
 // Chart.js defaults para look limpio
 const FONT = { family: 'Inter', size: 12 };
@@ -2634,125 +2636,279 @@ async function loadLatestIngresos() {
 }
 
 function renderIngresos(d) {
+  destroyChartsIng();
   const titulo = document.getElementById('ingresosTitulo');
   const sub    = document.getElementById('ingresosSub');
-  if (titulo) titulo.textContent = `Evolución ${d.periodo || '2026'}`;
+  if (titulo) titulo.textContent = `Detalle de Ingresos · ${d.periodo || '2026'}`;
   if (sub) {
     const carga = d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString('es-PY',{day:'numeric',month:'long',year:'numeric'}) : '';
-    sub.textContent = `${d.totales?.transacciones?.toLocaleString('es') || '—'} transacciones · Cargado ${carga}`;
+    sub.textContent = `${(d.totales?.transacciones||0).toLocaleString('es-PY')} transacciones · Cargado ${carga}`;
   }
 
-  const t = d.totales || {};
+  const t       = d.totales || {};
+  const ags     = d.agencias || [];
+  const meses   = d.periodos || [];
+  const clis    = d.topClientes || [];
+  const arenas  = d.arenas || [];
+  const ebs     = d.ebitda || [];
+  const hasEb   = ebs.length > 0;
+
+  // ── Colores por agencia ──
+  const AG_C = {BRICK:'#e85d26',NASTA:'#6c3fc5',ROGER:'#d42b4f',LUPE:'#0ea5b0',OMD:'#d4900a',AMPLIFY:'#8b5cf6'};
+  const agC = n => AG_C[n.toUpperCase()] || '#9ca3af';
+
+  // ── Análisis automático ──
+  const agLider   = ags[0];
+  const agBajaMg  = ags.filter(a => a.margen < 0.10 && a.facturacion > 0);
+  const mejorMg   = [...ags].sort((a,b)=>b.margen-a.margen)[0];
+  const peorMg    = [...ags].sort((a,b)=>a.margen-b.margen)[0];
+  const mejorMes  = meses.reduce((best,m)=>m.facturacion>(best?.facturacion||0)?m:best, null);
+  const topCli    = clis[0];
+  const top3pct   = clis.slice(0,3).reduce((s,c)=>s+c.pct,0)*100;
+  const arenaLid  = arenas[0];
+  const ebNegs    = ebs.filter(e=>e.ebitda<0);
+  const ebSin3Neg = ebs.filter(e=>e.ebitda_sin3709<0);
+  const tot3709   = ebs.reduce((s,e)=>s+(e.ebitda-(e.ebitda_sin3709||0)),0);
   const margenPct = t.margen ? (t.margen*100).toFixed(1)+'%' : '—';
 
-  // ── KPIs ──
+  // ── Diagnóstico de margen ──
+  const diagMg = (mg) => {
+    const p = mg*100;
+    if (p >= 20) return {txt:'✓ Sólido', c:'var(--green)'};
+    if (p >= 10) return {txt:'Ajustado', c:'#b45309'};
+    if (p >= 0)  return {txt:'⚠ Bajo', c:'#d97706'};
+    return {txt:'✗ Negativo', c:'var(--red)'};
+  };
+
   const kpiHtml = `
     <div class="ingresos-kpi-grid">
       <div class="kpi kpi-accent" style="--kpi-color:var(--accent)">
         <div class="kpi-label">Facturación acumulada</div>
-        <div class="kpi-value" style="font-size:32px">Gs. ${fmtGs(t.facturacion)}</div>
+        <div class="kpi-value" style="font-size:30px">Gs. ${fmtGs(t.facturacion)}</div>
         <div class="kpi-sub">${d.periodo || ''}</div>
       </div>
       <div class="kpi kpi-accent" style="--kpi-color:var(--green)">
-        <div class="kpi-label">Revenue</div>
-        <div class="kpi-value kpi-pos" style="font-size:32px">Gs. ${fmtGs(t.revenue)}</div>
+        <div class="kpi-label">Revenue del período</div>
+        <div class="kpi-value kpi-pos" style="font-size:30px">Gs. ${fmtGs(t.revenue)}</div>
         <div class="kpi-sub">Margen ${margenPct}</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">Agencias activas</div>
-        <div class="kpi-value" style="font-size:32px">${d.agencias?.length || '—'}</div>
-        <div class="kpi-sub">en el período</div>
+        <div class="kpi-label">Agencias con datos</div>
+        <div class="kpi-value" style="font-size:30px">${ags.length}</div>
+        <div class="kpi-sub">${agBajaMg.length>0?`<span style="color:var(--red)">⚠ ${agBajaMg.length} margen &lt;10%</span>`:'todas sanas'}</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Transacciones</div>
-        <div class="kpi-value" style="font-size:32px">${(t.transacciones||0).toLocaleString('es-PY')}</div>
-        <div class="kpi-sub">facturas procesadas</div>
+        <div class="kpi-value" style="font-size:30px">${(t.transacciones||0).toLocaleString('es-PY')}</div>
+        <div class="kpi-sub">${meses.length} meses activos</div>
       </div>
     </div>`;
-
-  // ── Evolución mensual ──
-  const meses = d.periodos || [];
-  const maxFac = Math.max(...meses.map(m=>m.facturacion), 1);
-  const mesesHtml = meses.map(m => {
-    const h = Math.round((m.facturacion / maxFac) * 68);
-    return `<div class="mes-col">
-      <div class="mes-bar-wrap"><div class="mes-bar" style="height:${h}px" title="${fmtGs(m.facturacion)}"></div></div>
-      <div class="mes-label">${m.mes.slice(0,3)}</div>
-    </div>`;
-  }).join('');
-
-  // ── Tabla agencias ──
-  const agRows = (d.agencias||[]).map(a => {
-    const cls = a.margen >= 0 ? 'val-pos' : 'val-neg';
-    return `<tr>
-      <td style="text-align:left;font-weight:700">${a.nombre}</td>
-      <td>Gs. ${fmtGs(a.facturacion)}</td>
-      <td>Gs. ${fmtGs(a.revenue)}</td>
-      <td class="${cls}">${(a.margen*100).toFixed(1)}%</td>
-      <td style="color:var(--muted);font-size:13px">${a.transacciones.toLocaleString('es-PY')}</td>
-    </tr>`;
-  }).join('');
-
-  // ── Top clientes ──
-  const topMax = d.topClientes?.[0]?.pct || 1;
-  const clientesHtml = (d.topClientes||[]).slice(0,10).map(c => {
-    const barW = Math.round((c.pct / topMax) * 100);
-    const nombre = c.nombre.replace(/\s*-\s*\d{9,}.*$/,'').trim(); // quitar RUC
-    return `<div class="clientes-bar-row">
-      <span class="cli-name" title="${c.nombre}">${nombre}</span>
-      <div class="cli-bar-bg"><div class="cli-bar-fill" style="width:${barW}%"></div></div>
-      <span class="cli-pct">${(c.pct*100).toFixed(1)}%</span>
-    </div>`;
-  }).join('');
-
-  // ── EBITDA cards ──
-  const ebitdaCards = (d.ebitda||[]).map(e => {
-    const pos = e.ebitda >= 0;
-    const mg  = e.margen_ebitda ? (e.margen_ebitda*100).toFixed(1)+'%' : '—';
-    return `<div class="ebitda-card ${pos?'is-pos':'is-neg'}">
-      <div class="ebitda-card-name">${e.empresa}</div>
-      <div class="ebitda-card-ebitda" style="color:${pos?'var(--green)':'var(--red)'}">Gs. ${fmtGs(e.ebitda)}</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:12px">EBITDA · Margen ${mg}</div>
-      <div class="ebitda-card-row"><span>Revenue</span><span>Gs. ${fmtGs(e.revenue)}</span></div>
-      <div class="ebitda-card-row"><span>RRHH</span><span>Gs. ${fmtGs(e.rrhh)}</span></div>
-      <div class="ebitda-card-row"><span>Comerciales</span><span>Gs. ${fmtGs(e.comerciales)}</span></div>
-      <div class="ebitda-card-row"><span>Admin</span><span>Gs. ${fmtGs(e.admin)}</span></div>
-      <div class="ebitda-card-row"><span>Sin 3709</span><span style="color:${e.ebitda_sin3709>=0?'var(--green)':'var(--red)'}">Gs. ${fmtGs(e.ebitda_sin3709)}</span></div>
-      <div class="ebitda-card-row"><span>Personas</span><span>${e.personas}</span></div>
-    </div>`;
-  }).join('');
-
-  const hasEbitda = d.ebitda?.length > 0;
 
   document.getElementById('ingresosContent').innerHTML = `
     ${kpiHtml}
-    <div class="ingresos-table-grid">
-      <div class="chart-card">
+    <div class="charts-grid" style="margin-bottom:20px">
+      <div class="chart-card wide">
         <div class="chart-title">Facturación por agencia</div>
-        <div class="chart-subtitle">Revenue y margen · ${d.periodo||''}</div>
-        <div class="table-wrap" style="margin:0">
-          <table>
-            <thead><tr>
-              <th style="text-align:left">Agencia</th>
-              <th>Facturación</th><th>Revenue</th><th>Margen</th><th>Facturas</th>
-            </tr></thead>
-            <tbody>${agRows}</tbody>
-          </table>
+        <div class="chart-subtitle">Facturación vs Revenue — ${d.periodo||''}</div>
+        <div class="chart-wrap" style="height:190px"><canvas id="cIngFac"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">Revenue = Ingresos netos · Facturación = Monto facturado bruto</div>
+          <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${agLider?.nombre||'—'}</strong> — Gs. ${fmtGs(agLider?.facturacion)} facturado, Gs. ${fmtGs(agLider?.revenue)} revenue</span></div>
+          <div class="ci-row"><span class="ci-label">Margen grupo</span><span class="ci-val" style="color:${diagMg(t.margen||0).c}">${margenPct} — ${diagMg(t.margen||0).txt}</span></div>
+          ${agBajaMg.length>0?`<div class="ci-row"><span class="ci-label" style="color:var(--red)">Problema</span><span class="ci-val" style="color:var(--red)">${agBajaMg.map(a=>a.nombre).join(', ')} con margen menor al 10% — revisar estructura de costos</span></div>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="charts-grid" style="margin-bottom:20px">
+      <div class="chart-card">
+        <div class="chart-title">Margen por agencia</div>
+        <div class="chart-subtitle">Revenue ÷ Facturación × 100 — Zona verde &gt;10%</div>
+        <div class="chart-wrap"><canvas id="cIngMargen"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">Margen = Revenue ÷ Facturación × 100%</div>
+          <div class="ci-row"><span class="ci-label">Mejor margen</span><span class="ci-val"><strong>${mejorMg?.nombre||'—'}</strong> — ${((mejorMg?.margen||0)*100).toFixed(1)}% <span style="color:${diagMg(mejorMg?.margen||0).c}">${diagMg(mejorMg?.margen||0).txt}</span></span></div>
+          <div class="ci-row"><span class="ci-label">Menor margen</span><span class="ci-val"><strong>${peorMg?.nombre||'—'}</strong> — ${((peorMg?.margen||0)*100).toFixed(1)}% <span style="color:${diagMg(peorMg?.margen||0).c}">${diagMg(peorMg?.margen||0).txt}</span></span></div>
+          ${peorMg&&peorMg.margen<0.10?`<div class="ci-row"><span class="ci-label" style="color:#d97706">Atención</span><span class="ci-val">${peorMg.nombre} está por debajo del umbral mínimo saludable (10%)</span></div>`:''}
         </div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">Top clientes</div>
-        <div class="chart-subtitle">% del total facturado</div>
-        ${clientesHtml}
-        <div class="chart-title" style="margin-top:20px">Evolución mensual</div>
-        <div class="chart-subtitle">Facturación acumulada</div>
-        <div class="meses-row">${mesesHtml}</div>
+        <div class="chart-title">Evolución mensual</div>
+        <div class="chart-subtitle">Facturación y Revenue — por mes del período</div>
+        <div class="chart-wrap"><canvas id="cIngEvo"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">Tendencia basada en ${meses.length} meses con actividad registrada</div>
+          ${mejorMes?`<div class="ci-row"><span class="ci-label">Mejor mes</span><span class="ci-val"><strong>${mejorMes.mes}</strong> — Gs. ${fmtGs(mejorMes.facturacion)} facturado</span></div>`:''}
+          ${meses.length>=2?`<div class="ci-row"><span class="ci-label">Tendencia</span><span class="ci-val">${meses[meses.length-1].facturacion>meses[0].facturacion?'↑ En crecimiento — último mes supera al primero':'↓ Desaceleración — último mes por debajo del primero'}</span></div>`:''}
+        </div>
       </div>
     </div>
-    ${hasEbitda ? `
-    <div class="sec-label" style="margin-bottom:12px">P&amp;L con EBITDA — desde reportes internos</div>
-    <div class="ingresos-ebitda-grid">${ebitdaCards}</div>` : ''}
-  `;
+    <div class="charts-grid" style="margin-bottom:20px">
+      <div class="chart-card">
+        <div class="chart-title">Top 10 clientes</div>
+        <div class="chart-subtitle">Concentración — % del total facturado del grupo</div>
+        <div class="chart-wrap" style="height:${Math.min(clis.length,10)*30+60}px"><canvas id="cIngCli"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">Concentración = Facturación cliente ÷ Total grupo × 100%</div>
+          ${topCli?`<div class="ci-row"><span class="ci-label">Mayor cliente</span><span class="ci-val"><strong>${topCli.nombre.replace(/\s*-\s*\d{9,}.*$/,'').trim()}</strong> — ${(topCli.pct*100).toFixed(1)}% ${topCli.pct>0.15?'<span style="color:var(--red)">⚠ Dependencia alta</span>':''}</span></div>`:''}
+          <div class="ci-row"><span class="ci-label">Top 3 clientes</span><span class="ci-val">${top3pct.toFixed(1)}% del total — ${top3pct>50?'<span style="color:#d97706">concentración elevada</span>':'diversificado'}</span></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Distribución por arena</div>
+        <div class="chart-subtitle">CC / DC / TRADE / BI — facturación del período</div>
+        <div class="chart-wrap"><canvas id="cIngArena"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">Arena = categoría del servicio en la transacción</div>
+          ${arenaLid?`<div class="ci-row"><span class="ci-label">Arena dominante</span><span class="ci-val"><strong>${arenaLid.nombre}</strong> — ${(arenaLid.pct_fac*100).toFixed(1)}% del total facturado</span></div>`:''}
+          ${arenas.length>1?`<div class="ci-row"><span class="ci-label">Mix</span><span class="ci-val">${arenas.map(a=>a.nombre+' '+(a.pct_fac*100).toFixed(0)+'%').join(' · ')}</span></div>`:''}
+        </div>
+      </div>
+    </div>
+    ${hasEb?`
+    <div class="charts-grid" style="margin-bottom:20px">
+      <div class="chart-card wide">
+        <div class="chart-title">EBITDA por empresa · Con vs Sin 3709</div>
+        <div class="chart-subtitle">Resultado operativo real — extraído del P&amp;L interno</div>
+        <div class="chart-wrap" style="height:210px"><canvas id="cIngEbitda"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">EBITDA = Revenue − RRHH − Gastos Comerciales − Admin</div>
+          <div class="ci-row"><span class="ci-label">EBITDA total</span><span class="ci-val"><strong style="color:${ebs.reduce((s,e)=>s+e.ebitda,0)>=0?'var(--green)':'var(--red)'}">Gs. ${fmtGs(ebs.reduce((s,e)=>s+e.ebitda,0))}</strong> consolidado del grupo</span></div>
+          <div class="ci-row"><span class="ci-label">Sin 3709</span><span class="ci-val" style="color:${ebs.reduce((s,e)=>s+e.ebitda_sin3709,0)>=0?'var(--green)':'var(--red)'}">Gs. ${fmtGs(ebs.reduce((s,e)=>s+e.ebitda_sin3709,0))} — impacto del crédito: Gs. ${fmtGs(tot3709)}</span></div>
+          ${ebNegs.length>0?`<div class="ci-row"><span class="ci-label" style="color:var(--red)">Problema</span><span class="ci-val" style="color:var(--red)">${ebNegs.map(e=>e.empresa).join(', ')} con EBITDA negativo — requieren atención urgente</span></div>`:''}
+          ${ebSin3Neg.length>0&&ebNegs.length===0?`<div class="ci-row"><span class="ci-label" style="color:#d97706">Alerta 3709</span><span class="ci-val">${ebSin3Neg.map(e=>e.empresa).join(', ')} dependen del crédito 3709 para mantenerse positivas</span></div>`:''}
+          ${ebSin3Neg.length>0&&ebNegs.length>0?`<div class="ci-row"><span class="ci-label" style="color:#d97706">Dependencia</span><span class="ci-val">${ebSin3Neg.map(e=>e.empresa).join(', ')} — sin 3709 no son rentables</span></div>`:''}
+        </div>
+      </div>
+    </div>
+    <div class="charts-grid" style="margin-bottom:20px">
+      <div class="chart-card wide">
+        <div class="chart-title">Estructura de costos por empresa</div>
+        <div class="chart-subtitle">RRHH · Comerciales · Admin — Gs.</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="cIngEgr"></canvas></div>
+        <div class="chart-insight">
+          <div class="ci-formula">Total egresos = RRHH + Gastos Comerciales + Gastos Admin</div>
+          <div class="ci-row"><span class="ci-label">Mayor costo</span><span class="ci-val"><strong>${(()=>{const mx=ebs.reduce((best,e)=>e.rrhh+e.comerciales+e.admin>(best.rrhh+best.comerciales+best.admin)?e:best,ebs[0]||{});return mx.empresa||'—';})()}</strong> — estructura más pesada del grupo</span></div>
+          <div class="ci-row"><span class="ci-label">RRHH total</span><span class="ci-val">Gs. ${fmtGs(ebs.reduce((s,e)=>s+e.rrhh,0))} — ${ebs.reduce((s,e)=>s+e.personas,0)} personas en el grupo</span></div>
+        </div>
+      </div>
+    </div>`:''}`
+  ;
+
+  // ── INICIALIZAR CHARTS ──────────────────────────────────────────────────────
+  const ingTip = (label, fn) => ({
+    backgroundColor:'#0f1117', titleFont:{...FONT,weight:'700'}, bodyFont:FONT, padding:10, cornerRadius:6,
+    callbacks:{ label: c => label ? ` ${label}: Gs. ${fmtGs(c.raw)}` : ` ${c.dataset?.label||''}: Gs. ${fmtGs(c.raw)}`, ...(fn||{}) }
+  });
+  const ingScales = (pct=false) => ({
+    x:{ grid:{color:GRID_COLOR}, border:{display:false}, ticks:{color:TICK_COLOR,font:FONT, callback:v=>pct?v+'%':fmtGs(v)} },
+    y:{ grid:{color:GRID_COLOR}, border:{display:false}, ticks:{color:TICK_COLOR,font:FONT, callback:v=>pct?v+'%':fmtGs(v)} }
+  });
+
+  // 1 — Facturación por agencia (grouped)
+  chartsIng.fac = new Chart(document.getElementById('cIngFac'),{
+    type:'bar',
+    data:{labels:ags.map(a=>a.nombre),datasets:[
+      {label:'Facturación',data:ags.map(a=>a.facturacion),backgroundColor:ags.map(a=>agC(a.nombre)),borderRadius:4,borderSkipped:false},
+      {label:'Revenue',data:ags.map(a=>a.revenue),backgroundColor:ags.map(a=>agC(a.nombre)+'55'),borderRadius:4,borderSkipped:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:12,boxWidth:10,boxHeight:10}},
+        tooltip:{...ingTip('',{label:c=>` ${c.dataset.label}: Gs. ${fmtGs(c.raw)}`})},
+      },
+      scales:{x:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+        y:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmtGs(v)}}}}
+  });
+
+  // 2 — Margen por agencia
+  const mgs = ags.map(a=>+(a.margen*100).toFixed(1));
+  chartsIng.margen = new Chart(document.getElementById('cIngMargen'),{
+    type:'bar',
+    data:{labels:ags.map(a=>a.nombre),datasets:[{
+      data:mgs,
+      backgroundColor:mgs.map(m=>m>=20?'#16a34a':m>=10?'#d4900a':'#d42b4f'),
+      borderRadius:5,borderSkipped:false
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',bodyFont:FONT,padding:10,cornerRadius:6,
+        callbacks:{label:c=>` ${c.raw.toFixed(1)}% margen`}}},
+      scales:{x:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+        y:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>v+'%'}}}}
+  });
+
+  // 3 — Evolución mensual (líneas)
+  chartsIng.evo = new Chart(document.getElementById('cIngEvo'),{
+    type:'line',
+    data:{labels:meses.map(m=>m.mes.slice(0,3)),datasets:[
+      {label:'Facturación',data:meses.map(m=>m.facturacion),borderColor:'#6c3fc5',backgroundColor:'rgba(108,63,197,.07)',fill:true,tension:0.3,pointRadius:4,pointHoverRadius:6,borderWidth:2},
+      {label:'Revenue',data:meses.map(m=>m.revenue),borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.05)',fill:true,tension:0.3,pointRadius:4,pointHoverRadius:6,borderWidth:2},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:12,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',bodyFont:FONT,padding:10,cornerRadius:6,callbacks:{label:c=>` ${c.dataset.label}: Gs. ${fmtGs(c.raw)}`}}},
+      scales:{x:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+        y:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmtGs(v)}}}}
+  });
+
+  // 4 — Top clientes (horizontal)
+  const top10 = clis.slice(0,10);
+  chartsIng.cli = new Chart(document.getElementById('cIngCli'),{
+    type:'bar',
+    data:{labels:top10.map(c=>c.nombre.replace(/\s*-\s*\d{9,}.*$/,'').trim().slice(0,22)),
+      datasets:[{data:top10.map(c=>+(c.pct*100).toFixed(1)),
+        backgroundColor:top10.map(c=>c.pct>0.15?'#d42b4f':'#6c3fc5'),borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f1117',bodyFont:FONT,padding:10,cornerRadius:6,
+        callbacks:{label:c=>` ${c.raw.toFixed(1)}% del total`}}},
+      scales:{x:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>v+'%'}},
+        y:{grid:{display:false},border:{display:false},ticks:{color:TICK_COLOR,font:{...FONT,weight:'500'}}}}}
+  });
+
+  // 5 — Arenas (donut)
+  const ARENA_C = {CC:'#e85d26',DC:'#6c3fc5',TRADE:'#d4900a',BI:'#0ea5b0',OTRO:'#9ca3af'};
+  const totArena = arenas.reduce((s,a)=>s+a.facturacion,0)||1;
+  chartsIng.arena = new Chart(document.getElementById('cIngArena'),{
+    type:'doughnut',
+    data:{labels:arenas.map(a=>a.nombre),datasets:[{
+      data:arenas.map(a=>a.facturacion),
+      backgroundColor:arenas.map(a=>ARENA_C[a.nombre]||'#9ca3af'),
+      borderWidth:0,hoverOffset:8
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{legend:{display:true,position:'bottom',labels:{color:'#6b7280',font:FONT,padding:12,boxWidth:12}},
+        tooltip:{backgroundColor:'#0f1117',bodyFont:FONT,padding:10,cornerRadius:6,
+          callbacks:{label:c=>` ${c.label}: Gs. ${fmtGs(c.raw)} (${(c.raw/totArena*100).toFixed(1)}%)`}}}}
+  });
+
+  if (!hasEb) return;
+
+  // 6 — EBITDA con vs sin 3709
+  chartsIng.ebitda = new Chart(document.getElementById('cIngEbitda'),{
+    type:'bar',
+    data:{labels:ebs.map(e=>e.empresa),datasets:[
+      {label:'EBITDA con 3709',data:ebs.map(e=>e.ebitda),backgroundColor:ebs.map(e=>e.ebitda>=0?'#16a34a':'#d42b4f'),borderRadius:4},
+      {label:'Sin 3709',data:ebs.map(e=>e.ebitda_sin3709),backgroundColor:ebs.map(e=>e.ebitda_sin3709>=0?'rgba(22,163,74,.4)':'rgba(212,43,79,.4)'),borderRadius:4},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:12,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',bodyFont:FONT,padding:10,cornerRadius:6,callbacks:{label:c=>` ${c.dataset.label}: Gs. ${fmtGs(c.raw)}`}}},
+      scales:{x:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+        y:{grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmtGs(v)}}}}
+  });
+
+  // 7 — Egresos (RRHH + Comerciales + Admin) apilado horizontal
+  chartsIng.egr = new Chart(document.getElementById('cIngEgr'),{
+    type:'bar',
+    data:{labels:ebs.map(e=>e.empresa),datasets:[
+      {label:'RRHH',data:ebs.map(e=>e.rrhh),backgroundColor:'#1a1a2e',borderRadius:3},
+      {label:'Comerciales',data:ebs.map(e=>e.comerciales),backgroundColor:'#6c3fc5',borderRadius:3},
+      {label:'Admin',data:ebs.map(e=>e.admin),backgroundColor:'#d4900a',borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
+        y:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:TICK_COLOR,font:{...FONT,weight:'600'}}}},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:12,boxWidth:10,boxHeight:10}},
+        tooltip:{backgroundColor:'#0f1117',bodyFont:FONT,padding:10,cornerRadius:6,callbacks:{label:c=>` ${c.dataset.label}: Gs. ${fmtGs(c.raw)}`}}}}
+  });
 }
 
 // ── OPEN SECTION ─────────────────────────────────────────────────────────────
