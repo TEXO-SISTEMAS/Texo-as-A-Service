@@ -365,7 +365,7 @@ app.delete('/api/chat/history/:id', async (req, res) => {
 // ── CHAT AI ───────────────────────────────────────────────────────────────────
 app.post('/api/chat', async (req, res) => {
   try {
-    const { messages, data, context } = req.body;
+    const { messages, data, context, ingresosData } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'messages requerido' });
 
     // ── CONTEXTO MARKETING ────────────────────────────────────────────────────
@@ -421,7 +421,32 @@ REGLAS:
 
     const fechaCorte = data?.fecha_corte || 'Octubre 2025';
 
-    const systemPrompt = `Eres un asistente especializado exclusivamente en Salud Financiera de agencias de publicidad. Tu fuente de información es el Excel de Salud Financiera, corte ${fechaCorte}.
+    // ── Resumen ingresos 2026 ──────────────────────────────────────────────────
+    let ingresosResumen = '';
+    if (ingresosData && ingresosData.totales) {
+      const fmtM = v => (parseFloat(v)||0) >= 1e9 ? ((v/1e9).toFixed(1)+'B Gs.') : (v/1e6).toFixed(0)+'M Gs.';
+      const t = ingresosData.totales;
+      const agLines = (ingresosData.agencias||[]).map(a =>
+        `  ${a.nombre}: Facturación ${fmtM(a.facturacion)}, Revenue ${fmtM(a.revenue)}, Margen ${(a.margen*100).toFixed(1)}%, ${a.transacciones} facturas`
+      ).join('\n');
+      const topCli = (ingresosData.topClientes||[]).slice(0,5).map(c =>
+        `  ${c.nombre.replace(/\s*-\s*\d{9,}.*$/,'').trim()}: ${(c.pct*100).toFixed(1)}%`
+      ).join('\n');
+      const ebLines = (ingresosData.ebitda||[]).map(e =>
+        `  ${e.empresa}: EBITDA ${fmtM(e.ebitda)} (sin 3709: ${fmtM(e.ebitda_sin3709)}), margen ${(e.margen_ebitda*100).toFixed(1)}%, ${e.personas} personas`
+      ).join('\n');
+      ingresosResumen = `
+
+DATOS DE DETALLE DE INGRESOS 2026 (período ${ingresosData.periodo || ''}):
+Facturación total: ${fmtM(t.facturacion)} | Revenue total: ${fmtM(t.revenue)} | Margen: ${(t.margen*100).toFixed(1)}% | Transacciones: ${t.transacciones}
+
+Por agencia:
+${agLines}
+${ebLines ? `\nEBITDA por empresa (P&L interno):\n${ebLines}` : ''}
+${topCli ? `\nTop clientes (% facturación):\n${topCli}` : ''}`;
+    }
+
+    const systemPrompt = `Eres un asistente especializado exclusivamente en Salud Financiera de agencias de publicidad. Tu fuente de información es el Excel de Salud Financiera, corte ${fechaCorte}, y el Detalle de Ingresos 2026 cuando esté disponible.
 
 DATOS ACTUALES DE LAS AGENCIAS:
 ${agenciasResumen}
@@ -508,8 +533,10 @@ IDs disponibles:
 - [[SCROLL:cCC]] → Gráfico Sub-Arenas CC
 - [[SCROLL:cDC]] → Gráfico Sub-Arenas DC
 
+${ingresosResumen}
+
 REGLAS DE COMPORTAMIENTO:
-1. Responde SIEMPRE citando los datos con la frase "Según los datos recaudados de Salud Financiera" cuando hagas referencia a números o métricas.
+1. Responde SIEMPRE citando los datos con la frase "Según los datos recaudados de Salud Financiera" cuando hagas referencia a números del Excel 2025, y "Según el Detalle de Ingresos 2026" cuando uses datos del período ENERO–JUNIO 2026.
 2. Adapta tu lenguaje: si el usuario usa términos técnicos financieros, responde con profundidad técnica. Si pregunta de forma simple o muestra no conocer el tema, explica en términos cotidianos con ejemplos concretos.
 3. Si alguien refuta un dato o resultado, no cedas sin evidencia — cita el número exacto del Excel y explica cómo se calcula.
 4. Si alguien hace preguntas mezcladas o confusas, identifica la pregunta principal, respóndela y luego ofrece aclarar los demás puntos.

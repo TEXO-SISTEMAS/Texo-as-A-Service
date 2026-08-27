@@ -2636,6 +2636,7 @@ async function loadLatestIngresos() {
 }
 
 function renderIngresos(d) {
+  window._ingresosData = d;
   destroyChartsIng();
   const titulo = document.getElementById('ingresosTitulo');
   const sub    = document.getElementById('ingresosSub');
@@ -3329,7 +3330,7 @@ async function sendChat() {
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory, data: window._dashData || {} })
+      body: JSON.stringify({ messages: chatHistory, data: window._dashData || {}, ingresosData: window._ingresosData || null })
     });
     const json = await resp.json();
     removeTyping();
