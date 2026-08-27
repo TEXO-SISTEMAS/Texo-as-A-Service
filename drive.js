@@ -55,8 +55,9 @@ async function deleteUpload(fileId) {
 
 async function getLatest() {
   const files = await listUploads();
-  if (!files.length) return null;
-  return await getUpload(files[0].id);
+  const sf = files.find(f => f.name.startsWith('salud-financiera_'));
+  if (!sf) return null;
+  return await getUpload(sf.id);
 }
 
 async function saveChat(nombre, data) {

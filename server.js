@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const { google } = require('googleapis');
 const { parseExcel } = require('./parser');
 const { parseAdlens } = require('./adlens_parser');
+const { parseIngresos } = require('./ingresos_parser');
 const drive = require('./drive');
 
 // ── RSS UTILITIES ─────────────────────────────────────────────────────────────
@@ -238,6 +239,42 @@ app.delete('/api/uploads/:id', async (req, res) => {
   try {
     await drive.deleteUpload(req.params.id);
     res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── UPLOAD INGRESOS ───────────────────────────────────────────────────────────
+app.post('/api/upload-ingresos', upload.single('archivo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No se recibió archivo' });
+
+    const parsed = parseIngresos(req.file.buffer);
+
+    await drive.saveMarketingIntel('ingresos', {
+      nombre: req.file.originalname,
+      uploaded_at: new Date().toISOString(),
+      ...parsed,
+    });
+
+    res.json({
+      ok: true,
+      periodo: parsed.periodo,
+      agencias: parsed.agencias.length,
+      totales: parsed.totales,
+    });
+  } catch (err) {
+    console.error('ERROR /api/upload-ingresos:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── ÚLTIMO INGRESOS ───────────────────────────────────────────────────────────
+app.get('/api/latest-ingresos', async (req, res) => {
+  try {
+    const data = await drive.getMarketingIntel('ingresos');
+    if (!data) return res.json({ empty: true });
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
