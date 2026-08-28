@@ -227,8 +227,13 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
-    <div class="logo">Texo <span>as a Service</span></div>
-    <a href="/home" class="btn btn-outline" style="font-size:13px">← Inicio</a>
+    <a href="/home" class="btn btn-outline" style="font-size:13px;text-decoration:none">← Inicio</a>
+    <div class="logo">Texo as a Service</div>
+    <nav style="display:flex;gap:6px;align-items:center">
+      <a href="/index" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Salud Financiera</a>
+      <a href="/adlens" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">AdLens</a>
+      <span style="font-size:13px;font-weight:700;padding:5px 12px;border-radius:6px;background:var(--accent);color:#fff">Marketing</span>
+    </nav>
   </div>
   <div class="topbar-right">
     <button class="btn btn-ai" id="btnChat" onclick="toggleChat()">✦ Asistente IA</button>
