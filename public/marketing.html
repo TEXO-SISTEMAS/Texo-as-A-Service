@@ -519,8 +519,6 @@ function redNoticiasHtml(noticias) {
 }
 
 function renderRedes(briefings, resumen, timestamp, redesNews = []) {
-  const wrap = document.getElementById('redesWrap');
-  if (wrap) wrap._briefingsData = { briefings, resumen, ts: timestamp };
   if (timestamp) {
     const d = new Date(timestamp);
     document.getElementById('redesTimestamp').textContent =
@@ -536,6 +534,7 @@ function renderRedes(briefings, resumen, timestamp, redesNews = []) {
   for (const r of redesNews) newsMap[r.id] = r.noticias || [];
 
   const wrap = document.getElementById('redesWrap');
+  if (wrap) wrap._briefingsData = { briefings, resumen, ts: timestamp };
 
   // Si no hay briefings pero sí noticias, mostrar cards con solo noticias
   const hasBriefings = briefings && briefings.length;
