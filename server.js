@@ -85,6 +85,25 @@ app.use(cookieParser());
 
 // ── AUTH HELPERS ──────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || 'texo-dev-secret-change-in-prod';
+const SUPER_ADMIN = 'danilo.sosa@texo.com.py';
+
+// Cache de usuarios permitidos (se refresca cada 5 min)
+let _usuariosCache = null;
+let _usuariosCacheTs = 0;
+async function getUsuariosPermitidos() {
+  if (_usuariosCache && Date.now() - _usuariosCacheTs < 5 * 60 * 1000) return _usuariosCache;
+  try {
+    const data = await drive.getUsuarios();
+    _usuariosCache = (data.usuarios || []).map(u => u.toLowerCase());
+    // Siempre incluir al super admin
+    if (!_usuariosCache.includes(SUPER_ADMIN)) _usuariosCache.push(SUPER_ADMIN);
+    _usuariosCacheTs = Date.now();
+    return _usuariosCache;
+  } catch(e) {
+    return [SUPER_ADMIN];
+  }
+}
+function invalidarCacheUsuarios() { _usuariosCache = null; _usuariosCacheTs = 0; }
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
@@ -138,6 +157,10 @@ app.get('/auth/google/callback', async (req, res) => {
     oauth2Client.setCredentials(tokens);
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const { data: userInfo } = await oauth2.userinfo.get();
+    const permitidos = await getUsuariosPermitidos();
+    if (!permitidos.includes(userInfo.email.toLowerCase())) {
+      return res.redirect('/login?error=acceso_denegado');
+    }
     const token = jwt.sign(
       { email: userInfo.email, name: userInfo.name, picture: userInfo.picture || null },
       JWT_SECRET,
@@ -189,6 +212,46 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ── ME ─────────────────────────────────────────────────────────────────────────
 app.get('/api/me', (req, res) => res.json(req.user));
+
+// ── ADMIN: GESTIÓN DE USUARIOS ────────────────────────────────────────────────
+function requireAdmin(req, res, next) {
+  if (req.user?.email !== SUPER_ADMIN) return res.status(403).json({ error: 'Solo el administrador puede hacer esto' });
+  next();
+}
+
+app.get('/api/admin/usuarios', requireAdmin, async (req, res) => {
+  try {
+    const data = await drive.getUsuarios();
+    res.json(data);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/usuarios', requireAdmin, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
+    const data = await drive.getUsuarios();
+    const lista = data.usuarios || [];
+    const emailLower = email.toLowerCase().trim();
+    if (lista.find(u => u.email.toLowerCase() === emailLower)) return res.status(409).json({ error: 'El usuario ya existe' });
+    lista.push({ email: emailLower, agregado_en: new Date().toISOString(), agregado_por: req.user.email });
+    await drive.saveUsuarios({ usuarios: lista });
+    invalidarCacheUsuarios();
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/usuarios/:email', requireAdmin, async (req, res) => {
+  try {
+    const emailTarget = decodeURIComponent(req.params.email).toLowerCase();
+    if (emailTarget === SUPER_ADMIN) return res.status(400).json({ error: 'No podés eliminar al administrador principal' });
+    const data = await drive.getUsuarios();
+    const lista = (data.usuarios || []).filter(u => u.email.toLowerCase() !== emailTarget);
+    await drive.saveUsuarios({ usuarios: lista });
+    invalidarCacheUsuarios();
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ── UPLOAD ────────────────────────────────────────────────────────────────────
 app.post('/api/upload', upload.single('archivo'), async (req, res) => {
@@ -720,7 +783,8 @@ app.get('/api/marketing/news', async (req, res) => {
 // ── MARKETING — NOTICIAS POR RED GLOBAL ──────────────────────────────────────
 app.get('/api/marketing/redes-news', async (req, res) => {
   try {
-    if (_redesNewsCache.data && (Date.now() - _redesNewsCache.ts) < REDES_NEWS_TTL) {
+    const force = req.query.refresh === '1';
+    if (!force && _redesNewsCache.data && (Date.now() - _redesNewsCache.ts) < REDES_NEWS_TTL) {
       return res.json({ ..._redesNewsCache.data, cache: true });
     }
 

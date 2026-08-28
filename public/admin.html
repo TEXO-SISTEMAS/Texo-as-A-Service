@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — Texo as a Service</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--border:#2a2d3a;--text:#e8eaf0;--muted:rgba(232,234,240,.45);
+  --accent:#f0f040;--green:#4ade80;--red:#f87171;--warn:#fbbf24;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:56px;background:rgba(15,17,23,.95);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.logo{font-size:15px;font-weight:700;color:#fff;letter-spacing:.02em}
+.logo span{color:var(--accent)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.3)}
+.btn-outline:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.6)}
+.btn-primary{background:var(--accent);color:#0f1117}
+.btn-primary:hover{background:#e8e830}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(248,113,113,.3);padding:5px 11px;font-size:12px;border-radius:5px}
+.btn-danger:hover{background:rgba(248,113,113,.1)}
+.main{max-width:740px;margin:48px auto;padding:0 24px 80px}
+.page-title{font-size:26px;font-weight:700;margin-bottom:6px}
+.page-sub{font-size:14px;color:var(--muted);margin-bottom:36px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 28px 24px}
+.card-title{font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:20px}
+.add-row{display:flex;gap:10px;margin-bottom:28px}
+.add-row input{flex:1;background:#0f1117;border:1px solid var(--border);border-radius:7px;padding:9px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border .15s}
+.add-row input:focus{border-color:rgba(240,240,64,.5)}
+.add-row input::placeholder{color:var(--muted)}
+.user-list{display:flex;flex-direction:column;gap:8px}
+.user-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:#0f1117;border:1px solid var(--border);border-radius:8px;gap:12px}
+.user-email{font-size:14px;font-weight:500}
+.user-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.user-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(240,240,64,.15);color:var(--accent)}
+.user-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.empty{text-align:center;padding:32px;color:var(--muted);font-size:14px}
+.toast{position:fixed;bottom:28px;right:28px;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:99}
+.toast.show{opacity:1}
+.toast.success{background:#166534;color:#4ade80;border:1px solid rgba(74,222,128,.3)}
+.toast.error{background:#7f1d1d;color:#f87171;border:1px solid rgba(248,113,113,.3)}
+.blocker{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;align-items:center;justify-content:center;font-size:14px;color:var(--muted)}
+.blocker.show{display:flex}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.15);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/home" class="btn btn-outline" style="font-size:13px;text-decoration:none">← Inicio</a>
+    <div class="logo">Texo <span>as a Service</span> / Admin</div>
+  </div>
+</div>
+
+<div class="main" id="main">
+  <div class="page-title">Gestión de usuarios</div>
+  <div class="page-sub">Solo vos podés ver y modificar esta sección.</div>
+
+  <div class="card">
+    <div class="card-title">Usuarios con acceso</div>
+
+    <div class="add-row">
+      <input type="email" id="emailInput" placeholder="nuevo@texo.com.py" autocomplete="off">
+      <button class="btn btn-primary" onclick="agregarUsuario()">+ Agregar</button>
+    </div>
+
+    <div class="user-list" id="userList">
+      <div class="empty">Cargando...</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="blocker" id="blocker"><span class="spinner"></span></div>
+
+<script>
+let usuarios = [];
+
+async function init() {
+  const me = await fetch('/api/me').then(r => r.json());
+  if (me.email !== 'danilo.sosa@texo.com.py') {
+    document.getElementById('main').innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted)">Acceso restringido al administrador.</div>';
+    return;
+  }
+  cargarUsuarios();
+}
+
+async function cargarUsuarios() {
+  try {
+    const data = await fetch('/api/admin/usuarios').then(r => r.json());
+    usuarios = data.usuarios || [];
+    renderUsuarios();
+  } catch(e) {
+    showToast('Error al cargar usuarios', 'error');
+  }
+}
+
+function renderUsuarios() {
+  const list = document.getElementById('userList');
+  if (!usuarios.length) {
+    list.innerHTML = '<div class="empty">No hay usuarios agregados aún.</div>';
+    return;
+  }
+  list.innerHTML = [
+    // Super admin siempre primero
+    `<div class="user-row">
+      <div>
+        <div class="user-email">danilo.sosa@texo.com.py</div>
+        <div class="user-meta">Administrador principal</div>
+      </div>
+      <div class="user-right"><span class="user-badge">ADMIN</span></div>
+    </div>`,
+    ...usuarios.map(u => `
+    <div class="user-row" id="row-${CSS.escape(u.email)}">
+      <div>
+        <div class="user-email">${u.email}</div>
+        <div class="user-meta">Agregado ${u.agregado_en ? new Date(u.agregado_en).toLocaleDateString('es-PY',{day:'numeric',month:'long',year:'numeric'}) : '—'}</div>
+      </div>
+      <div class="user-right">
+        <button class="btn btn-danger" onclick="eliminarUsuario('${u.email}')">Eliminar</button>
+      </div>
+    </div>`)
+  ].join('');
+}
+
+async function agregarUsuario() {
+  const input = document.getElementById('emailInput');
+  const email = input.value.trim().toLowerCase();
+  if (!email || !email.includes('@')) { showToast('Ingresá un email válido', 'error'); return; }
+  if (email === 'danilo.sosa@texo.com.py') { showToast('Ya sos el admin principal', 'error'); return; }
+  if (usuarios.find(u => u.email === email)) { showToast('Ese usuario ya existe', 'error'); return; }
+
+  setBusy(true);
+  try {
+    const r = await fetch('/api/admin/usuarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error);
+    input.value = '';
+    await cargarUsuarios();
+    showToast('✓ Usuario agregado', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally { setBusy(false); }
+}
+
+async function eliminarUsuario(email) {
+  if (!confirm(`¿Eliminar acceso de ${email}?`)) return;
+  setBusy(true);
+  try {
+    const r = await fetch('/api/admin/usuarios/' + encodeURIComponent(email), { method: 'DELETE' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error);
+    await cargarUsuarios();
+    showToast('✓ Usuario eliminado', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally { setBusy(false); }
+}
+
+function setBusy(v) { document.getElementById('blocker').classList.toggle('show', v); }
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3500);
+}
+
+document.getElementById('emailInput').addEventListener('keydown', e => { if (e.key === 'Enter') agregarUsuario(); });
+init();
+</script>
+</body>
+</html>

@@ -183,4 +183,40 @@ async function saveMarketingIntel(tipo, data) {
   return result.data;
 }
 
-module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, listChats, getChat, deleteChat, getMarketing, saveMarketing, getMarketingIntel, saveMarketingIntel };
+// ── USUARIOS PERMITIDOS ───────────────────────────────────────────────────────
+async function getUsuarios() {
+  const drive = getDrive();
+  const res = await drive.files.list({
+    q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name = 'usuarios-permitidos.json' and trashed=false`,
+    fields: 'files(id)',
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true
+  });
+  const files = res.data.files || [];
+  if (!files.length) return { usuarios: [] };
+  return await getUpload(files[0].id);
+}
+
+async function saveUsuarios(data) {
+  const drive = getDrive();
+  try {
+    const res = await drive.files.list({
+      q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name = 'usuarios-permitidos.json' and trashed=false`,
+      fields: 'files(id)',
+      includeItemsFromAllDrives: true,
+      supportsAllDrives: true
+    });
+    for (const f of (res.data.files || [])) {
+      try { await drive.files.delete({ fileId: f.id, supportsAllDrives: true }); } catch(e) {}
+    }
+  } catch(e) {}
+  const stream = Readable.from([JSON.stringify(data)]);
+  await drive.files.create({
+    requestBody: { name: 'usuarios-permitidos.json', mimeType: 'application/json', parents: [FOLDER_ID] },
+    media: { mimeType: 'application/json', body: stream },
+    fields: 'id',
+    supportsAllDrives: true
+  });
+}
+
+module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, listChats, getChat, deleteChat, getMarketing, saveMarketing, getMarketingIntel, saveMarketingIntel, getUsuarios, saveUsuarios };

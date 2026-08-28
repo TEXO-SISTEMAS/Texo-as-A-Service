@@ -86,13 +86,28 @@
     const sep = document.createElement('span');
     sep.className = 'ac-sep';
 
+    // Admin link (solo para danilo)
+    const items = [avatar, name, sep];
+    if (user.email === 'danilo.sosa@texo.com.py') {
+      const adminLink = document.createElement('a');
+      adminLink.className = 'ac-logout';
+      adminLink.href = '/admin';
+      adminLink.textContent = '⚙ Admin';
+      adminLink.style.color = 'rgba(240,240,64,.7)';
+      adminLink.onmouseover = () => adminLink.style.color = '#f0f040';
+      adminLink.onmouseout  = () => adminLink.style.color = 'rgba(240,240,64,.7)';
+      const sep2 = document.createElement('span'); sep2.className = 'ac-sep';
+      items.push(adminLink, sep2);
+    }
+
     // Logout
     const logout = document.createElement('a');
     logout.className = 'ac-logout';
     logout.href = '/auth/logout';
     logout.textContent = 'Salir';
 
-    chip.append(avatar, name, sep, logout);
+    items.push(logout);
+    chip.append(...items);
     document.body.appendChild(chip);
 
   } catch(e) {
