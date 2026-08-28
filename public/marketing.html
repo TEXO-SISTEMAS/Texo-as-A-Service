@@ -173,6 +173,16 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 .red-estado{font-size:12.5px;color:var(--text);line-height:1.5}
 .red-movimiento{font-size:12px;color:var(--muted);line-height:1.5;padding:8px 12px;background:#f8f9fb;border-radius:6px;border-left:3px solid var(--warn)}
 .red-impacto{font-size:12px;color:var(--accent);font-weight:600;line-height:1.45}
+.red-agencias{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.red-agencia-chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--accent);color:#fff;letter-spacing:.04em}
+.red-noticias-sep{border:none;border-top:1px solid var(--border);margin:6px 0 4px}
+.red-noticias-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:2px}
+.red-noticia-item{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);text-decoration:none;color:inherit}
+.red-noticia-item:last-child{border-bottom:none}
+.red-noticia-item:hover .red-noticia-title{color:var(--accent)}
+.red-noticia-title{font-size:12px;color:var(--text);line-height:1.4;flex:1}
+.red-noticia-date{font-size:10px;color:var(--muted);white-space:nowrap}
+.red-sin-noticias{font-size:11px;color:var(--muted);font-style:italic;padding:4px 0}
 
 /* ── CHAT SIDEBAR ── */
 .chat-sidebar{width:0;overflow:hidden;flex-shrink:0;border-left:0px solid var(--border);transition:width .28s cubic-bezier(.4,0,.2,1),border-color .28s;background:var(--white);display:flex;position:relative}
@@ -493,7 +503,21 @@ function renderAlertas(alertas, resumen, timestamp) {
 }
 
 // ── RENDER REDES ─────────────────────────────────────────────────────────────
-function renderRedes(briefings, resumen, timestamp) {
+const REDES_AGENCIAS = { WPP:['NASTA'], Publicis:['BRICK'], 'Omnicom+IPG':['OMD','ROGER'], DAN:[] };
+const BRIEFING_TO_NEWS_ID = { WPP:'WPP', Publicis:'Publicis', 'Omnicom+IPG':'Omnicom', DAN:'DAN' };
+
+function redNoticiasHtml(noticias) {
+  if (!noticias || !noticias.length) return `<div class="red-sin-noticias">Sin noticias recientes disponibles</div>`;
+  return noticias.slice(0, 3).map(n => {
+    const date = n.pubDate ? new Date(n.pubDate).toLocaleDateString('es-PY',{day:'numeric',month:'short'}) : '';
+    return `<a class="red-noticia-item" href="${n.link}" target="_blank" rel="noopener">
+      <span class="red-noticia-title">${n.title}</span>
+      <span class="red-noticia-date">${date}</span>
+    </a>`;
+  }).join('');
+}
+
+function renderRedes(briefings, resumen, timestamp, redesNews = []) {
   if (timestamp) {
     const d = new Date(timestamp);
     document.getElementById('redesTimestamp').textContent =
@@ -504,17 +528,49 @@ function renderRedes(briefings, resumen, timestamp) {
   if (resumen) { resBox.textContent = resumen; resWrap.style.display = 'block'; }
   else { resWrap.style.display = 'none'; }
 
+  // news lookup por id de red
+  const newsMap = {};
+  for (const r of redesNews) newsMap[r.id] = r.noticias || [];
+
   const wrap = document.getElementById('redesWrap');
-  if (!briefings || !briefings.length) {
+
+  // Si no hay briefings pero sí noticias, mostrar cards con solo noticias
+  const hasBriefings = briefings && briefings.length;
+  const hasNews = redesNews.length > 0;
+
+  if (!hasBriefings && !hasNews) {
     wrap.innerHTML = `<div class="alerts-empty"><div style="font-size:32px;opacity:.4">🌐</div><p>Sin briefing generado.</p><p>Presioná <strong>⟳ Actualizar briefing</strong> para que Claude analice las redes globales.</p></div>`;
     return;
   }
-  wrap.innerHTML = `<div class="redes-grid">${briefings.map(b => `
+
+  // Construir lista de redes a mostrar
+  const redesMostrar = hasBriefings ? briefings.map(b => ({
+    id: BRIEFING_TO_NEWS_ID[b.red] || b.red,
+    nombre: b.red,
+    agencias: REDES_AGENCIAS[b.red] || [],
+    estado: b.estado,
+    movimientos: b.movimientos,
+    impacto_texo: b.impacto_texo,
+    noticias: newsMap[BRIEFING_TO_NEWS_ID[b.red]] || [],
+  })) : [
+    { id:'WPP',      nombre:'WPP',           agencias:['NASTA'],       noticias: newsMap['WPP']      || [] },
+    { id:'Publicis', nombre:'Publicis',       agencias:['BRICK'],       noticias: newsMap['Publicis'] || [] },
+    { id:'Omnicom',  nombre:'Omnicom + IPG',  agencias:['OMD','ROGER'], noticias: newsMap['Omnicom']  || [] },
+    { id:'DAN',      nombre:'Dentsu / DAN',   agencias:[],              noticias: newsMap['DAN']      || [] },
+  ];
+
+  wrap.innerHTML = `<div class="redes-grid">${redesMostrar.map(r => `
     <div class="red-card">
-      <div class="red-card-head"><span class="red-nombre">${b.red}</span></div>
-      <div class="red-estado">${b.estado}</div>
-      ${b.movimientos ? `<div class="red-movimiento">📌 ${b.movimientos}</div>` : ''}
-      ${b.impacto_texo ? `<div class="red-impacto">→ ${b.impacto_texo}</div>` : ''}
+      <div class="red-card-head">
+        <span class="red-nombre">${r.nombre}</span>
+      </div>
+      ${r.agencias?.length ? `<div class="red-agencias">${r.agencias.map(a=>`<span class="red-agencia-chip">${a}</span>`).join('')}</div>` : ''}
+      ${r.estado   ? `<div class="red-estado">${r.estado}</div>` : ''}
+      ${r.movimientos  ? `<div class="red-movimiento">📌 ${r.movimientos}</div>` : ''}
+      ${r.impacto_texo ? `<div class="red-impacto">→ ${r.impacto_texo}</div>` : ''}
+      <hr class="red-noticias-sep">
+      <div class="red-noticias-label">Últimas noticias</div>
+      ${redNoticiasHtml(r.noticias)}
     </div>`).join('')}</div>`;
 }
 
@@ -551,11 +607,15 @@ function renderNews(data) {
 // ── LOAD ON PAGE LOAD ─────────────────────────────────────────────────────────
 async function loadMarketing() {
   try {
-    const r = await fetch('/api/marketing');
-    const data = await r.json();
+    const [marketingR, redesNewsR] = await Promise.all([
+      fetch('/api/marketing'),
+      fetch('/api/marketing/redes-news').catch(() => null),
+    ]);
+    const data = await marketingR.json();
+    const redesNewsData = redesNewsR ? await redesNewsR.json().catch(() => ({ redes: [] })) : { redes: [] };
     if (data.mercado) renderMercado(data.mercado);
     renderAlertas(data.alertas, data.resumen, data.ultima_actualizacion);
-    renderRedes(data.redes, data.redes_resumen, data.redes_actualizacion);
+    renderRedes(data.redes, data.redes_resumen, data.redes_actualizacion, redesNewsData.redes || []);
   } catch(e) { console.error('loadMarketing:', e); }
 }
 

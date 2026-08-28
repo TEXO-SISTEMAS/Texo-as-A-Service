@@ -52,6 +52,24 @@ function parseRSS(xml, max = 8) {
 let _newsCache = { data: null, ts: 0 };
 const NEWS_TTL = 30 * 60 * 1000; // 30 min
 
+let _redesNewsCache = { data: null, ts: 0 };
+const REDES_NEWS_TTL = 60 * 60 * 1000; // 1h
+
+const REDES_CONFIG = [
+  { id:'WPP',      nombre:'WPP',            agencias:['NASTA'],
+    q:'"WPP" advertising OR media agency 2025 OR 2026',
+    keywords:['wpp'] },
+  { id:'Publicis', nombre:'Publicis Groupe', agencias:['BRICK'],
+    q:'"Publicis" advertising OR "Publicis Groupe" 2025 OR 2026',
+    keywords:['publicis'] },
+  { id:'Omnicom',  nombre:'Omnicom + IPG',  agencias:['OMD','ROGER'],
+    q:'"Omnicom" OR "IPG Mediabrands" OR "Interpublic" advertising 2025 OR 2026',
+    keywords:['omnicom','ipg','interpublic','initiative','mediabrands'] },
+  { id:'DAN',      nombre:'Dentsu / DAN',   agencias:[],
+    q:'"Dentsu" advertising network OR "DAN" agency 2025 OR 2026',
+    keywords:['dentsu','dan'] },
+];
+
 let _anthropic = null;
 function getAnthropic() {
   if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -696,6 +714,38 @@ app.get('/api/marketing/news', async (req, res) => {
   } catch (err) {
     console.error('ERROR /api/marketing/news:', err);
     res.status(500).json({ error: err.message, noticias_py: [], noticias_global: [] });
+  }
+});
+
+// ── MARKETING — NOTICIAS POR RED GLOBAL ──────────────────────────────────────
+app.get('/api/marketing/redes-news', async (req, res) => {
+  try {
+    if (_redesNewsCache.data && (Date.now() - _redesNewsCache.ts) < REDES_NEWS_TTL) {
+      return res.json({ ..._redesNewsCache.data, cache: true });
+    }
+
+    const redesResults = await Promise.all(REDES_CONFIG.map(async (red) => {
+      try {
+        const url = `https://news.google.com/rss/search?q=${encodeURIComponent(red.q)}&hl=en-US&gl=US&ceid=US:en`;
+        const xml = await fetchURL(url);
+        const items = parseRSS(xml, 10);
+        const filtered = items.filter(item => {
+          const t = (item.title + ' ' + (item.source || '')).toLowerCase();
+          return red.keywords.some(k => t.includes(k));
+        }).slice(0, 4);
+        return { ...red, noticias: filtered };
+      } catch(e) {
+        console.warn(`RSS redes-news error (${red.id}):`, e.message);
+        return { ...red, noticias: [] };
+      }
+    }));
+
+    const data = { redes: redesResults, fetched_at: new Date().toISOString() };
+    _redesNewsCache = { data, ts: Date.now() };
+    res.json(data);
+  } catch (err) {
+    console.error('ERROR /api/marketing/redes-news:', err);
+    res.status(500).json({ error: err.message, redes: [] });
   }
 });
 
