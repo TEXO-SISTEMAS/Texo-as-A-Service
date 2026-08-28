@@ -57,17 +57,17 @@ const REDES_NEWS_TTL = 60 * 60 * 1000; // 1h
 
 const REDES_CONFIG = [
   { id:'WPP',      nombre:'WPP',            agencias:['NASTA'],
-    q:'"WPP" advertising OR media agency 2025 OR 2026',
+    q:'WPP advertising agency news',
     keywords:['wpp'] },
   { id:'Publicis', nombre:'Publicis Groupe', agencias:['BRICK'],
-    q:'"Publicis" advertising OR "Publicis Groupe" 2025 OR 2026',
+    q:'Publicis Groupe advertising news',
     keywords:['publicis'] },
   { id:'Omnicom',  nombre:'Omnicom + IPG',  agencias:['OMD','ROGER'],
-    q:'"Omnicom" OR "IPG Mediabrands" OR "Interpublic" advertising 2025 OR 2026',
-    keywords:['omnicom','ipg','interpublic','initiative','mediabrands'] },
+    q:'Omnicom IPG advertising merger news',
+    keywords:['omnicom','ipg','interpublic','initiative'] },
   { id:'DAN',      nombre:'Dentsu / DAN',   agencias:[],
-    q:'"Dentsu" advertising network OR "DAN" agency 2025 OR 2026',
-    keywords:['dentsu','dan'] },
+    q:'Dentsu advertising network news',
+    keywords:['dentsu'] },
 ];
 
 let _anthropic = null;
@@ -728,12 +728,14 @@ app.get('/api/marketing/redes-news', async (req, res) => {
       try {
         const url = `https://news.google.com/rss/search?q=${encodeURIComponent(red.q)}&hl=en-US&gl=US&ceid=US:en`;
         const xml = await fetchURL(url);
-        const items = parseRSS(xml, 10);
+        const items = parseRSS(xml, 12);
         const filtered = items.filter(item => {
-          const t = (item.title + ' ' + (item.source || '')).toLowerCase();
+          const t = (item.title + ' ' + (item.source || '') + ' ' + (item.link || '')).toLowerCase();
           return red.keywords.some(k => t.includes(k));
         }).slice(0, 4);
-        return { ...red, noticias: filtered };
+        // Si el filtro queda vacío, devolver los primeros ítems sin filtrar
+        const result = filtered.length > 0 ? filtered : items.slice(0, 3);
+        return { ...red, noticias: result };
       } catch(e) {
         console.warn(`RSS redes-news error (${red.id}):`, e.message);
         return { ...red, noticias: [] };
