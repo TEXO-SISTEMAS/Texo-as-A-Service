@@ -417,9 +417,6 @@ function parsearEnBrowser(wb) {
 async function handleFile(e) {
   const file = e.target.files[0];
   if (!file) return;
-  const btn = document.getElementById('btnUpload');
-  btn.innerHTML = '<span class="spinner"></span> Procesando...';
-  btn.disabled = true;
   try {
     const buf = await file.arrayBuffer();
     const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
@@ -439,8 +436,6 @@ async function handleFile(e) {
   } catch(err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
-    btn.innerHTML = '↑ Cargar Excel';
-    btn.disabled = false;
     e.target.value = '';
   }
 }
