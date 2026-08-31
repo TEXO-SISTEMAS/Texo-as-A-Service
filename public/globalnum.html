@@ -432,6 +432,7 @@ input[type=file]{display:none}
           <tfoot id="tAgMesFoot"></tfoot>
         </table>
       </div>
+      <div class="chart-insight" id="insightTablaAgMes"></div>
     </div>
 
     <!-- Tabla medio × agencia -->
@@ -447,6 +448,7 @@ input[type=file]{display:none}
           <tfoot id="tMedAgFoot"></tfoot>
         </table>
       </div>
+      <div class="chart-insight" id="insightTablaMedAg"></div>
     </div>
 
     <!-- Inversión por cliente, agencia y mes (stacked horizontal) -->
@@ -1289,6 +1291,45 @@ function renderInsights(d) {
         ciRow('Canal líder', `<strong>${topCan.nombre}</strong> · ${fGsI(topCan.inversion)} · ${pctI(topCan.inversion, inv)} del total`) +
         ciRow('Top 10 canales', `concentran el <strong>${pctI(sumTop, inv)}</strong> de la inversión`) +
         ciRow('Recomendación', pctTop1 > 20 ? 'Alta concentración en un canal — evaluar diversificación' : 'Mix de canales saludable');
+    }
+
+    // ── Tabla mes × agencia ───────────────────────────────────────────────────
+    const elTabAgMes = document.getElementById('insightTablaAgMes');
+    if (elTabAgMes && d.rawRows && d.rawRows.length) {
+      const pivot  = {}; for (let m=1;m<=12;m++) pivot[m]=0;
+      d.rawRows.forEach(r => { if(r.nMes>=1&&r.nMes<=12) pivot[r.nMes]=(pivot[r.nMes]||0)+r.invGs; });
+      const meses  = Object.entries(pivot).filter(([,v])=>v>0).map(([m,v])=>({mes:+m,inv:v}));
+      if (meses.length) {
+        const mejorM = meses.reduce((a,b)=>b.inv>a.inv?b:a);
+        const menorM = meses.reduce((a,b)=>b.inv<a.inv?b:a);
+        const agencias = [...new Set(d.rawRows.map(r=>r.agencia))];
+        const totAg  = {}; agencias.forEach(ag=>{ totAg[ag]=d.rawRows.filter(r=>r.agencia===ag).reduce((s,r)=>s+r.invGs,0); });
+        const liderAg = agencias.reduce((a,b)=>totAg[b]>totAg[a]?b:a, agencias[0]);
+        elTabAgMes.innerHTML =
+          ciRow('Objetivo', 'Cruzar la inversión mensual con cada agencia para ver en qué meses cada agencia concentra su actividad y detectar oportunidades de redistribución.') +
+          `<div class="ci-formula">Cada celda = suma Gs. de la agencia en ese mes · Total = suma de todas las agencias</div>` +
+          ciRow('Mes pico',     `<strong>${MES_LABEL[mejorM.mes-1]}</strong> · ${fGsI(mejorM.inv)}`) +
+          ciRow('Mes más bajo', `<strong>${MES_LABEL[menorM.mes-1]}</strong> · ${fGsI(menorM.inv)}`) +
+          ciRow('Agencia líder', `<strong>${liderAg}</strong> · ${pctI(totAg[liderAg], inv)} del total anual`);
+      }
+    }
+
+    // ── Tabla medio × agencia ─────────────────────────────────────────────────
+    const elTabMedAg = document.getElementById('insightTablaMedAg');
+    if (elTabMedAg && d.rawRows && d.rawRows.length) {
+      const medMap = {}; d.rawRows.forEach(r=>{ if(r.medio) medMap[r.medio]=(medMap[r.medio]||0)+r.invGs; });
+      const medEntries = Object.entries(medMap).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+      if (medEntries.length) {
+        const topMed    = medEntries[0];
+        const digital   = medMap['DIGITAL'] || medMap['Digital'] || 0;
+        const pctDig    = digital / inv * 100;
+        elTabMedAg.innerHTML =
+          ciRow('Objetivo', 'Ver qué medios concentran mayor inversión en cada agencia para identificar especialización, solapamientos y potencial de optimización del mix.') +
+          `<div class="ci-formula">Cada celda = suma Gs. de la agencia en ese medio · Total = suma de todas las agencias</div>` +
+          ciRow('Medio dominante', `<strong>${topMed[0]}</strong> · ${fGsI(topMed[1])} · ${pctI(topMed[1], inv)} del total`) +
+          ciRow('Digital',         digital > 0 ? `${pctI(digital, inv)} del total ${ciBadge(pctDig>=30?'Fuerte presencia':pctDig>=15?'En crecimiento':'Oportunidad', pctDig>=30?'ok':pctDig>=15?'warn':'bad')}` : 'Sin datos') +
+          ciRow('Medios activos',  `${medEntries.length} medios en el período`);
+      }
     }
   } catch(e) { console.error('renderInsights error:', e); }
 }
