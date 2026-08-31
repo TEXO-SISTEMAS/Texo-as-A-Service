@@ -161,10 +161,7 @@ app.get('/auth/google/callback', async (req, res) => {
     oauth2Client.setCredentials(tokens);
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const { data: userInfo } = await oauth2.userinfo.get();
-    const permitidos = await getUsuariosPermitidos();
-    if (!permitidos.includes(userInfo.email.toLowerCase())) {
-      return res.redirect('/login?error=acceso_denegado');
-    }
+    // Acceso abierto a cualquier cuenta Google
     const token = jwt.sign(
       { email: userInfo.email, name: userInfo.name, picture: userInfo.picture || null },
       JWT_SECRET,
