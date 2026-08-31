@@ -282,7 +282,7 @@ input[type=file]{display:none}
     <div class="chart-card wide" style="margin-bottom:16px" id="cardAgMes">
       <div class="chart-title">Inversión por agencia y mes</div>
       <div class="chart-subtitle">Importe Gs. — agrupado por mes</div>
-      <div class="chart-wrap" style="height:320px"><canvas id="cAgMes"></canvas></div>
+      <div class="chart-wrap" style="height:480px"><canvas id="cAgMes"></canvas></div>
     </div>
 
     <!-- Top clientes -->
@@ -338,7 +338,7 @@ function fmtGsExacto(v) { return v > 0 ? 'Gs. ' + Math.round(v).toLocaleString('
 
 // ── CARGA ARCHIVO (parse en browser para evitar 413) ─────────────────────────
 const MES_NUM = { Ene:1,Feb:2,Mar:3,Abr:4,May:5,Jun:6,Jul:7,Ago:8,Sep:9,Oct:10,Nov:11,Dic:12 };
-const MES_LABEL = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MES_LABEL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 function normalizarMedio(tipo) {
   if (!tipo) return 'OTROS';
@@ -607,7 +607,7 @@ function renderCharts(d) {
         ...COMMON,
         plugins: {
           legend: { labels: { color: TICK, font: FONT, boxWidth: 12, padding: 16 } },
-          tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmtGsShort(ctx.parsed.y) } }
+          tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmtGsExacto(ctx.parsed.y) } }
         },
         scales: {
           x: { ticks: { color: TICK, font: FONT }, grid: { color: 'transparent' } },
