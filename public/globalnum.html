@@ -301,9 +301,9 @@ input[type=file]{display:none}
 
     <!-- Top clientes -->
     <div class="chart-card wide" style="margin-bottom:16px">
-      <div class="chart-title">Top 15 clientes</div>
-      <div class="chart-subtitle">Inversión en Gs.</div>
-      <div class="chart-wrap" style="height:360px"><canvas id="cClientes"></canvas></div>
+      <div class="chart-title">Top 10 clientes · inversión total</div>
+      <div class="chart-subtitle">Importe Gs. acumulado anual</div>
+      <div class="chart-wrap" style="height:320px"><canvas id="cClientes"></canvas></div>
     </div>
 
     <!-- Tabla canales -->
@@ -440,7 +440,7 @@ function parsearEnBrowser(wb) {
     porMes,
     agencias: toArr(porAgencia),
     medios:   toArr(porMedio),
-    topClientes: toArr(porCliente).slice(0,15),
+    topClientes: toArr(porCliente).slice(0,10),
     canales:  toArr(porCanal).slice(0,10),
     rawRows,
   };
