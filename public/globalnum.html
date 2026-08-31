@@ -1003,7 +1003,10 @@ function toggleChat() {
   sb.classList.toggle('open', _gnChatOpen);
   sb.style.width = _gnChatOpen ? _gnChatWidth + 'px' : '0';
   document.getElementById('btnChat').classList.toggle('active', _gnChatOpen);
-  if (_gnChatOpen) setTimeout(() => document.getElementById('chatInputGN').focus(), 280);
+  if (_gnChatOpen) {
+    gnRestoreSession();
+    setTimeout(() => document.getElementById('chatInputGN').focus(), 280);
+  }
 }
 
 try {
@@ -1051,6 +1054,27 @@ function gnTyping(show) {
   wrap.appendChild(d); wrap.scrollTop = wrap.scrollHeight;
 }
 
+function gnSaveSession() {
+  try { localStorage.setItem('gnChatSession', JSON.stringify(_gnHistory)); } catch(e) {}
+}
+
+let _gnRestored = false;
+function gnRestoreSession() {
+  if (_gnRestored) return;
+  _gnRestored = true;
+  try {
+    const saved = localStorage.getItem('gnChatSession');
+    if (!saved) return;
+    const history = JSON.parse(saved);
+    if (!history?.length) return;
+    _gnHistory = history;
+    const wrap = document.getElementById('chatMessagesGN');
+    wrap.innerHTML = '';
+    _gnHistory.forEach(m => gnAppend(m.role, m.content));
+    wrap.scrollTop = wrap.scrollHeight;
+  } catch(e) {}
+}
+
 async function sendChatGN() {
   const input = document.getElementById('chatInputGN');
   const text  = input.value.trim();
@@ -1071,6 +1095,7 @@ async function sendChatGN() {
     const reply = json.reply || json.error || 'Sin respuesta.';
     gnAppend('assistant', reply);
     _gnHistory.push({ role:'assistant', content: reply });
+    gnSaveSession();
   } catch(e) {
     gnTyping(false);
     gnAppend('assistant', 'Error de conexión. Intentá nuevamente.');
@@ -1080,7 +1105,8 @@ async function sendChatGN() {
 }
 
 function newChatGN() {
-  _gnHistory = [];
+  _gnHistory = []; _gnRestored = true;
+  try { localStorage.removeItem('gnChatSession'); } catch(e) {}
   const wrap = document.getElementById('chatMessagesGN');
   wrap.innerHTML = '<div class="chat-msg assistant rendered">Nueva conversación iniciada. ¿En qué te puedo ayudar con los datos de inversión?</div>';
   document.getElementById('chatInputGN').focus();
