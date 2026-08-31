@@ -243,8 +243,9 @@ input[type=file]{display:none}
               <th>Mes</th>
               <th>Año</th>
               <th>Moneda</th>
-              <th>Inv. Gs.</th>
-              <th id="thUsd" style="display:none">Inv. USD</th>
+              <th id="thImporte" style="display:none">Importe</th>
+              <th>Importe Gs.</th>
+              <th id="thUsd" style="display:none">Importe USD</th>
               <th>Com. Gs.</th>
               <th>% Com.</th>
             </tr></thead>
@@ -349,6 +350,7 @@ function parsearEnBrowser(wb) {
   const iTipo=idx('Tipo (original)'), iGrupo=idx('Grupo / Proveedor'), iCanal=idx('Canal');
   const iMes=idx('Mes'), iNMes=idx('Nº Mes'), iAnio=idx('Año');
   const iMoneda=idx('Moneda');
+  const iImporte=idx('Importe');
   const iImporteGs=idx('Importe Gs'), iComGs=idx('Comisión Gs');
   // Detectar columnas USD (varios nombres posibles)
   const iImpUsd = ['Importe USD','Inversión USD','Importe $','USD'].reduce((acc,n)=>acc>=0?acc:idx(n), -1);
@@ -372,6 +374,7 @@ function parsearEnBrowser(wb) {
     const nMes=typeof r[iNMes]==='number'?r[iNMes]:(MES_NUM[r[iMes]]||0);
     const anio=iAnio>=0&&r[iAnio]?parseInt(r[iAnio])||null:null;
     const moneda=iMoneda>=0&&r[iMoneda]?String(r[iMoneda]).trim():null;
+    const importe=iImporte>=0?parseFloat(r[iImporte])||0:0;
     const inv=parseFloat(r[iImporteGs])||0;
     const com=parseFloat(r[iComGs])||0;
     const invUsd=iImpUsd>=0?parseFloat(r[iImpUsd])||0:0;
@@ -390,7 +393,7 @@ function parsearEnBrowser(wb) {
     const cKey=grupo!=='—'?grupo:canal;
     if (!porCanal[cKey]) porCanal[cKey]={inversion:0,comision:0};
     porCanal[cKey].inversion+=inv; porCanal[cKey].comision+=com;
-    rawRows.push({agencia,cliente,medio,tipo:tipoOrig,grupo,canal,nMes,mes:MES_LABEL[nMes-1],anio,moneda,invGs:inv,comGs:com,invUsd,comUsd});
+    rawRows.push({agencia,cliente,medio,tipo:tipoOrig,grupo,canal,nMes,mes:MES_LABEL[nMes-1],anio,moneda,importe,invGs:inv,comGs:com,invUsd,comUsd});
   }
 
   const sumRange=(arr,a,b)=>arr.slice(a,b).reduce((acc,m)=>({inversion:acc.inversion+m.inversion,comision:acc.comision+m.comision}),{inversion:0,comision:0});
@@ -428,7 +431,8 @@ function compressRows(rows) {
     r.nMes, r.anio || 0,  dict(mos, r.moneda || '—'),
     Math.round(r.invGs),  Math.round(r.comGs),
     Math.round((r.invUsd || 0) * 100) / 100,
-    Math.round((r.comUsd || 0) * 100) / 100
+    Math.round((r.comUsd || 0) * 100) / 100,
+    Math.round((r.importe || 0) * 100) / 100
   ]);
   return { ags, cls, mds, tis, grs, cas, mos, data };
 }
@@ -440,7 +444,7 @@ function decompressRows(c) {
     tipo:    c.tis[r[3]], grupo:   c.grs[r[4]], canal: c.cas[r[5]],
     nMes: r[6], mes: MES_LABEL[r[6] - 1], anio: r[7] || null,
     moneda: c.mos[r[8]],
-    invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12]
+    invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12], importe: r[13] || 0
   }));
 }
 
@@ -650,7 +654,7 @@ function renderCharts(d) {
 let _rawRows = [];
 let _filtered = [];
 let _pagPage  = 1;
-const _pagSize = 20;
+const _pagSize = 15;
 
 function renderDetalleTabla(rows) {
   _rawRows = rows || [];
@@ -676,8 +680,10 @@ function renderDetalleTabla(rows) {
   selMes.innerHTML = '<option value="">Todos los meses</option>'   + meses.map(n=>`<option value="${n}">${MES_LABEL[n-1]}</option>`).join('');
   selMon.innerHTML = '<option value="">Todas las monedas</option>' + monedas.map(m=>`<option>${m}</option>`).join('');
 
-  const hasUsd = _rawRows.some(r=>r.invUsd>0);
-  document.getElementById('thUsd').style.display = hasUsd ? '' : 'none';
+  const hasUsd      = _rawRows.some(r=>r.invUsd>0);
+  const hasImporte  = _rawRows.some(r=>r.importe>0);
+  document.getElementById('thUsd').style.display     = hasUsd     ? '' : 'none';
+  document.getElementById('thImporte').style.display = hasImporte ? '' : 'none';
 
   filtrarDetalle();
 }
@@ -715,15 +721,17 @@ function renderPaginaDetalle() {
   const total = Math.ceil(_filtered.length / _pagSize) || 1;
   const from  = (_pagPage - 1) * _pagSize;
   const page  = _filtered.slice(from, from + _pagSize);
-  const hasUsd = _rawRows.some(r=>r.invUsd>0);
+  const hasUsd     = _rawRows.some(r=>r.invUsd>0);
+  const hasImporte = _rawRows.some(r=>r.importe>0);
 
   const fmtUsd = v => v > 0 ? '$ ' + v.toLocaleString('es-PY') : '—';
+  const fmtNum = v => v > 0 ? v.toLocaleString('es-PY') : '—';
 
   const tbody = document.getElementById('tbDetalle');
   tbody.innerHTML = page.map(r => {
-    const agKey   = r.agencia.toUpperCase().split(' ')[0];
-    const color   = AG_COLOR[agKey] || '#6b7280';
-    const comPct  = r.invGs > 0 ? (r.comGs / r.invGs * 100).toFixed(1) + '%' : '—';
+    const agKey  = r.agencia.toUpperCase().split(' ')[0];
+    const color  = AG_COLOR[agKey] || '#6b7280';
+    const comPct = r.invGs > 0 ? (r.comGs / r.invGs * 100).toFixed(1) + '%' : '—';
     return `<tr>
       <td style="text-align:left"><span class="ag-dot" style="background:${color}"></span>${r.agencia}</td>
       <td style="text-align:left;max-width:180px;white-space:normal;font-size:13px">${r.cliente}</td>
@@ -734,6 +742,7 @@ function renderPaginaDetalle() {
       <td style="font-size:13px">${r.mes}</td>
       <td style="font-size:13px">${r.anio||'—'}</td>
       <td style="font-size:13px;color:var(--muted)">${r.moneda||'—'}</td>
+      ${hasImporte ? `<td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.importe)}</td>` : ''}
       <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtGs(r.invGs)}</td>
       ${hasUsd ? `<td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtUsd(r.invUsd)}</td>` : ''}
       <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--green)">${fmtGs(r.comGs)}</td>
