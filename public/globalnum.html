@@ -441,6 +441,7 @@ input[type=file]{display:none}
       <div class="chart-title">Mix de medios por agencia</div>
       <div class="chart-subtitle">Inversión Gs. por medio — desglosado por agencia</div>
       <div class="chart-wrap" style="height:300px"><canvas id="cMixMedAg"></canvas></div>
+      <div class="chart-insight" id="insightMixMedAg"></div>
     </div>
 
     <!-- Tabla medio × agencia -->
@@ -1377,6 +1378,31 @@ function renderInsights(d) {
           ciRow('Mes más bajo', `<strong>${MES_LABEL[menorM.mes-1]}</strong> · ${fGsI(menorM.inv)}`) +
           ciRow('Agencia líder', `<strong>${liderAg}</strong> · ${pctI(totAg[liderAg], inv)} del total anual`);
       }
+    }
+
+    // ── Mix de medios por agencia (gráfico) ──────────────────────────────────
+    const elMixMedAg = document.getElementById('insightMixMedAg');
+    if (elMixMedAg && d.rawRows && d.rawRows.length) {
+      const agList  = [...new Set(d.rawRows.map(r=>r.agencia))].sort();
+      const medList = [...new Set(d.rawRows.map(r=>r.medio).filter(Boolean))].sort();
+      const pivot   = {}; agList.forEach(ag=>{ pivot[ag]={}; medList.forEach(m=>pivot[ag][m]=0); });
+      d.rawRows.forEach(r=>{ if(r.medio&&pivot[r.agencia]) pivot[r.agencia][r.medio]=(pivot[r.agencia][r.medio]||0)+r.invGs; });
+      const totAg   = {}; agList.forEach(ag=>{ totAg[ag]=medList.reduce((s,m)=>s+(pivot[ag][m]||0),0); });
+      // medio dominante por agencia
+      const domMed  = ag => medList.reduce((a,b)=>(pivot[ag][b]||0)>(pivot[ag][a]||0)?b:a, medList[0]);
+      // medio más usado en general
+      const medTot  = {}; medList.forEach(m=>{ medTot[m]=agList.reduce((s,ag)=>s+(pivot[ag][m]||0),0); });
+      const topMed  = medList.reduce((a,b)=>medTot[b]>medTot[a]?b:a, medList[0]);
+      const pctTop  = inv>0 ? (medTot[topMed]/inv*100).toFixed(1) : '0';
+      // agencia más diversificada (menor % en su medio principal)
+      const divScore= ag => { const t=totAg[ag]||1; const dm=domMed(ag); return (pivot[ag][dm]||0)/t; };
+      const masDivAg= agList.reduce((a,b)=>divScore(b)<divScore(a)?b:a, agList[0]);
+      elMixMedAg.innerHTML =
+        ciRow('Objetivo', 'Comparar qué medios utiliza cada agencia y detectar especializaciones, solapamientos y oportunidades de optimización del mix publicitario entre agencias.') +
+        `<div class="ci-formula">Cada barra = inversión total de la agencia · cada segmento = un medio · tooltip muestra Gs. y % del total de la agencia</div>` +
+        ciRow('Medio líder global', `<strong>${topMed}</strong> · ${pctTop}% de la inversión total del grupo`) +
+        ciRow('Medio dominante por agencia', agList.map(ag=>`<strong>${ag}</strong>: ${domMed(ag)}`).join(' · ')) +
+        ciRow('Más diversificada', `<strong>${masDivAg}</strong> · menor dependencia de un solo medio ${ciBadge('Equilibrada', 'ok')}`);
     }
 
     // ── Tabla medio × agencia ─────────────────────────────────────────────────
