@@ -157,6 +157,27 @@ input[type=file]{display:none}
 .chat-input:focus{border-color:var(--accent)}
 .chat-send{width:36px;height:36px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .chat-send:hover{background:#2d2d50}.chat-send:disabled{opacity:.4;cursor:default}
+.chat-saving{font-size:11px;color:var(--muted2);padding:0 14px 6px;text-align:right;flex-shrink:0}
+.chat-hist-panel{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--surface);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:10}
+.chat-hist-panel.open{transform:translateX(0)}
+.chat-sidebar-inner{position:relative}
+.chat-hist-header{background:var(--accent);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.chat-hist-header h3{font-size:15px;font-weight:700;flex:1}
+.chat-hist-list{flex:1;overflow-y:auto;padding:12px}
+.chat-hist-list::-webkit-scrollbar{width:4px}
+.chat-hist-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.chat-hist-empty{color:var(--muted2);font-size:13px;text-align:center;padding:40px 20px}
+.chat-hist-item{padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:background .15s}
+.chat-hist-item:hover{background:#f8f9fb}
+.chat-hist-item-title{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-hist-item-date{font-size:11.5px;color:var(--muted2)}
+.chat-hist-item-del{float:right;background:none;border:none;color:var(--muted2);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;transition:color .15s;margin-top:-2px}
+.chat-hist-item-del:hover{color:var(--red)}
+.chat-hist-actions{padding:12px;border-top:1px solid var(--border);flex-shrink:0;display:flex;gap:8px}
+.btn-sm{padding:7px 14px;font-size:13px;border-radius:6px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .15s}
+.btn-sm-primary{background:var(--accent);color:#f0f040}
+.btn-sm-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text)}
+.btn-sm-outline:hover{background:#f4f5f7}
 /* DETALLE TABLE */
 .detalle-search-row{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
 .detalle-search{flex:1;min-width:220px;padding:8px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
@@ -208,6 +229,7 @@ input[type=file]{display:none}
         <div class="chat-header-title">Analista de Inversión</div>
         <div class="chat-header-sub">Global Num · Texo as a Service</div>
       </div>
+      <button class="chat-close" onclick="openHistorialGN()" style="font-size:12px;font-weight:700;letter-spacing:.05em;padding:4px 8px;border-radius:5px;background:rgba(255,255,255,.12);margin-right:4px">Historial</button>
       <button class="chat-close" onclick="newChatGN()" title="Nueva conversación" style="font-size:18px;line-height:1;margin-right:2px">+</button>
       <button class="chat-close" onclick="toggleChat()" title="Cerrar">✕</button>
     </div>
@@ -221,10 +243,26 @@ input[type=file]{display:none}
     <div class="chat-messages" id="chatMessagesGN">
       <div class="chat-msg assistant rendered">Hola, soy tu analista de <strong>inversión publicitaria</strong> de Texo. Podés preguntarme sobre clientes, agencias, medios, meses, comisiones o pedirme una recomendación estratégica. ¿En qué te ayudo?</div>
     </div>
+    <div class="chat-saving" id="chatSavingGN"></div>
     <div class="chat-disclaimer">Responde exclusivamente sobre datos de inversión publicitaria de Global Num</div>
     <div class="chat-input-row">
       <textarea class="chat-input" id="chatInputGN" rows="1" placeholder="Preguntá sobre los datos de inversión…" onkeydown="gnKeydown(event)" oninput="gnResize(this)"></textarea>
       <button class="chat-send" id="chatSendGN" onclick="sendChatGN()">➤</button>
+    </div>
+
+    <!-- Panel historial -->
+    <div class="chat-hist-panel" id="chatHistPanelGN">
+      <div class="chat-hist-header">
+        <h3>Historial de conversaciones</h3>
+        <button class="chat-close" onclick="closeHistorialGN()">✕</button>
+      </div>
+      <div class="chat-hist-list" id="chatHistListGN">
+        <div class="chat-hist-empty">Cargando...</div>
+      </div>
+      <div class="chat-hist-actions">
+        <button class="btn-sm btn-sm-primary" onclick="saveCurrentChatGN()">Guardar esta conversación</button>
+        <button class="btn-sm btn-sm-outline" onclick="newChatGN();closeHistorialGN()">+ Nueva</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1109,7 +1147,85 @@ function newChatGN() {
   try { localStorage.removeItem('gnChatSession'); } catch(e) {}
   const wrap = document.getElementById('chatMessagesGN');
   wrap.innerHTML = '<div class="chat-msg assistant rendered">Nueva conversación iniciada. ¿En qué te puedo ayudar con los datos de inversión?</div>';
+  document.getElementById('chatSavingGN').textContent = '';
   document.getElementById('chatInputGN').focus();
+}
+
+// ── HISTORIAL EN DRIVE ────────────────────────────────────────────────────────
+function openHistorialGN() {
+  document.getElementById('chatHistPanelGN').classList.add('open');
+  loadHistorialGN();
+}
+function closeHistorialGN() {
+  document.getElementById('chatHistPanelGN').classList.remove('open');
+}
+
+async function loadHistorialGN() {
+  const list = document.getElementById('chatHistListGN');
+  list.innerHTML = '<div class="chat-hist-empty">Cargando...</div>';
+  try {
+    const resp  = await fetch('/api/chat/history?prefix=globalnum-');
+    const items = await resp.json();
+    const gn    = items.filter(f => f.nombre && f.nombre.startsWith('globalnum-'));
+    if (!gn.length) { list.innerHTML = '<div class="chat-hist-empty">No hay conversaciones guardadas</div>'; return; }
+    const details = await Promise.all(gn.map(item =>
+      fetch(`/api/chat/history/${item.id}`).then(r => r.json()).catch(() => ({ title: '—', messages: [] }))
+    ));
+    list.innerHTML = '';
+    gn.forEach((item, i) => {
+      const title = details[i].title || '—';
+      const date  = new Date(item.created_at).toLocaleString('es-PY', { dateStyle:'short', timeStyle:'short' });
+      const div   = document.createElement('div');
+      div.className = 'chat-hist-item';
+      div.innerHTML = `<button class="chat-hist-item-del" onclick="deleteHistGN(event,'${item.id}')">✕</button>
+        <div class="chat-hist-item-title">${title}</div>
+        <div class="chat-hist-item-date">${date}</div>`;
+      div.addEventListener('click', () => loadHistItemGN(item.id, details[i]));
+      list.appendChild(div);
+    });
+  } catch(e) {
+    list.innerHTML = '<div class="chat-hist-empty">Error al cargar el historial</div>';
+  }
+}
+
+async function loadHistItemGN(id, data) {
+  _gnHistory = data.messages || [];
+  const wrap = document.getElementById('chatMessagesGN');
+  wrap.innerHTML = '';
+  _gnHistory.forEach(m => gnAppend(m.role, m.content));
+  wrap.scrollTop = wrap.scrollHeight;
+  try { localStorage.setItem('gnChatSession', JSON.stringify(_gnHistory)); } catch(e) {}
+  document.getElementById('chatSavingGN').textContent = '✓ Conversación cargada';
+  setTimeout(() => { document.getElementById('chatSavingGN').textContent = ''; }, 2000);
+  closeHistorialGN();
+}
+
+async function deleteHistGN(e, id) {
+  e.stopPropagation();
+  if (!confirm('¿Eliminar esta conversación?')) return;
+  await fetch(`/api/chat/history/${id}`, { method: 'DELETE' });
+  await loadHistorialGN();
+}
+
+async function saveCurrentChatGN() {
+  if (_gnHistory.length < 2) { alert('No hay suficiente contenido para guardar.'); return; }
+  const saving = document.getElementById('chatSavingGN');
+  saving.textContent = 'Guardando...';
+  const firstMsg = _gnHistory.find(m => m.role === 'user')?.content || 'Conversación';
+  const title    = firstMsg.length > 60 ? firstMsg.slice(0, 60) + '...' : firstMsg;
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  try {
+    await fetch('/api/chat/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: _gnHistory, title, nombre: `globalnum-${timestamp}.json` })
+    });
+    saving.textContent = '✓ Guardado en Drive';
+    setTimeout(() => { saving.textContent = ''; }, 3000);
+    closeHistorialGN();
+  } catch(e) {
+    saving.textContent = 'Error al guardar';
+  }
 }
 
 function iaSetSummary(d) {

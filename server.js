@@ -521,10 +521,10 @@ app.get('/api/chat/history/:id', async (req, res) => {
 
 app.post('/api/chat/save', async (req, res) => {
   try {
-    const { messages, title } = req.body;
+    const { messages, title, nombre: bodyNombre } = req.body;
     if (!messages?.length) return res.status(400).json({ error: 'messages requerido' });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const nombre = `chat-${timestamp}.json`;
+    const nombre = bodyNombre || `chat-${timestamp}.json`;
     const saved = await drive.saveChat(nombre, { title, messages, saved_at: new Date().toISOString() });
     res.json({ ok: true, id: saved.id });
   } catch (err) {
