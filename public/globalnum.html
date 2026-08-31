@@ -109,6 +109,14 @@ tbody td:first-child{text-align:left;font-weight:600;font-size:14px}
 .td-bar{width:120px}
 .mini-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;width:100%}
 .mini-fill{height:100%;border-radius:2px;background:var(--accent)}
+/* TABLA AG-MES */
+#tAgMes th{padding:9px 14px;text-align:right;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted2);border-bottom:2px solid var(--border);white-space:nowrap}
+#tAgMes th:first-child{text-align:left}
+#tAgMes td{padding:9px 14px;text-align:right;font-size:13px;white-space:nowrap;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+#tAgMes td:first-child{text-align:left;font-weight:600;color:var(--text)}
+#tAgMes tfoot td{padding:10px 14px;text-align:right;font-size:13px;font-weight:700;white-space:nowrap;border-top:2px solid var(--border);color:var(--text)}
+#tAgMes tfoot td:first-child{text-align:left}
+#tAgMes tbody tr:hover td{background:rgba(0,0,0,.03)}
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:99}
 .toast.show{opacity:1}
@@ -408,6 +416,26 @@ input[type=file]{display:none}
       <div class="chart-subtitle">Importe Gs. — agrupado por mes</div>
       <div class="chart-wrap" style="height:480px"><canvas id="cAgMes"></canvas></div>
       <div class="chart-insight" id="insightAgMes"></div>
+    </div>
+
+    <!-- Tabla mes × agencia filtrable por medio -->
+    <div class="chart-card wide" style="margin-bottom:16px" id="cardTablaAgMes">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <div>
+          <div class="chart-title" style="margin-bottom:2px">Inversión por mes y agencia</div>
+          <div class="chart-subtitle">Importe Gs. · filtrar por medio</div>
+        </div>
+        <select id="filterTablaAgMesMedio" onchange="renderTablaAgMes()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px;cursor:pointer">
+          <option value="">Todos los medios</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="tAgMes" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead id="tAgMesHead"></thead>
+          <tbody id="tAgMesBody"></tbody>
+          <tfoot id="tAgMesFoot"></tfoot>
+        </table>
+      </div>
     </div>
 
     <!-- Inversión por cliente, agencia y mes (stacked horizontal) -->
@@ -859,6 +887,15 @@ function renderCharts(d) {
     }
   });
 
+  // Tabla mes × agencia — poblar select de medios y renderizar
+  if (d.rawRows && d.rawRows.length) {
+    const mediosDisp = [...new Set(d.rawRows.map(r=>r.medio).filter(Boolean))].sort();
+    const selMedTab = document.getElementById('filterTablaAgMesMedio');
+    selMedTab.innerHTML = '<option value="">Todos los medios</option>' +
+      mediosDisp.map(m=>`<option>${m}</option>`).join('');
+    renderTablaAgMes();
+  }
+
   // Top 10 clientes × agencia — poblar select de mes y renderizar
   if (d.rawRows && d.rawRows.length) {
     const mesesDisp = [...new Set(d.rawRows.map(r=>r.nMes))].sort((a,b)=>a-b);
@@ -902,6 +939,48 @@ function renderCharts(d) {
       }
     }
   });
+}
+
+// ── TABLA MES × AGENCIA ───────────────────────────────────────────────────────
+function renderTablaAgMes() {
+  if (!_d || !_d.rawRows || !_d.rawRows.length) return;
+  const medio = document.getElementById('filterTablaAgMesMedio').value;
+  const rows  = medio ? _d.rawRows.filter(r => r.medio === medio) : _d.rawRows;
+
+  const agencias = [...new Set(_d.rawRows.map(r => r.agencia))].sort();
+  // pivot: mes → agencia → suma
+  const pivot = {};
+  for (let m = 1; m <= 12; m++) pivot[m] = {};
+  agencias.forEach(ag => { for (let m=1;m<=12;m++) pivot[m][ag] = 0; });
+  rows.forEach(r => { if (r.nMes>=1&&r.nMes<=12) pivot[r.nMes][r.agencia] = (pivot[r.nMes][r.agencia]||0) + r.invGs; });
+
+  const totAg = {};
+  agencias.forEach(ag => { totAg[ag] = Object.values(pivot).reduce((s,m)=>s+(m[ag]||0),0); });
+  const totGeneral = agencias.reduce((s,ag)=>s+totAg[ag],0);
+
+  const fN = v => v > 0 ? Math.round(v).toLocaleString('es-PY') : '—';
+  const agColor = {NASTA:'#6c3fc5',BRICK:'#e85d26',LUPE:'#0ea5b0',OMD:'#d4900a',ROGER:'#d42b4f'};
+
+  document.getElementById('tAgMesHead').innerHTML =
+    `<tr><th>Mes</th>${agencias.map(ag=>`<th style="color:${agColor[ag]||'inherit'}">${ag}</th>`).join('')}<th>Total</th></tr>`;
+
+  const mesesConDatos = Object.entries(pivot)
+    .map(([m, agMap]) => ({ m:+m, total: agencias.reduce((s,ag)=>s+(agMap[ag]||0),0), agMap }))
+    .filter(x => x.total > 0);
+
+  document.getElementById('tAgMesBody').innerHTML = mesesConDatos.map(({m, total, agMap}) =>
+    `<tr>
+      <td>${MES_LABEL[m-1]}</td>
+      ${agencias.map(ag=>`<td>${fN(agMap[ag])}</td>`).join('')}
+      <td style="font-weight:700">${fN(total)}</td>
+    </tr>`).join('');
+
+  document.getElementById('tAgMesFoot').innerHTML =
+    `<tr>
+      <td>Total general</td>
+      ${agencias.map(ag=>`<td style="color:${agColor[ag]||'inherit'}">${fN(totAg[ag])}</td>`).join('')}
+      <td>${fN(totGeneral)}</td>
+    </tr>`;
 }
 
 // ── GRÁFICO CLI×MES RE-RENDERABLE ────────────────────────────────────────────
