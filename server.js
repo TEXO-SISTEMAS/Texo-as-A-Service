@@ -10,6 +10,7 @@ const { google } = require('googleapis');
 const { parseExcel } = require('./parser');
 const { parseAdlens } = require('./adlens_parser');
 const { parseIngresos } = require('./ingresos_parser');
+const { parseGlobalnum } = require('./globalnum_parser');
 const drive = require('./drive');
 
 // ── RSS UTILITIES ─────────────────────────────────────────────────────────────
@@ -367,6 +368,44 @@ app.post('/api/save-ingresos', async (req, res) => {
 app.get('/api/latest-ingresos', async (req, res) => {
   try {
     const data = await drive.getMarketingIntel('ingresos');
+    if (!data) return res.json({ empty: true });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GLOBAL NUM ────────────────────────────────────────────────────────────────
+app.post('/api/upload-globalnum', upload.single('archivo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Archivo requerido' });
+    const data = parseGlobalnum(req.file.buffer);
+    data.cargado_en = new Date().toISOString();
+    await drive.saveGlobalnum(data);
+    res.json({ ok: true, periodo: data.periodo, clientes: data.totales.clientes });
+  } catch (err) {
+    console.error('ERROR /api/upload-globalnum:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Parse en browser → recibe JSON directamente
+app.post('/api/save-globalnum', async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data || !data.totales) return res.status(400).json({ error: 'Datos inválidos' });
+    data.cargado_en = new Date().toISOString();
+    await drive.saveGlobalnum(data);
+    res.json({ ok: true, periodo: data.periodo });
+  } catch (err) {
+    console.error('ERROR /api/save-globalnum:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/latest-globalnum', async (req, res) => {
+  try {
+    const data = await drive.getLatestGlobalnum();
     if (!data) return res.json({ empty: true });
     res.json(data);
   } catch (err) {

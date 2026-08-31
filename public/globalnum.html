@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Global Num — Texo as a Service</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.mini.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--border:#2a2d3a;--border2:#333649;
+  --text:#e8eaf0;--muted:rgba(232,234,240,.45);--muted2:rgba(232,234,240,.25);
+  --accent:#f0f040;--green:#4ade80;--red:#f87171;--warn:#fbbf24;--blue:#60a5fa;
+  --white:#1e2130;
+  --C-NASTA:#6c3fc5;--C-BRICK:#e85d26;--C-LUPE:#0ea5b0;--C-OMD:#d4900a;--C-ROGER:#d42b4f;
+  --C-TV:#3b82f6;--C-RADIO:#a855f7;--C-DIGITAL:#10b981;--C-PRENSA:#f59e0b;--C-CABLE:#ef4444;--C-OOH:#ec4899;--C-OTROS:#6b7280;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;display:flex;flex-direction:column;min-height:100vh}
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:56px;background:rgba(15,17,23,.97);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.logo{font-size:15px;font-weight:700;color:#fff;letter-spacing:.02em;white-space:nowrap}
+nav{display:flex;gap:4px;align-items:center}
+nav a{font-size:13px;padding:5px 11px;border-radius:6px;color:rgba(255,255,255,.55);text-decoration:none;transition:color .15s}
+nav a:hover{color:#fff}
+nav .active{font-weight:700;padding:5px 11px;border-radius:6px;background:var(--accent);color:#0f1117;font-size:13px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 15px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.3)}
+.btn-outline:hover{background:rgba(255,255,255,.08)}
+.btn-primary{background:var(--accent);color:#0f1117}
+.btn-primary:hover{background:#e8e830}
+/* LAYOUT */
+.main{flex:1;padding:32px 32px 80px;max-width:1400px;width:100%;margin:0 auto}
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:80px 24px}
+.empty-icon{font-size:48px;opacity:.3;margin-bottom:16px}
+.empty-title{font-size:20px;font-weight:700;margin-bottom:8px}
+.empty-sub{font-size:14px;color:var(--muted);margin-bottom:28px}
+/* HEADER */
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;gap:16px;flex-wrap:wrap}
+.page-title{font-size:28px;font-weight:800;letter-spacing:-.02em}
+.page-title span{color:var(--accent)}
+.page-period{font-size:13px;color:var(--muted);margin-top:4px}
+/* KPIs */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px}
+.kpi-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.kpi-val{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:6px}
+/* PERIOD TABS */
+.period-tabs{display:flex;gap:6px;margin-bottom:20px}
+.ptab{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;font-family:inherit}
+.ptab.active{background:var(--accent);color:#0f1117;border-color:transparent}
+/* PERIOD BREAKDOWN */
+.period-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
+.period-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.period-card.full{grid-column:1/-1}
+.period-header{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.period-rows{display:grid;gap:8px}
+.period-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.period-row-label{font-size:13px;font-weight:600;flex-shrink:0}
+.period-row-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.period-row-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s}
+.period-row-val{font-size:13px;font-weight:700;text-align:right;min-width:90px;flex-shrink:0}
+.period-row-com{font-size:11px;color:var(--muted);min-width:70px;text-align:right;flex-shrink:0}
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+.charts-grid.triple{grid-template-columns:2fr 1fr}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px}
+.chart-card.wide{grid-column:1/-1}
+.chart-title{font-size:13px;font-weight:700;margin-bottom:18px;color:var(--text)}
+.chart-title span{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
+canvas{display:block;width:100%!important}
+/* TABLE */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
+.table-header{padding:18px 22px 14px;font-size:13px;font-weight:700;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th{background:#151824;padding:10px 16px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+td{padding:10px 16px;font-size:13px;border-top:1px solid var(--border)}
+tr:hover td{background:rgba(255,255,255,.02)}
+.td-bar{width:120px}
+.mini-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;width:100%}
+.mini-fill{height:100%;border-radius:2px;background:var(--accent)}
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:99}
+.toast.show{opacity:1}
+.toast.success{background:#166534;color:#4ade80;border:1px solid rgba(74,222,128,.3)}
+.toast.error{background:#7f1d1d;color:#f87171;border:1px solid rgba(248,113,113,.3)}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+input[type=file]{display:none}
+/* Responsive */
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .charts-grid,.charts-grid.triple{grid-template-columns:1fr}
+  .period-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="/home" class="btn btn-outline" style="font-size:13px;text-decoration:none">← Inicio</a>
+    <div class="logo">Texo as a Service</div>
+    <nav>
+      <a href="/index">Salud Financiera</a>
+      <a href="/adlens">AdLens</a>
+      <a href="/marketing">Marketing</a>
+      <span class="active">Global Num</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-outline" id="btnUpload" onclick="document.getElementById('fileInput').click()">↑ Cargar Excel</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(event)">
+  </div>
+</div>
+
+<div class="main" id="main">
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">📊</div>
+    <div class="empty-title">Sin datos cargados</div>
+    <div class="empty-sub">Subí el archivo GLOBAL NUM para ver la inversión publicitaria del holding.</div>
+    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">↑ Cargar Excel</button>
+  </div>
+
+  <div id="dashboard" style="display:none">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Global <span>Num</span></div>
+        <div class="page-period" id="periodLabel">—</div>
+      </div>
+      <div class="period-tabs">
+        <button class="ptab active" onclick="setPeriod('mensual',this)">Mensual</button>
+        <button class="ptab" onclick="setPeriod('trimestral',this)">Trimestral</button>
+        <button class="ptab" onclick="setPeriod('semestral',this)">Semestral</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Inversión Total</div>
+        <div class="kpi-val" id="kpiInversion">—</div>
+        <div class="kpi-sub" id="kpiInvSub">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Comisión Total</div>
+        <div class="kpi-val" id="kpiComision">—</div>
+        <div class="kpi-sub" id="kpiComSub">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Clientes Activos</div>
+        <div class="kpi-val" id="kpiClientes">—</div>
+        <div class="kpi-sub">Anunciantes con inversión</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Agencias</div>
+        <div class="kpi-val" id="kpiAgencias">—</div>
+        <div class="kpi-sub">NASTA · BRICK · LUPE · OMD · ROGER</div>
+      </div>
+    </div>
+
+    <!-- Período breakdown -->
+    <div class="period-grid" id="periodBreakdown"></div>
+
+    <!-- Evolución mensual -->
+    <div class="chart-card wide" style="margin-bottom:16px">
+      <div class="chart-title">Evolución mensual <span>Inversión en Gs.</span></div>
+      <canvas id="cEvo" height="90"></canvas>
+    </div>
+
+    <!-- Agencias + Medios -->
+    <div class="charts-grid triple" style="margin-bottom:16px">
+      <div class="chart-card">
+        <div class="chart-title">Inversión por agencia <span>Gs.</span></div>
+        <canvas id="cAgencia" height="140"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Mix de medios</div>
+        <canvas id="cMedios" height="140"></canvas>
+      </div>
+    </div>
+
+    <!-- Top clientes -->
+    <div class="chart-card wide" style="margin-bottom:16px">
+      <div class="chart-title">Top 15 clientes <span>por inversión Gs.</span></div>
+      <canvas id="cClientes" height="110"></canvas>
+    </div>
+
+    <!-- Tabla canales -->
+    <div class="table-wrap">
+      <div class="table-header">Top canales / proveedores</div>
+      <div style="overflow-x:auto">
+        <table id="tCanales">
+          <thead><tr>
+            <th>#</th><th>Canal / Proveedor</th>
+            <th>Inversión Gs.</th><th>Comisión Gs.</th><th>% del total</th><th></th>
+          </tr></thead>
+          <tbody id="tbCanales"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let _d = null;
+let _charts = {};
+const FONT = { family:"'Inter',sans-serif", size:12 };
+const TICK  = 'rgba(232,234,240,.45)';
+const GRID  = 'rgba(255,255,255,.06)';
+
+const AG_COLOR = { NASTA:'#6c3fc5', BRICK:'#e85d26', LUPE:'#0ea5b0', OMD:'#d4900a', ROGER:'#d42b4f' };
+const MD_COLOR = { 'TV ABIERTA':'#3b82f6', RADIO:'#a855f7', DIGITAL:'#10b981', PRENSA:'#f59e0b', 'TV CABLE':'#ef4444', 'VIA PUBLICA':'#ec4899', OTROS:'#6b7280' };
+
+function fmtGs(v) {
+  if (!v) return 'Gs. 0';
+  if (v >= 1e12) return 'Gs. ' + (v/1e12).toFixed(1) + 'B';
+  if (v >= 1e9)  return 'Gs. ' + (v/1e9).toFixed(1) + 'B';
+  if (v >= 1e6)  return 'Gs. ' + (v/1e6).toFixed(0) + 'M';
+  return 'Gs. ' + Math.round(v).toLocaleString('es-PY');
+}
+function fmtGsShort(v) {
+  if (!v) return '0';
+  if (v >= 1e9)  return (v/1e9).toFixed(1) + 'B';
+  if (v >= 1e6)  return (v/1e6).toFixed(0) + 'M';
+  return Math.round(v).toLocaleString('es-PY');
+}
+function pct(v, total) { return total > 0 ? (v/total*100).toFixed(1) + '%' : '—'; }
+
+// ── CARGA ARCHIVO ─────────────────────────────────────────────────────────────
+async function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const btn = document.getElementById('btnUpload');
+  btn.innerHTML = '<span class="spinner"></span> Procesando...';
+  btn.disabled = true;
+  try {
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
+    const ws  = wb.Sheets['CUBO'];
+    if (!ws) throw new Error('No se encontró la hoja CUBO en el archivo');
+
+    // Enviar el archivo completo al servidor para parsear y guardar
+    const form = new FormData();
+    form.append('archivo', file);
+    const r = await fetch('/api/upload-globalnum', { method: 'POST', body: form });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error del servidor');
+
+    showToast('✓ Datos cargados · ' + data.periodo, 'success');
+    await loadData();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    btn.innerHTML = '↑ Cargar Excel';
+    btn.disabled = false;
+    e.target.value = '';
+  }
+}
+
+// ── CARGA DESDE DRIVE ─────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const r = await fetch('/api/latest-globalnum');
+    const data = await r.json();
+    if (data.empty || data.error) return;
+    _d = data;
+    render(data);
+  } catch(e) { console.error(e); }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render(d) {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboard').style.display  = 'block';
+
+  document.getElementById('periodLabel').textContent = 'Inversión publicitaria · ' + (d.periodo || '2025');
+
+  const t = d.totales;
+  document.getElementById('kpiInversion').textContent = fmtGs(t.inversion);
+  document.getElementById('kpiInvSub').textContent    = 'Período: ' + (d.periodo || '2025');
+  document.getElementById('kpiComision').textContent  = fmtGs(t.comision);
+  document.getElementById('kpiComSub').textContent    = pct(t.comision, t.inversion) + ' sobre inversión';
+  document.getElementById('kpiClientes').textContent  = t.clientes;
+  document.getElementById('kpiAgencias').textContent  = t.agencias;
+
+  setPeriod('mensual', document.querySelector('.ptab.active'));
+  renderCharts(d);
+  renderTablaCanales(d.canales, t.inversion);
+}
+
+function setPeriod(tipo, btn) {
+  document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (!_d) return;
+  const wrap = document.getElementById('periodBreakdown');
+  if (tipo === 'mensual')     renderPeriodMensual(wrap, _d);
+  if (tipo === 'semestral')   renderPeriodSemestral(wrap, _d);
+  if (tipo === 'trimestral')  renderPeriodTrimestral(wrap, _d);
+}
+
+function periodRow(label, inv, com, maxInv) {
+  const fillPct = maxInv > 0 ? Math.min(100, inv/maxInv*100) : 0;
+  return `<div class="period-row">
+    <div class="period-row-label" style="min-width:80px">${label}</div>
+    <div class="period-row-bar"><div class="period-row-fill" style="width:${fillPct.toFixed(1)}%"></div></div>
+    <div class="period-row-val">${fmtGs(inv)}</div>
+    <div class="period-row-com">Com: ${fmtGsShort(com)}</div>
+  </div>`;
+}
+
+function renderPeriodMensual(wrap, d) {
+  const maxInv = Math.max(...d.porMes.map(m => m.inversion));
+  const rows = d.porMes.map(m => periodRow(m.mes, m.inversion, m.comision, maxInv)).join('');
+  wrap.innerHTML = `<div class="period-card full">
+    <div class="period-header">Inversión mensual 2025</div>
+    <div class="period-rows">${rows}</div>
+  </div>`;
+}
+
+function renderPeriodSemestral(wrap, d) {
+  const maxInv = Math.max(...d.semestres.map(s => s.inversion));
+  const rows = d.semestres.map(s => periodRow(s.label, s.inversion, s.comision, maxInv)).join('');
+  wrap.innerHTML = `<div class="period-card full">
+    <div class="period-header">Inversión por semestre</div>
+    <div class="period-rows">${rows}</div>
+  </div>`;
+}
+
+function renderPeriodTrimestral(wrap, d) {
+  const maxInv = Math.max(...d.trimestres.map(q => q.inversion));
+  const rows = d.trimestres.map(q => periodRow(q.label, q.inversion, q.comision, maxInv)).join('');
+  wrap.innerHTML = `<div class="period-card full">
+    <div class="period-header">Inversión por trimestre</div>
+    <div class="period-rows">${rows}</div>
+  </div>`;
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────────
+function destroyChart(key) { if (_charts[key]) { try { _charts[key].destroy(); } catch(e){} delete _charts[key]; } }
+
+function renderCharts(d) {
+  // Evolución mensual
+  destroyChart('evo');
+  _charts.evo = new Chart(document.getElementById('cEvo'), {
+    type: 'line',
+    data: {
+      labels: d.porMes.map(m => m.mes),
+      datasets: [{
+        label: 'Inversión',
+        data: d.porMes.map(m => m.inversion),
+        borderColor: '#f0f040',
+        backgroundColor: 'rgba(240,240,64,.08)',
+        fill: true,
+        tension: .35,
+        pointRadius: 4,
+        pointBackgroundColor: '#f0f040',
+      },{
+        label: 'Comisión',
+        data: d.porMes.map(m => m.comision),
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16,185,129,.07)',
+        fill: true,
+        tension: .35,
+        pointRadius: 3,
+        pointBackgroundColor: '#10b981',
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend:{ labels:{ color:TICK, font:FONT }}, tooltip:{
+        callbacks:{ label: ctx => ' ' + fmtGs(ctx.parsed.y) }
+      }},
+      scales: {
+        x: { ticks:{ color:TICK, font:FONT }, grid:{ color:GRID }},
+        y: { ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }}
+      }
+    }
+  });
+
+  // Por agencia
+  destroyChart('agencia');
+  const agNames = d.agencias.map(a => a.nombre);
+  const agColors = agNames.map(n => AG_COLOR[n] || '#6b7280');
+  _charts.agencia = new Chart(document.getElementById('cAgencia'), {
+    type: 'bar',
+    data: {
+      labels: agNames,
+      datasets: [{
+        label: 'Inversión',
+        data: d.agencias.map(a => a.inversion),
+        backgroundColor: agColors.map(c => c + 'cc'),
+        borderColor: agColors,
+        borderWidth: 1.5,
+      },{
+        label: 'Comisión',
+        data: d.agencias.map(a => a.comision),
+        backgroundColor: agColors.map(c => c + '44'),
+        borderColor: agColors.map(c => c + '88'),
+        borderWidth: 1,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{ labels:{ color:TICK, font:FONT }}, tooltip:{
+        callbacks:{ label: ctx => ' ' + fmtGs(ctx.parsed.y) }
+      }},
+      scales:{
+        x:{ ticks:{ color:TICK, font:FONT }, grid:{ color:GRID }},
+        y:{ ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }}
+      }
+    }
+  });
+
+  // Mix de medios (donut)
+  destroyChart('medios');
+  const mdNames  = d.medios.map(m => m.nombre);
+  const mdColors = mdNames.map(n => MD_COLOR[n] || '#6b7280');
+  _charts.medios = new Chart(document.getElementById('cMedios'), {
+    type: 'doughnut',
+    data: {
+      labels: mdNames,
+      datasets: [{ data: d.medios.map(m => m.inversion), backgroundColor: mdColors, borderColor: '#1a1d27', borderWidth: 2 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true, cutout:'60%',
+      plugins:{ legend:{ position:'bottom', labels:{ color:TICK, font:FONT, padding:10, boxWidth:12 }},
+        tooltip:{ callbacks:{ label: ctx => ' ' + ctx.label + ': ' + fmtGs(ctx.parsed) + ' (' + pct(ctx.parsed, d.totales.inversion) + ')' }}
+      }
+    }
+  });
+
+  // Top clientes (horizontal bar)
+  destroyChart('clientes');
+  const cliNombres = d.topClientes.map(c => c.nombre.length > 28 ? c.nombre.slice(0,26)+'…' : c.nombre);
+  _charts.clientes = new Chart(document.getElementById('cClientes'), {
+    type: 'bar',
+    data: {
+      labels: cliNombres,
+      datasets: [{
+        label: 'Inversión',
+        data: d.topClientes.map(c => c.inversion),
+        backgroundColor: 'rgba(240,240,64,.75)',
+        borderColor: '#f0f040',
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{ display:false }, tooltip:{
+        callbacks:{ label: ctx => ' ' + fmtGs(ctx.parsed.x) + ' · ' + pct(ctx.parsed.x, d.totales.inversion) }
+      }},
+      scales:{
+        x:{ ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }},
+        y:{ ticks:{ color:TICK, font:{...FONT,size:11} }, grid:{ color:GRID }}
+      }
+    }
+  });
+}
+
+// ── TABLA CANALES ─────────────────────────────────────────────────────────────
+function renderTablaCanales(canales, totalInv) {
+  const maxInv = canales[0]?.inversion || 1;
+  const tbody = document.getElementById('tbCanales');
+  tbody.innerHTML = canales.map((c,i) => `
+    <tr>
+      <td style="color:var(--muted);font-size:12px">${i+1}</td>
+      <td style="font-weight:600">${c.nombre}</td>
+      <td>${fmtGs(c.inversion)}</td>
+      <td style="color:var(--muted)">${fmtGs(c.comision)}</td>
+      <td style="font-weight:700;color:var(--accent)">${pct(c.inversion, totalInv)}</td>
+      <td class="td-bar"><div class="mini-bar"><div class="mini-fill" style="width:${(c.inversion/maxInv*100).toFixed(1)}%"></div></div></td>
+    </tr>`).join('');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 4000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadData();
+</script>
+
+<script src="/auth-bar.js"></script>
+</body>
+</html>
