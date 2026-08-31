@@ -178,6 +178,17 @@ input[type=file]{display:none}
 .btn-sm-primary{background:var(--accent);color:#f0f040}
 .btn-sm-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text)}
 .btn-sm-outline:hover{background:#f4f5f7}
+/* CHART INSIGHTS */
+.chart-insight{border-top:1px solid rgba(0,0,0,.07);margin-top:14px;padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.ci-row{display:flex;align-items:baseline;gap:8px;font-size:12px;line-height:1.5}
+.ci-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(0,0,0,.3);white-space:nowrap;min-width:80px}
+.ci-val{color:rgba(0,0,0,.65)}
+.ci-val strong{color:#0f1117;font-weight:700}
+.ci-formula{font-family:'DM Mono',monospace;font-size:11px;color:rgba(0,0,0,.45);background:rgba(0,0,0,.04);border-radius:5px;padding:4px 8px;margin-top:2px}
+.ci-badge{display:inline-flex;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700}
+.ci-ok{background:rgba(22,163,74,.12);color:#15803d}
+.ci-warn{background:rgba(212,144,10,.12);color:#b45309}
+.ci-bad{background:rgba(212,43,79,.12);color:#b91c1c}
 /* DETALLE TABLE */
 .detalle-search-row{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
 .detalle-search{flex:1;min-width:220px;padding:8px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
@@ -381,11 +392,13 @@ input[type=file]{display:none}
         <div class="chart-title">Inversión por agencia</div>
         <div class="chart-subtitle">Gs. acumulado</div>
         <div class="chart-wrap"><canvas id="cAgencia"></canvas></div>
+        <div class="chart-insight" id="insightAgencia"></div>
       </div>
       <div class="chart-card">
         <div class="chart-title">Mix de medios</div>
         <div class="chart-subtitle">Participación % sobre inversión</div>
         <div class="chart-wrap"><canvas id="cMedios"></canvas></div>
+        <div class="chart-insight" id="insightMedios"></div>
       </div>
     </div>
 
@@ -394,6 +407,7 @@ input[type=file]{display:none}
       <div class="chart-title">Inversión por agencia y mes</div>
       <div class="chart-subtitle">Importe Gs. — agrupado por mes</div>
       <div class="chart-wrap" style="height:480px"><canvas id="cAgMes"></canvas></div>
+      <div class="chart-insight" id="insightAgMes"></div>
     </div>
 
     <!-- Inversión por cliente, agencia y mes (stacked horizontal) -->
@@ -408,6 +422,7 @@ input[type=file]{display:none}
         </select>
       </div>
       <div class="chart-wrap" style="height:320px"><canvas id="cCliMesH"></canvas></div>
+      <div class="chart-insight" id="insightCliAgencia"></div>
     </div>
 
     <!-- Top clientes -->
@@ -415,6 +430,7 @@ input[type=file]{display:none}
       <div class="chart-title">Top 10 clientes · inversión total</div>
       <div class="chart-subtitle">Importe Gs. acumulado anual</div>
       <div class="chart-wrap" style="height:320px"><canvas id="cClientes"></canvas></div>
+      <div class="chart-insight" id="insightTopCli"></div>
     </div>
 
     <!-- Tabla canales -->
@@ -652,6 +668,7 @@ function render(d) {
   setPeriod('mensual', document.querySelector('.ptab.active'));
   renderDetalleTabla(d.rawRows);
   renderCharts(d);
+  renderInsights(d);
   renderTablaCanales(d.canales, t.inversion);
   iaSetSummary(d);
 }
@@ -1023,6 +1040,103 @@ function showToast(msg, type='success') {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast show ' + type;
   setTimeout(() => t.className = 'toast', 4000);
+}
+
+// ── CHART INSIGHTS ────────────────────────────────────────────────────────────
+function ciRow(label, val) {
+  return `<div class="ci-row"><span class="ci-label">${label}</span><span class="ci-val">${val}</span></div>`;
+}
+function ciBadge(txt, tipo) { return `<span class="ci-badge ci-${tipo}">${txt}</span>`; }
+
+function renderInsights(d) {
+  try {
+    console.log('[insights] d keys:', Object.keys(d||{}), 'agencias:', d&&d.agencias&&d.agencias.length, 'rawRows:', d&&d.rawRows&&d.rawRows.length);
+    const t   = d.totales;
+    if (!t) return;
+    const inv   = t.inversion || 1;
+    const fGsI  = v => 'Gs. ' + Math.round(v).toLocaleString('es-PY');
+    const pctI  = (v, total) => total > 0 ? (v / total * 100).toFixed(1) + '%' : '—';
+
+    // ── Inversión por agencia ──────────────────────────────────────────────────
+    const elAg = document.getElementById('insightAgencia');
+    if (elAg && d.agencias && d.agencias.length) {
+      const sorted  = [...d.agencias].sort((a,b) => b.inversion - a.inversion);
+      const lider   = sorted[0];
+      const menorAg = sorted[sorted.length - 1];
+      const hhi     = sorted.reduce((s,a) => s + Math.pow(a.inversion / inv, 2), 0);
+      const concRisk= hhi > 0.35 ? 'bad' : hhi > 0.25 ? 'warn' : 'ok';
+      const concLbl = hhi > 0.35 ? 'Concentración alta' : hhi > 0.25 ? 'Moderada' : 'Distribuida';
+      elAg.innerHTML =
+        `<div class="ci-formula">Participación = Inversión agencia ÷ Inversión total × 100%</div>` +
+        ciRow('Líder',    `<strong>${lider.nombre}</strong> · ${fGsI(lider.inversion)} · ${pctI(lider.inversion, inv)} del total`) +
+        ciRow('Menor',    `<strong>${menorAg.nombre}</strong> · ${fGsI(menorAg.inversion)} · ${pctI(menorAg.inversion, inv)} del total`) +
+        ciRow('Concentración', ciBadge(concLbl, concRisk) + ` HHI ${hhi.toFixed(2)} — ${hhi > 0.35 ? 'Riesgo si una agencia cae' : hhi > 0.25 ? 'Monitorear dependencia' : 'Portafolio equilibrado'}`);
+    }
+
+    // ── Mix de medios ─────────────────────────────────────────────────────────
+    const elMed = document.getElementById('insightMedios');
+    if (elMed && d.medios && d.medios.length) {
+      const sortedM = [...d.medios].sort((a,b) => b.inversion - a.inversion);
+      const topMed  = sortedM[0];
+      const digital = d.medios.find(m => (m.nombre||'').toUpperCase() === 'DIGITAL');
+      const pctDig  = digital ? (digital.inversion / inv * 100) : 0;
+      elMed.innerHTML =
+        `<div class="ci-formula">Mix = Inversión por medio ÷ Inversión total × 100%</div>` +
+        ciRow('Dominante', `<strong>${topMed.nombre}</strong> · ${pctI(topMed.inversion, inv)} · ${fGsI(topMed.inversion)}`) +
+        ciRow('Digital',   digital ? `${pctI(digital.inversion, inv)} del total ${ciBadge(pctDig >= 30 ? 'Fuerte presencia' : pctDig >= 15 ? 'En crecimiento' : 'Oportunidad', pctDig >= 30 ? 'ok' : pctDig >= 15 ? 'warn' : 'bad')}` : 'Sin datos de digital') +
+        ciRow('Recomendación', 'Mix equilibrado: TV+Digital+Radio para mayor alcance y frecuencia');
+    }
+
+    // ── Inversión por agencia y mes ───────────────────────────────────────────
+    const elAgMes = document.getElementById('insightAgMes');
+    if (elAgMes && d.porMes && d.porMes.length) {
+      const conDatos = d.porMes.filter(m => m.inversion > 0);
+      if (conDatos.length) {
+        const mejorMes  = conDatos.reduce((a,b) => b.inversion > a.inversion ? b : a);
+        const menorMes  = conDatos.reduce((a,b) => b.inversion < a.inversion ? b : a);
+        const promedio  = conDatos.reduce((s,m) => s + m.inversion, 0) / conDatos.length;
+        const varPct    = ((mejorMes.inversion - menorMes.inversion) / promedio * 100).toFixed(0);
+        elAgMes.innerHTML =
+          `<div class="ci-formula">Inversión mensual = suma de importes Gs. de todos los clientes/agencias en el mes</div>` +
+          ciRow('Mejor mes',  `<strong>${mejorMes.mes}</strong> · ${fGsI(mejorMes.inversion)}`) +
+          ciRow('Menor mes',  `<strong>${menorMes.mes}</strong> · ${fGsI(menorMes.inversion)}`) +
+          ciRow('Variación',  `${varPct}% entre pico y valle ${ciBadge(+varPct > 80 ? 'Alta estacionalidad' : +varPct > 40 ? 'Moderada' : 'Estable', +varPct > 80 ? 'warn' : 'ok')}`) +
+          ciRow('Recomendación', +varPct > 60 ? 'Planificar acciones en meses bajos para suavizar la curva' : 'Distribución mensual saludable');
+      }
+    }
+
+    // ── Top clientes × agencia ────────────────────────────────────────────────
+    const elCliAg = document.getElementById('insightCliAgencia');
+    if (elCliAg && d.rawRows && d.rawRows.length) {
+      const cliTotMap = {};
+      d.rawRows.forEach(r => { cliTotMap[r.cliente] = (cliTotMap[r.cliente]||0) + (r.invGs||0); });
+      const cliSorted = Object.entries(cliTotMap).sort((a,b) => b[1]-a[1]);
+      if (cliSorted.length) {
+        const top1cli   = cliSorted[0];
+        const top3sum   = cliSorted.slice(0,3).reduce((s,e) => s+e[1], 0);
+        const pctTop1   = top1cli[1] / inv * 100;
+        const pctTop3   = top3sum   / inv * 100;
+        elCliAg.innerHTML =
+          `<div class="ci-formula">Barras apiladas por agencia — filtrar por mes con el selector superior</div>` +
+          ciRow('Mayor cliente', `<strong>${top1cli[0]}</strong> · ${fGsI(top1cli[1])} · ${pctI(top1cli[1], inv)} del total ${ciBadge(pctTop1 > 20 ? 'Riesgo concentración' : 'Normal', pctTop1 > 20 ? 'warn' : 'ok')}`) +
+          ciRow('Top 3 clientes', `concentran el <strong>${pctTop3.toFixed(1)}%</strong> de la inversión total`) +
+          ciRow('Recomendación', pctTop1 > 20 ? 'Diversificar para reducir dependencia del cliente líder' : 'Cartera de clientes bien distribuida');
+      }
+    }
+
+    // ── Top 10 clientes inversión total ──────────────────────────────────────
+    const elTopCli = document.getElementById('insightTopCli');
+    if (elTopCli && d.topClientes && d.topClientes.length) {
+      const top1c   = d.topClientes[0];
+      const sumTop10= d.topClientes.reduce((s,c) => s+c.inversion, 0);
+      const pctLead = top1c.inversion / inv * 100;
+      elTopCli.innerHTML =
+        `<div class="ci-formula">Inversión total = suma anual de importe Gs. por cliente (todos los medios y meses)</div>` +
+        ciRow('Nº 1', `<strong>${top1c.nombre}</strong> · ${fGsI(top1c.inversion)} · ${pctI(top1c.inversion, inv)} del total`) +
+        ciRow('Top 10 acumulan', `<strong>${pctI(sumTop10, inv)}</strong> de la inversión total`) +
+        ciRow('Riesgo', ciBadge(pctLead > 25 ? 'Alta dependencia' : pctLead > 15 ? 'Moderada' : 'Baja', pctLead > 25 ? 'bad' : pctLead > 15 ? 'warn' : 'ok') + ` — el cliente líder representa el ${pctLead.toFixed(1)}%`);
+    }
+  } catch(e) { console.error('renderInsights error:', e); }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
