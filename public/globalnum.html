@@ -445,6 +445,7 @@ input[type=file]{display:none}
           <tbody id="tbCanales"></tbody>
         </table>
       </div>
+      <div class="chart-insight" id="insightCanales"></div>
     </div>
 
   </div>
@@ -696,27 +697,68 @@ function periodRow(label, inv, com, maxInv) {
 function renderPeriodMensual(wrap, d) {
   const maxInv = Math.max(...d.porMes.map(m => m.inversion));
   const rows = d.porMes.map(m => periodRow(m.mes, m.inversion, m.comision, maxInv)).join('');
+  const inv   = d.totales.inversion || 1;
+  const conDatos = d.porMes.filter(m => m.inversion > 0);
+  let insightHtml = '';
+  if (conDatos.length) {
+    const mejor  = conDatos.reduce((a,b) => b.inversion > a.inversion ? b : a);
+    const menor  = conDatos.reduce((a,b) => b.inversion < a.inversion ? b : a);
+    const prom   = conDatos.reduce((s,m) => s+m.inversion, 0) / conDatos.length;
+    const varP   = ((mejor.inversion - menor.inversion) / prom * 100).toFixed(0);
+    insightHtml = `<div class="chart-insight" style="margin-top:12px">` +
+      `<div class="ci-formula">Inversión mensual = suma de importes Gs. del período · barras = % relativo al mes pico</div>` +
+      ciRow('Mejor mes',  `<strong>${mejor.mes}</strong> · ${fmtGs(mejor.inversion)}`) +
+      ciRow('Menor mes',  `<strong>${menor.mes}</strong> · ${fmtGs(menor.inversion)}`) +
+      ciRow('Variación',  `${varP}% entre pico y valle ${ciBadge(+varP > 80 ? 'Alta estacionalidad' : +varP > 40 ? 'Moderada' : 'Estable', +varP > 80 ? 'warn' : 'ok')}`) +
+      `</div>`;
+  }
   wrap.innerHTML = `<div class="period-card full">
     <div class="period-header">Inversión mensual 2025</div>
     <div class="period-rows">${rows}</div>
+    ${insightHtml}
   </div>`;
 }
 
 function renderPeriodSemestral(wrap, d) {
   const maxInv = Math.max(...d.semestres.map(s => s.inversion));
   const rows = d.semestres.map(s => periodRow(s.label, s.inversion, s.comision, maxInv)).join('');
+  const [s1, s2] = d.semestres;
+  let insightHtml = '';
+  if (s1 && s2 && s1.inversion && s2.inversion) {
+    const diff    = ((s2.inversion - s1.inversion) / s1.inversion * 100).toFixed(1);
+    const tipo    = +diff > 5 ? 'ok' : +diff < -5 ? 'bad' : 'warn';
+    const texto   = +diff > 5 ? 'Segundo semestre más fuerte' : +diff < -5 ? 'Caída vs S1' : 'Semestres parejos';
+    insightHtml = `<div class="chart-insight" style="margin-top:12px">` +
+      `<div class="ci-formula">Inversión semestral = suma Gs. de los 6 meses de cada período</div>` +
+      ciRow('S1 vs S2', `${ciBadge(texto, tipo)} variación: <strong>${diff > 0 ? '+' : ''}${diff}%</strong>`) +
+      ciRow('Recomendación', +diff < -10 ? 'Reforzar actividad en segundo semestre' : +diff > 10 ? 'Capitalizar el impulso del segundo semestre' : 'Distribución semestral equilibrada') +
+      `</div>`;
+  }
   wrap.innerHTML = `<div class="period-card full">
     <div class="period-header">Inversión por semestre</div>
     <div class="period-rows">${rows}</div>
+    ${insightHtml}
   </div>`;
 }
 
 function renderPeriodTrimestral(wrap, d) {
   const maxInv = Math.max(...d.trimestres.map(q => q.inversion));
   const rows = d.trimestres.map(q => periodRow(q.label, q.inversion, q.comision, maxInv)).join('');
+  const sorted = [...d.trimestres].sort((a,b) => b.inversion - a.inversion);
+  let insightHtml = '';
+  if (sorted.length) {
+    const mejorQ = sorted[0];
+    const menorQ = sorted[sorted.length - 1];
+    insightHtml = `<div class="chart-insight" style="margin-top:12px">` +
+      `<div class="ci-formula">Inversión trimestral = suma Gs. de los 3 meses del trimestre</div>` +
+      ciRow('Mejor trimestre', `<strong>${mejorQ.label}</strong> · ${fmtGs(mejorQ.inversion)}`) +
+      ciRow('Menor trimestre', `<strong>${menorQ.label}</strong> · ${fmtGs(menorQ.inversion)}`) +
+      `</div>`;
+  }
   wrap.innerHTML = `<div class="period-card full">
     <div class="period-header">Inversión por trimestre</div>
     <div class="period-rows">${rows}</div>
+    ${insightHtml}
   </div>`;
 }
 
@@ -1050,7 +1092,6 @@ function ciBadge(txt, tipo) { return `<span class="ci-badge ci-${tipo}">${txt}</
 
 function renderInsights(d) {
   try {
-    console.log('[insights] d keys:', Object.keys(d||{}), 'agencias:', d&&d.agencias&&d.agencias.length, 'rawRows:', d&&d.rawRows&&d.rawRows.length);
     const t   = d.totales;
     if (!t) return;
     const inv   = t.inversion || 1;
@@ -1135,6 +1176,19 @@ function renderInsights(d) {
         ciRow('Nº 1', `<strong>${top1c.nombre}</strong> · ${fGsI(top1c.inversion)} · ${pctI(top1c.inversion, inv)} del total`) +
         ciRow('Top 10 acumulan', `<strong>${pctI(sumTop10, inv)}</strong> de la inversión total`) +
         ciRow('Riesgo', ciBadge(pctLead > 25 ? 'Alta dependencia' : pctLead > 15 ? 'Moderada' : 'Baja', pctLead > 25 ? 'bad' : pctLead > 15 ? 'warn' : 'ok') + ` — el cliente líder representa el ${pctLead.toFixed(1)}%`);
+    }
+
+    // ── Top canales / proveedores ─────────────────────────────────────────────
+    const elCanales = document.getElementById('insightCanales');
+    if (elCanales && d.canales && d.canales.length) {
+      const topCan  = d.canales[0];
+      const sumTop  = d.canales.reduce((s,c) => s+c.inversion, 0);
+      const pctTop1 = topCan.inversion / inv * 100;
+      elCanales.innerHTML =
+        `<div class="ci-formula">Canal = agencia + medio + tipo de compra · Inversión = suma Gs. del canal en el período</div>` +
+        ciRow('Canal líder', `<strong>${topCan.nombre}</strong> · ${fGsI(topCan.inversion)} · ${pctI(topCan.inversion, inv)} del total`) +
+        ciRow('Top 10 canales', `concentran el <strong>${pctI(sumTop, inv)}</strong> de la inversión`) +
+        ciRow('Recomendación', pctTop1 > 20 ? 'Alta concentración en un canal — evaluar diversificación' : 'Mix de canales saludable');
     }
   } catch(e) { console.error('renderInsights error:', e); }
 }
