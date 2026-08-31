@@ -422,10 +422,13 @@ async function handleFile(e) {
     const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
     const data = parsearEnBrowser(wb);
 
+    // rawRows solo vive en memoria — no se manda al servidor (evita 413)
+    const { rawRows, ...dataParaServer } = data;
+
     const r = await fetch('/api/save-globalnum', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(dataParaServer)
     });
     const res = await r.json();
     if (!r.ok) throw new Error(res.error || 'Error del servidor');
