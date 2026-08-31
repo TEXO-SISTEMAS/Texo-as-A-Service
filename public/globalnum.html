@@ -414,6 +414,35 @@ function parsearEnBrowser(wb) {
   };
 }
 
+// ── COMPRESIÓN DETALLE ────────────────────────────────────────────────────────
+// Convierte rawRows a formato compacto (índices en lugar de strings repetidos)
+// para que entre dentro del límite de Vercel al guardar en Drive
+function compressRows(rows) {
+  if (!rows || !rows.length) return null;
+  const dict = (arr, val) => { let i = arr.indexOf(val); if (i < 0) { i = arr.length; arr.push(val); } return i; };
+  const ags=[], cls=[], mds=[], tis=[], grs=[], cas=[], mos=[];
+  const data = rows.map(r => [
+    dict(ags, r.agencia), dict(cls, r.cliente), dict(mds, r.medio),
+    dict(tis, r.tipo),    dict(grs, r.grupo),   dict(cas, r.canal),
+    r.nMes, r.anio || 0,  dict(mos, r.moneda || '—'),
+    Math.round(r.invGs),  Math.round(r.comGs),
+    Math.round((r.invUsd || 0) * 100) / 100,
+    Math.round((r.comUsd || 0) * 100) / 100
+  ]);
+  return { ags, cls, mds, tis, grs, cas, mos, data };
+}
+
+function decompressRows(c) {
+  if (!c || !c.data) return [];
+  return c.data.map(r => ({
+    agencia: c.ags[r[0]], cliente: c.cls[r[1]], medio: c.mds[r[2]],
+    tipo:    c.tis[r[3]], grupo:   c.grs[r[4]], canal: c.cas[r[5]],
+    nMes: r[6], mes: MES_LABEL[r[6] - 1], anio: r[7] || null,
+    moneda: c.mos[r[8]],
+    invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12]
+  }));
+}
+
 async function handleFile(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -422,9 +451,9 @@ async function handleFile(e) {
     const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
     const data = parsearEnBrowser(wb);
 
-    // rawRows: guardar en localStorage para persistir entre recargas (no va al servidor)
-    const { rawRows, ...dataParaServer } = data;
-    try { localStorage.setItem('gn_rawrows', JSON.stringify(rawRows)); } catch(e) {}
+    // Comprimir detalle para guardar en Drive (evita 413)
+    const { rawRows, ...rest } = data;
+    const dataParaServer = { ...rest, detalle: compressRows(rawRows) };
 
     const r = await fetch('/api/save-globalnum', {
       method: 'POST',
@@ -450,11 +479,8 @@ async function loadData() {
     const r = await fetch('/api/latest-globalnum');
     const data = await r.json();
     if (data.empty || data.error) return;
-    // Recuperar rawRows de localStorage (no se guarda en Drive)
-    try {
-      const saved = localStorage.getItem('gn_rawrows');
-      if (saved) data.rawRows = JSON.parse(saved);
-    } catch(e) {}
+    // Descomprimir detalle guardado en Drive
+    if (data.detalle) data.rawRows = decompressRows(data.detalle);
     _d = data;
     render(data);
   } catch(e) { console.error(e); }
