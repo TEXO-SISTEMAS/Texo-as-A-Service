@@ -226,8 +226,11 @@ input[type=file]{display:none}
         <div class="detalle-search-row">
           <input class="detalle-search" type="text" id="detalleSearch" placeholder="Buscar por cliente, agencia, medio, tipo, grupo..." oninput="filtrarDetalle()">
           <select class="detalle-select" id="filterAgencia" onchange="filtrarDetalle()"><option value="">Todas las agencias</option></select>
+          <select class="detalle-select" id="filterCliente" onchange="filtrarDetalle()"><option value="">Todos los clientes</option></select>
           <select class="detalle-select" id="filterMedio"   onchange="filtrarDetalle()"><option value="">Todos los medios</option></select>
+          <select class="detalle-select" id="filterGrupo"   onchange="filtrarDetalle()"><option value="">Todos los grupos</option></select>
           <select class="detalle-select" id="filterMes"     onchange="filtrarDetalle()"><option value="">Todos los meses</option></select>
+          <select class="detalle-select" id="filterAnio"    onchange="filtrarDetalle()"><option value="">Todos los años</option></select>
           <select class="detalle-select" id="filterMoneda"  onchange="filtrarDetalle()"><option value="">Todas las monedas</option></select>
           <span class="detalle-count" id="detalleCount"></span>
         </div>
@@ -672,18 +675,27 @@ function renderDetalleTabla(rows) {
   document.getElementById('detalleData').style.display = '';
 
   const agencias = [...new Set(_rawRows.map(r=>r.agencia))].sort();
+  const clientes = [...new Set(_rawRows.map(r=>r.cliente))].sort();
   const medios   = [...new Set(_rawRows.map(r=>r.medio))].sort();
+  const grupos   = [...new Set(_rawRows.map(r=>r.grupo).filter(g=>g&&g!=='—'))].sort();
   const meses    = [...new Set(_rawRows.map(r=>r.nMes))].sort((a,b)=>a-b);
+  const anios    = [...new Set(_rawRows.map(r=>r.anio).filter(Boolean))].sort();
   const monedas  = [...new Set(_rawRows.map(r=>r.moneda||'—').filter(m=>m&&m!=='—'))].sort();
 
   const selAg  = document.getElementById('filterAgencia');
+  const selCl  = document.getElementById('filterCliente');
   const selMed = document.getElementById('filterMedio');
+  const selGr  = document.getElementById('filterGrupo');
   const selMes = document.getElementById('filterMes');
+  const selAn  = document.getElementById('filterAnio');
   const selMon = document.getElementById('filterMoneda');
   selAg.innerHTML  = '<option value="">Todas las agencias</option>' + agencias.map(a=>`<option>${a}</option>`).join('');
-  selMed.innerHTML = '<option value="">Todos los medios</option>'  + medios.map(m=>`<option>${m}</option>`).join('');
-  selMes.innerHTML = '<option value="">Todos los meses</option>'   + meses.map(n=>`<option value="${n}">${MES_LABEL[n-1]}</option>`).join('');
-  selMon.innerHTML = '<option value="">Todas las monedas</option>' + monedas.map(m=>`<option>${m}</option>`).join('');
+  selCl.innerHTML  = '<option value="">Todos los clientes</option>' + clientes.map(c=>`<option>${c}</option>`).join('');
+  selMed.innerHTML = '<option value="">Todos los medios</option>'   + medios.map(m=>`<option>${m}</option>`).join('');
+  selGr.innerHTML  = '<option value="">Todos los grupos</option>'   + grupos.map(g=>`<option>${g}</option>`).join('');
+  selMes.innerHTML = '<option value="">Todos los meses</option>'    + meses.map(n=>`<option value="${n}">${MES_LABEL[n-1]}</option>`).join('');
+  selAn.innerHTML  = '<option value="">Todos los años</option>'     + anios.map(a=>`<option>${a}</option>`).join('');
+  selMon.innerHTML = '<option value="">Todas las monedas</option>'  + monedas.map(m=>`<option>${m}</option>`).join('');
 
   const hasUsd = _rawRows.some(r=>r.invUsd>0);
   document.getElementById('thUsd').style.display = hasUsd ? '' : 'none';
@@ -694,14 +706,20 @@ function renderDetalleTabla(rows) {
 function filtrarDetalle() {
   const q   = (document.getElementById('detalleSearch').value||'').toLowerCase().trim();
   const ag  = document.getElementById('filterAgencia').value;
+  const cl  = document.getElementById('filterCliente').value;
   const med = document.getElementById('filterMedio').value;
+  const gr  = document.getElementById('filterGrupo').value;
   const mes = document.getElementById('filterMes').value;
+  const an  = document.getElementById('filterAnio').value;
   const mon = document.getElementById('filterMoneda').value;
 
   _filtered = _rawRows.filter(r => {
     if (ag  && r.agencia !== ag)        return false;
+    if (cl  && r.cliente !== cl)        return false;
     if (med && r.medio   !== med)       return false;
+    if (gr  && r.grupo   !== gr)        return false;
     if (mes && r.nMes    !== +mes)      return false;
+    if (an  && String(r.anio) !== an)   return false;
     if (mon && (r.moneda||'—') !== mon) return false;
     if (q) {
       const txt = [r.agencia,r.cliente,r.medio,r.tipo,r.grupo,r.canal,r.mes,r.moneda||''].join(' ').toLowerCase();
