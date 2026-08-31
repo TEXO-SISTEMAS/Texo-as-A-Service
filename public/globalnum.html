@@ -422,8 +422,9 @@ async function handleFile(e) {
     const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
     const data = parsearEnBrowser(wb);
 
-    // rawRows solo vive en memoria — no se manda al servidor (evita 413)
+    // rawRows: guardar en localStorage para persistir entre recargas (no va al servidor)
     const { rawRows, ...dataParaServer } = data;
+    try { localStorage.setItem('gn_rawrows', JSON.stringify(rawRows)); } catch(e) {}
 
     const r = await fetch('/api/save-globalnum', {
       method: 'POST',
@@ -449,6 +450,11 @@ async function loadData() {
     const r = await fetch('/api/latest-globalnum');
     const data = await r.json();
     if (data.empty || data.error) return;
+    // Recuperar rawRows de localStorage (no se guarda en Drive)
+    try {
+      const saved = localStorage.getItem('gn_rawrows');
+      if (saved) data.rawRows = JSON.parse(saved);
+    } catch(e) {}
     _d = data;
     render(data);
   } catch(e) { console.error(e); }
