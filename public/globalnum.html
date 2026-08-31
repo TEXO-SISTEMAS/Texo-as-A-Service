@@ -228,6 +228,7 @@ input[type=file]{display:none}
           <select class="detalle-select" id="filterAgencia" onchange="filtrarDetalle()"><option value="">Todas las agencias</option></select>
           <select class="detalle-select" id="filterMedio"   onchange="filtrarDetalle()"><option value="">Todos los medios</option></select>
           <select class="detalle-select" id="filterMes"     onchange="filtrarDetalle()"><option value="">Todos los meses</option></select>
+          <select class="detalle-select" id="filterMoneda"  onchange="filtrarDetalle()"><option value="">Todas las monedas</option></select>
           <span class="detalle-count" id="detalleCount"></span>
         </div>
         <div style="overflow-x:auto">
@@ -649,7 +650,7 @@ function renderCharts(d) {
 let _rawRows = [];
 let _filtered = [];
 let _pagPage  = 1;
-const _pagSize = 50;
+const _pagSize = 20;
 
 function renderDetalleTabla(rows) {
   _rawRows = rows || [];
@@ -664,13 +665,16 @@ function renderDetalleTabla(rows) {
   const agencias = [...new Set(_rawRows.map(r=>r.agencia))].sort();
   const medios   = [...new Set(_rawRows.map(r=>r.medio))].sort();
   const meses    = [...new Set(_rawRows.map(r=>r.nMes))].sort((a,b)=>a-b);
+  const monedas  = [...new Set(_rawRows.map(r=>r.moneda||'—').filter(m=>m&&m!=='—'))].sort();
 
   const selAg  = document.getElementById('filterAgencia');
   const selMed = document.getElementById('filterMedio');
   const selMes = document.getElementById('filterMes');
+  const selMon = document.getElementById('filterMoneda');
   selAg.innerHTML  = '<option value="">Todas las agencias</option>' + agencias.map(a=>`<option>${a}</option>`).join('');
   selMed.innerHTML = '<option value="">Todos los medios</option>'  + medios.map(m=>`<option>${m}</option>`).join('');
   selMes.innerHTML = '<option value="">Todos los meses</option>'   + meses.map(n=>`<option value="${n}">${MES_LABEL[n-1]}</option>`).join('');
+  selMon.innerHTML = '<option value="">Todas las monedas</option>' + monedas.map(m=>`<option>${m}</option>`).join('');
 
   const hasUsd = _rawRows.some(r=>r.invUsd>0);
   document.getElementById('thUsd').style.display = hasUsd ? '' : 'none';
@@ -683,11 +687,13 @@ function filtrarDetalle() {
   const ag  = document.getElementById('filterAgencia').value;
   const med = document.getElementById('filterMedio').value;
   const mes = document.getElementById('filterMes').value;
+  const mon = document.getElementById('filterMoneda').value;
 
   _filtered = _rawRows.filter(r => {
-    if (ag  && r.agencia !== ag)   return false;
-    if (med && r.medio   !== med)  return false;
-    if (mes && r.nMes    !== +mes) return false;
+    if (ag  && r.agencia !== ag)        return false;
+    if (med && r.medio   !== med)       return false;
+    if (mes && r.nMes    !== +mes)      return false;
+    if (mon && (r.moneda||'—') !== mon) return false;
     if (q) {
       const txt = [r.agencia,r.cliente,r.medio,r.tipo,r.grupo,r.canal,r.mes,r.moneda||''].join(' ').toLowerCase();
       if (!txt.includes(q)) return false;
