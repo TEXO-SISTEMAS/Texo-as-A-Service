@@ -87,6 +87,8 @@ app.use(cookieParser());
 // ── AUTH HELPERS ──────────────────────────────────────────────────────────────
 const JWT_SECRET = process.env.JWT_SECRET || 'texo-dev-secret-change-in-prod';
 const SUPER_ADMIN = 'danilo.sosa@texo.com.py';
+// Usuarios adicionales con acceso (se pueden gestionar luego desde /admin.html)
+const USUARIOS_EXTRA = ['alejandro.rolandi@texo.com.py'];
 
 // Cache de usuarios permitidos (se refresca cada 5 min)
 let _usuariosCache = null;
@@ -95,13 +97,14 @@ async function getUsuariosPermitidos() {
   if (_usuariosCache && Date.now() - _usuariosCacheTs < 5 * 60 * 1000) return _usuariosCache;
   try {
     const data = await drive.getUsuarios();
-    _usuariosCache = (data.usuarios || []).map(u => u.toLowerCase());
-    // Siempre incluir al super admin
+    // Los usuarios guardados pueden ser strings o {email, ...}
+    _usuariosCache = (data.usuarios || []).map(u => (u.email || u).toLowerCase());
     if (!_usuariosCache.includes(SUPER_ADMIN)) _usuariosCache.push(SUPER_ADMIN);
+    USUARIOS_EXTRA.forEach(e => { if (!_usuariosCache.includes(e)) _usuariosCache.push(e); });
     _usuariosCacheTs = Date.now();
     return _usuariosCache;
   } catch(e) {
-    return [SUPER_ADMIN];
+    return [SUPER_ADMIN, ...USUARIOS_EXTRA];
   }
 }
 function invalidarCacheUsuarios() { _usuariosCache = null; _usuariosCacheTs = 0; }
