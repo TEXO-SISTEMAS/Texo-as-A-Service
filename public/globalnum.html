@@ -243,7 +243,7 @@ input[type=file]{display:none}
               <th>Mes</th>
               <th>Año</th>
               <th>Moneda</th>
-              <th id="thImporte" style="display:none">Importe</th>
+              <th>Importe</th>
               <th>Importe Gs.</th>
               <th id="thUsd" style="display:none">Importe USD</th>
               <th>Com. Gs.</th>
@@ -350,7 +350,7 @@ function parsearEnBrowser(wb) {
   const iTipo=idx('Tipo (original)'), iGrupo=idx('Grupo / Proveedor'), iCanal=idx('Canal');
   const iMes=idx('Mes'), iNMes=idx('Nº Mes'), iAnio=idx('Año');
   const iMoneda=idx('Moneda');
-  const iImporte=idx('Importe');
+  const iImporte = ['Importe','Monto','Inversión','Inversion','Net','Neto'].reduce((acc,n)=>acc>=0?acc:idx(n), -1);
   const iImporteGs=idx('Importe Gs'), iComGs=idx('Comisión Gs');
   // Detectar columnas USD (varios nombres posibles)
   const iImpUsd = ['Importe USD','Inversión USD','Importe $','USD'].reduce((acc,n)=>acc>=0?acc:idx(n), -1);
@@ -680,10 +680,8 @@ function renderDetalleTabla(rows) {
   selMes.innerHTML = '<option value="">Todos los meses</option>'   + meses.map(n=>`<option value="${n}">${MES_LABEL[n-1]}</option>`).join('');
   selMon.innerHTML = '<option value="">Todas las monedas</option>' + monedas.map(m=>`<option>${m}</option>`).join('');
 
-  const hasUsd      = _rawRows.some(r=>r.invUsd>0);
-  const hasImporte  = _rawRows.some(r=>r.importe>0);
-  document.getElementById('thUsd').style.display     = hasUsd     ? '' : 'none';
-  document.getElementById('thImporte').style.display = hasImporte ? '' : 'none';
+  const hasUsd = _rawRows.some(r=>r.invUsd>0);
+  document.getElementById('thUsd').style.display = hasUsd ? '' : 'none';
 
   filtrarDetalle();
 }
@@ -721,8 +719,7 @@ function renderPaginaDetalle() {
   const total = Math.ceil(_filtered.length / _pagSize) || 1;
   const from  = (_pagPage - 1) * _pagSize;
   const page  = _filtered.slice(from, from + _pagSize);
-  const hasUsd     = _rawRows.some(r=>r.invUsd>0);
-  const hasImporte = _rawRows.some(r=>r.importe>0);
+  const hasUsd = _rawRows.some(r=>r.invUsd>0);
 
   const fmtUsd = v => v > 0 ? '$ ' + v.toLocaleString('es-PY') : '—';
   const fmtNum = v => v > 0 ? v.toLocaleString('es-PY') : '—';
@@ -742,7 +739,7 @@ function renderPaginaDetalle() {
       <td style="font-size:13px">${r.mes}</td>
       <td style="font-size:13px">${r.anio||'—'}</td>
       <td style="font-size:13px;color:var(--muted)">${r.moneda||'—'}</td>
-      ${hasImporte ? `<td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.importe)}</td>` : ''}
+      <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.importe)}</td>
       <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtGs(r.invGs)}</td>
       ${hasUsd ? `<td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtUsd(r.invUsd)}</td>` : ''}
       <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--green)">${fmtGs(r.comGs)}</td>
