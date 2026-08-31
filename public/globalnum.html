@@ -234,7 +234,86 @@ function fmtGsShort(v) {
 }
 function pct(v, total) { return total > 0 ? (v/total*100).toFixed(1) + '%' : '—'; }
 
-// ── CARGA ARCHIVO ─────────────────────────────────────────────────────────────
+// ── CARGA ARCHIVO (parse en browser para evitar 413) ─────────────────────────
+const MES_NUM = { Ene:1,Feb:2,Mar:3,Abr:4,May:5,Jun:6,Jul:7,Ago:8,Sep:9,Oct:10,Nov:11,Dic:12 };
+const MES_LABEL = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function normalizarMedio(tipo) {
+  if (!tipo) return 'OTROS';
+  const t = String(tipo).toUpperCase().trim();
+  if (t.includes('TV') && t.includes('CABLE')) return 'TV CABLE';
+  if (t.includes('TV')) return 'TV ABIERTA';
+  if (t.includes('RADIO')) return 'RADIO';
+  if (t.includes('DIGITAL')) return 'DIGITAL';
+  if (t.includes('PRENSA')) return 'PRENSA';
+  if (t.includes('VIA') || t.includes('PUBLICA')) return 'VIA PUBLICA';
+  return 'OTROS';
+}
+
+function parsearEnBrowser(wb) {
+  const ws = wb.Sheets['CUBO'];
+  if (!ws) throw new Error('No se encontró la hoja CUBO en el archivo');
+  const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:null });
+  const H = rows[0];
+  const idx = n => H.indexOf(n);
+  const iAgencia=idx('Agencia'), iCliente=idx('Cliente'), iMedio=idx('Medio');
+  const iTipo=idx('Tipo (original)'), iGrupo=idx('Grupo / Proveedor'), iCanal=idx('Canal');
+  const iMes=idx('Mes'), iNMes=idx('Nº Mes');
+  const iImporteGs=idx('Importe Gs'), iComGs=idx('Comisión Gs');
+
+  let totalInversion=0, totalComision=0;
+  const clientesSet=new Set(), agenciasSet=new Set();
+  const porMes=Array.from({length:12},(_,i)=>({mes:MES_LABEL[i],nMes:i+1,inversion:0,comision:0}));
+  const porAgencia={}, porMedio={}, porCliente={}, porCanal={};
+
+  for (let i=1; i<rows.length; i++) {
+    const r=rows[i];
+    if (!r||!r[iAgencia]) continue;
+    const agencia=String(r[iAgencia]).trim();
+    const cliente=r[iCliente]?String(r[iCliente]).trim():'—';
+    const medio=normalizarMedio(r[iMedio]||r[iTipo]);
+    const canal=r[iCanal]?String(r[iCanal]).trim():'—';
+    const grupo=r[iGrupo]?String(r[iGrupo]).trim():'—';
+    const nMes=typeof r[iNMes]==='number'?r[iNMes]:(MES_NUM[r[iMes]]||0);
+    const inv=parseFloat(r[iImporteGs])||0;
+    const com=parseFloat(r[iComGs])||0;
+    if (nMes<1||nMes>12) continue;
+
+    totalInversion+=inv; totalComision+=com;
+    clientesSet.add(cliente); agenciasSet.add(agencia);
+    porMes[nMes-1].inversion+=inv; porMes[nMes-1].comision+=com;
+    if (!porAgencia[agencia]) porAgencia[agencia]={inversion:0,comision:0};
+    porAgencia[agencia].inversion+=inv; porAgencia[agencia].comision+=com;
+    if (!porMedio[medio]) porMedio[medio]={inversion:0,comision:0};
+    porMedio[medio].inversion+=inv; porMedio[medio].comision+=com;
+    if (!porCliente[cliente]) porCliente[cliente]={inversion:0,comision:0};
+    porCliente[cliente].inversion+=inv; porCliente[cliente].comision+=com;
+    const cKey=grupo!=='—'?grupo:canal;
+    if (!porCanal[cKey]) porCanal[cKey]={inversion:0,comision:0};
+    porCanal[cKey].inversion+=inv; porCanal[cKey].comision+=com;
+  }
+
+  const sumRange=(arr,a,b)=>arr.slice(a,b).reduce((acc,m)=>({inversion:acc.inversion+m.inversion,comision:acc.comision+m.comision}),{inversion:0,comision:0});
+  const s1=sumRange(porMes,0,6), s2=sumRange(porMes,6,12);
+  const q1=sumRange(porMes,0,3), q2=sumRange(porMes,3,6), q3=sumRange(porMes,6,9), q4=sumRange(porMes,9,12);
+
+  const toArr=(obj)=>Object.entries(obj).map(([nombre,d])=>({nombre,...d,pct:totalInversion>0?d.inversion/totalInversion:0})).sort((a,b)=>b.inversion-a.inversion);
+  const mesesConDatos=porMes.filter(m=>m.inversion>0);
+  const periodo=mesesConDatos.length>0?`${mesesConDatos[0].mes} – ${mesesConDatos[mesesConDatos.length-1].mes} 2025`:'2025';
+
+  return {
+    periodo,
+    totales:{inversion:totalInversion,comision:totalComision,clientes:clientesSet.size,agencias:agenciasSet.size},
+    semestres:[{label:'S1 · Ene–Jun',...s1},{label:'S2 · Jul–Dic',...s2}],
+    trimestres:[{label:'Q1 · Ene–Mar',...q1},{label:'Q2 · Abr–Jun',...q2},{label:'Q3 · Jul–Sep',...q3},{label:'Q4 · Oct–Dic',...q4}],
+    porMes,
+    agencias: toArr(porAgencia),
+    medios:   toArr(porMedio),
+    topClientes: toArr(porCliente).slice(0,15),
+    canales:  toArr(porCanal).slice(0,10),
+  };
+}
+
 async function handleFile(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -244,18 +323,19 @@ async function handleFile(e) {
   try {
     const buf = await file.arrayBuffer();
     const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
-    const ws  = wb.Sheets['CUBO'];
-    if (!ws) throw new Error('No se encontró la hoja CUBO en el archivo');
+    const data = parsearEnBrowser(wb);
 
-    // Enviar el archivo completo al servidor para parsear y guardar
-    const form = new FormData();
-    form.append('archivo', file);
-    const r = await fetch('/api/upload-globalnum', { method: 'POST', body: form });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Error del servidor');
+    const r = await fetch('/api/save-globalnum', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const res = await r.json();
+    if (!r.ok) throw new Error(res.error || 'Error del servidor');
 
     showToast('✓ Datos cargados · ' + data.periodo, 'success');
-    await loadData();
+    _d = data;
+    render(data);
   } catch(err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
