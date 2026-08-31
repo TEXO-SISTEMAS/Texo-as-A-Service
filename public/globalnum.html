@@ -424,7 +424,7 @@ input[type=file]{display:none}
     <div class="chart-card wide" style="margin-bottom:16px" id="cardTablaAgMes">
       <div style="margin-bottom:14px">
         <div class="chart-title" style="margin-bottom:2px">Inversión por mes y agencia</div>
-        <div class="chart-subtitle">Importe Gs.</div>
+        <div class="chart-subtitle">Importe Gs. · (% del mes · % de la agencia)</div>
       </div>
       <div style="overflow-x:auto">
         <table id="tAgMes" style="width:100%;border-collapse:collapse;font-size:13px">
@@ -1015,19 +1015,24 @@ function renderTablaAgMes() {
   const pivot    = {};
   for (let m=1;m<=12;m++) { pivot[m]={}; agencias.forEach(ag=>pivot[m][ag]=0); }
   rows.forEach(r => { if (r.nMes>=1&&r.nMes<=12) pivot[r.nMes][r.agencia]=(pivot[r.nMes][r.agencia]||0)+r.invGs; });
-  const totAg    = {}; agencias.forEach(ag=>{ totAg[ag]=Object.values(pivot).reduce((s,m)=>s+(m[ag]||0),0); });
-  const totGen   = agencias.reduce((s,ag)=>s+totAg[ag],0);
-  const fN       = v => v>0 ? Math.round(v).toLocaleString('es-PY') : '—';
-  const agColor  = {NASTA:'#6c3fc5',BRICK:'#e85d26',LUPE:'#0ea5b0',OMD:'#d4900a',ROGER:'#d42b4f'};
+  const totAg  = {}; agencias.forEach(ag=>{ totAg[ag]=Object.values(pivot).reduce((s,m)=>s+(m[ag]||0),0); });
+  const totGen = agencias.reduce((s,ag)=>s+totAg[ag],0);
+  const fN     = v => v>0 ? Math.round(v).toLocaleString('es-PY') : '—';
+  const fP     = (v,t) => t>0 ? (v/t*100).toFixed(1)+'%' : '—';
+  const agColor= {NASTA:'#6c3fc5',BRICK:'#e85d26',LUPE:'#0ea5b0',OMD:'#d4900a',ROGER:'#d42b4f'};
+  const cell   = (v, totMes, totAgencia) => v > 0
+    ? `${fN(v)}<br><span style="font-size:11px;color:var(--muted)">(${fP(v,totMes)} mes · ${fP(v,totAgencia)} ag.)</span>`
+    : '—';
   document.getElementById('tAgMesHead').innerHTML =
     `<tr><th>Mes</th>${agencias.map(ag=>`<th style="color:${agColor[ag]||'inherit'}">${ag}</th>`).join('')}<th>Total</th></tr>`;
   document.getElementById('tAgMesBody').innerHTML = Array.from({length:12},(_,i)=>i+1)
     .filter(m => agencias.some(ag=>pivot[m][ag]>0))
-    .map(m => { const tot=agencias.reduce((s,ag)=>s+(pivot[m][ag]||0),0);
-      return `<tr><td>${MES_LABEL[m-1]}</td>${agencias.map(ag=>`<td>${fN(pivot[m][ag])}</td>`).join('')}<td style="font-weight:700">${fN(tot)}</td></tr>`; })
-    .join('');
+    .map(m => {
+      const tot = agencias.reduce((s,ag)=>s+(pivot[m][ag]||0),0);
+      return `<tr><td>${MES_LABEL[m-1]}</td>${agencias.map(ag=>`<td>${cell(pivot[m][ag], tot, totAg[ag])}</td>`).join('')}<td style="font-weight:700">${fN(tot)}<br><span style="font-size:11px;color:var(--muted)">(${fP(tot,totGen)})</span></td></tr>`;
+    }).join('');
   document.getElementById('tAgMesFoot').innerHTML =
-    `<tr><td>Total general</td>${agencias.map(ag=>`<td style="color:${agColor[ag]||'inherit'}">${fN(totAg[ag])}</td>`).join('')}<td>${fN(totGen)}</td></tr>`;
+    `<tr><td>Total general</td>${agencias.map(ag=>`<td style="color:${agColor[ag]||'inherit'}">${fN(totAg[ag])}<br><span style="font-size:11px;color:var(--muted)">(${fP(totAg[ag],totGen)})</span></td>`).join('')}<td>${fN(totGen)}</td></tr>`;
 }
 
 // ── TABLA MEDIO × AGENCIA ─────────────────────────────────────────────────────
