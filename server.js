@@ -421,8 +421,25 @@ app.post('/api/ask-globalnum', async (req, res) => {
 
     const fmtB = v => v >= 1e9 ? (v/1e9).toFixed(1)+'B Gs.' : v >= 1e6 ? (v/1e6).toFixed(0)+'M Gs.' : Math.round(v).toLocaleString('es-PY')+' Gs.';
 
+    // Serializar matriz mes × agencia
+    const agMesLines = [];
+    if (summary && summary.porAgenciaMes) {
+      for (const [ag, meses] of Object.entries(summary.porAgenciaMes)) {
+        const mesesStr = Object.entries(meses).filter(([,v])=>v>0).map(([m,v])=>`${m}: ${fmtB(v)}`).join(', ');
+        if (mesesStr) agMesLines.push(`  ${ag}: ${mesesStr}`);
+      }
+    }
+    // Serializar matriz medio × agencia
+    const medAgLines = [];
+    if (summary && summary.porMedioAgencia) {
+      for (const [med, ags] of Object.entries(summary.porMedioAgencia)) {
+        const agsStr = Object.entries(ags).filter(([,v])=>v>0).map(([ag,v])=>`${ag}: ${fmtB(v)}`).join(', ');
+        if (agsStr) medAgLines.push(`  ${med}: ${agsStr}`);
+      }
+    }
+
     const ctx = summary ? `
-DATOS ACTUALES DEL DASHBOARD GLOBAL NUM (Inversión Publicitaria):
+DATOS ACTUALES DEL DASHBOARD INVERSIÓN A MEDIOS (Inversión Publicitaria):
 
 Período: ${summary.periodo || '—'}
 Inversión total: ${fmtB(summary.inversionTotal||0)}
@@ -430,24 +447,30 @@ Comisión total: ${fmtB(summary.comisionTotal||0)}
 Clientes activos: ${summary.clientes||0}
 Agencias: ${summary.agencias||0}
 
-Por agencia:
+Por agencia (total anual):
 ${(summary.porAgencia||[]).map(a=>`  ${a.nombre}: ${fmtB(a.inversion)} (${a.pct}%)`).join('\n')}
+
+Inversión mensual por agencia (mes × agencia):
+${agMesLines.join('\n') || '  Sin datos'}
 
 Top 10 clientes:
 ${(summary.topClientes||[]).map((c,i)=>`  ${i+1}. ${c.nombre}: ${fmtB(c.inversion)}`).join('\n')}
 
-Por mes (Importe Gs.):
+Por mes — inversión total consolidada:
 ${(summary.porMes||[]).filter(m=>m.inversion>0).map(m=>`  ${m.mes}: ${fmtB(m.inversion)}`).join('\n')}
 
-Mix de medios:
+Mix de medios (total):
 ${(summary.medios||[]).map(m=>`  ${m.nombre}: ${fmtB(m.inversion)}`).join('\n')}
+
+Mix de medios por agencia (medio × agencia):
+${medAgLines.join('\n') || '  Sin datos'}
 
 Top canales/proveedores:
 ${(summary.canales||[]).map((c,i)=>`  ${i+1}. ${c.nombre}: ${fmtB(c.inversion)}`).join('\n')}
 ` : 'No hay datos cargados aún.';
 
     const systemPrompt = `Sos un analista senior de inversión publicitaria del holding Texo as a Service (Paraguay).
-Tu rol es interpretar los datos de Global Num — el sistema de tracking de inversión publicitaria de las agencias BRICK, NASTA, LUPE, OMD y ROGER.
+Tu rol es interpretar los datos de Inversión a Medios — el sistema de tracking de inversión publicitaria de las agencias BRICK, NASTA, LUPE, OMD y ROGER.
 
 ${ctx}
 
