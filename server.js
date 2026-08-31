@@ -413,6 +413,66 @@ app.get('/api/latest-globalnum', async (req, res) => {
   }
 });
 
+// ── GLOBALNUM — IA ANALISTA ───────────────────────────────────────────────────
+app.post('/api/ask-globalnum', async (req, res) => {
+  try {
+    const { summary, messages } = req.body;
+    if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensajes inválidos' });
+
+    const fmtB = v => v >= 1e9 ? (v/1e9).toFixed(1)+'B Gs.' : v >= 1e6 ? (v/1e6).toFixed(0)+'M Gs.' : Math.round(v).toLocaleString('es-PY')+' Gs.';
+
+    const ctx = summary ? `
+DATOS ACTUALES DEL DASHBOARD GLOBAL NUM (Inversión Publicitaria):
+
+Período: ${summary.periodo || '—'}
+Inversión total: ${fmtB(summary.inversionTotal||0)}
+Comisión total: ${fmtB(summary.comisionTotal||0)}
+Clientes activos: ${summary.clientes||0}
+Agencias: ${summary.agencias||0}
+
+Por agencia:
+${(summary.porAgencia||[]).map(a=>`  ${a.nombre}: ${fmtB(a.inversion)} (${a.pct}%)`).join('\n')}
+
+Top 10 clientes:
+${(summary.topClientes||[]).map((c,i)=>`  ${i+1}. ${c.nombre}: ${fmtB(c.inversion)}`).join('\n')}
+
+Por mes (Importe Gs.):
+${(summary.porMes||[]).filter(m=>m.inversion>0).map(m=>`  ${m.mes}: ${fmtB(m.inversion)}`).join('\n')}
+
+Mix de medios:
+${(summary.medios||[]).map(m=>`  ${m.nombre}: ${fmtB(m.inversion)}`).join('\n')}
+
+Top canales/proveedores:
+${(summary.canales||[]).map((c,i)=>`  ${i+1}. ${c.nombre}: ${fmtB(c.inversion)}`).join('\n')}
+` : 'No hay datos cargados aún.';
+
+    const systemPrompt = `Sos un analista senior de inversión publicitaria del holding Texo as a Service (Paraguay).
+Tu rol es interpretar los datos de Global Num — el sistema de tracking de inversión publicitaria de las agencias BRICK, NASTA, LUPE, OMD y ROGER.
+
+${ctx}
+
+REGLAS:
+1. Respondé siempre en español, con lenguaje ejecutivo pero directo.
+2. Citá los datos exactos cuando des un número.
+3. Si no tenés el dato, decilo claramente — nunca inventes.
+4. Podés hacer recomendaciones estratégicas basadas en los datos.
+5. Si te preguntan algo fuera del tema de inversión publicitaria de Texo, redirigí amablemente.
+6. Para comparaciones o tendencias, usá los datos del período disponible.`;
+
+    const response = await getAnthropic().messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: messages.map(m => ({ role: m.role, content: m.content }))
+    });
+
+    res.json({ reply: response.content[0].text });
+  } catch (err) {
+    console.error('ERROR /api/ask-globalnum:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── DIAGNÓSTICO ───────────────────────────────────────────────────────────────
 app.get('/api/diag', async (req, res) => {
   const result = {
