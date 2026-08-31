@@ -435,8 +435,8 @@ function compressRows(rows) {
     Math.round(r.invGs),  Math.round(r.comGs),
     Math.round((r.invUsd || 0) * 100) / 100,
     Math.round((r.comUsd || 0) * 100) / 100,
-    Math.round((r.importe   || 0) * 100) / 100,
-    Math.round((r.comision  || 0) * 100) / 100
+    Math.round((r.importe   || 0) * 10000) / 10000,
+    Math.round((r.comision  || 0) * 10000) / 10000
   ]);
   return { ags, cls, mds, tis, grs, cas, mos, data };
 }
@@ -726,7 +726,7 @@ function renderPaginaDetalle() {
   const hasUsd = _rawRows.some(r=>r.invUsd>0);
 
   const fmtUsd = v => v > 0 ? '$ ' + v.toLocaleString('es-PY') : '—';
-  const fmtNum = v => v > 0 ? v.toLocaleString('es-PY') : '—';
+  const fmtNum = v => v > 0 ? v.toLocaleString('es-PY', {minimumFractionDigits:0, maximumFractionDigits:4}) : '—';
 
   const tbody = document.getElementById('tbDetalle');
   tbody.innerHTML = page.map(r => {
