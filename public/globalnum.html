@@ -278,6 +278,13 @@ input[type=file]{display:none}
       </div>
     </div>
 
+    <!-- Inversión por agencia y mes -->
+    <div class="chart-card wide" style="margin-bottom:16px" id="cardAgMes">
+      <div class="chart-title">Inversión por agencia y mes</div>
+      <div class="chart-subtitle">Importe Gs. — agrupado por mes</div>
+      <div class="chart-wrap" style="height:320px"><canvas id="cAgMes"></canvas></div>
+    </div>
+
     <!-- Top clientes -->
     <div class="chart-card wide" style="margin-bottom:16px">
       <div class="chart-title">Top 15 clientes</div>
@@ -574,6 +581,44 @@ function destroyChart(key) { if (_charts[key]) { try { _charts[key].destroy(); }
 
 function renderCharts(d) {
   const COMMON = { responsive:true, maintainAspectRatio:false };
+
+  // Inversión por agencia y mes — barras agrupadas
+  destroyChart('agMes');
+  if (d.rawRows && d.rawRows.length) {
+    const agList = [...new Set(d.rawRows.map(r=>r.agencia))].sort();
+    const porAgMes = {};
+    agList.forEach(ag => { porAgMes[ag] = Array(12).fill(0); });
+    d.rawRows.forEach(r => {
+      if (porAgMes[r.agencia] && r.nMes >= 1 && r.nMes <= 12) porAgMes[r.agencia][r.nMes-1] += r.invGs;
+    });
+    _charts.agMes = new Chart(document.getElementById('cAgMes'), {
+      type: 'bar',
+      data: {
+        labels: MES_LABEL,
+        datasets: agList.map(ag => ({
+          label: ag,
+          data: porAgMes[ag],
+          backgroundColor: AG_COLOR[ag] || '#6b7280',
+          borderRadius: 4,
+          borderWidth: 0,
+        }))
+      },
+      options: {
+        ...COMMON,
+        plugins: {
+          legend: { labels: { color: TICK, font: FONT, boxWidth: 12, padding: 16 } },
+          tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmtGsShort(ctx.parsed.y) } }
+        },
+        scales: {
+          x: { ticks: { color: TICK, font: FONT }, grid: { color: 'transparent' } },
+          y: { ticks: { color: TICK, font: FONT, callback: v => fmtGsShort(v) }, grid: { color: GRID } }
+        }
+      }
+    });
+    document.getElementById('cardAgMes').style.display = '';
+  } else {
+    document.getElementById('cardAgMes').style.display = 'none';
+  }
 
   // Por agencia — barra simple, color por agencia, sin comisión
   destroyChart('agencia');
