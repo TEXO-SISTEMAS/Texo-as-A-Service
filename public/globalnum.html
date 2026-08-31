@@ -32,8 +32,23 @@ nav .active{font-weight:700;padding:5px 11px;border-radius:6px;background:#f0f04
 .btn-outline:hover{background:rgba(255,255,255,.08)}
 .btn-primary{background:var(--accent);color:#0f1117}
 .btn-primary:hover{background:#e8e830}
+/* HERO */
+.hero{background:linear-gradient(135deg,#0b0f1a 0%,#1a1a2e 55%,#0d1535 100%);padding:36px 44px 32px;color:#fff;position:relative;overflow:hidden;flex-shrink:0}
+.hero::before{content:'';position:absolute;top:-80px;right:-40px;width:360px;height:360px;background:radial-gradient(circle,rgba(240,240,64,.06) 0%,transparent 60%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:100px;padding:5px 16px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:18px}
+.hero-row{display:flex;align-items:flex-start;justify-content:space-between;gap:32px;margin-bottom:24px}
+.hero-title{font-size:44px;font-weight:900;letter-spacing:-.04em;line-height:.95;color:#fff}
+.hero-title-sub{font-size:34px;font-weight:300;letter-spacing:-.02em;color:#f0f040;line-height:1}
+.hero-tagline{font-size:11px;color:rgba(255,255,255,.35);margin-top:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.hero-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;padding-top:4px}
+.hero-right-label{font-size:11px;color:rgba(255,255,255,.35);text-align:right;line-height:1.5}
+.hero-stats{display:flex;gap:10px;flex-wrap:wrap;padding-top:18px;border-top:1px solid rgba(255,255,255,.1)}
+.hs{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 18px;flex:1;min-width:110px}
+.hs-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:4px}
+.hs-value{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.02em;line-height:1.1}
+.hs-sub{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px}
 /* LAYOUT */
-.main{flex:1;padding:32px 32px 80px;max-width:1400px;width:100%;margin:0 auto}
+.main{flex:1;padding:28px 32px 80px;max-width:1400px;width:100%;margin:0 auto}
 /* EMPTY STATE */
 .empty-state{text-align:center;padding:80px 24px}
 .empty-icon{font-size:48px;opacity:.3;margin-bottom:16px}
@@ -115,8 +130,45 @@ input[type=file]{display:none}
     </nav>
   </div>
   <div class="topbar-right">
-    <button class="btn btn-outline" id="btnUpload" onclick="document.getElementById('fileInput').click()">↑ Cargar Excel</button>
     <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(event)">
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero" id="heroSection">
+  <div class="hero-badge">Capa 04 · Inversión Publicitaria · Holding</div>
+  <div class="hero-row">
+    <div>
+      <div class="hero-title">Global</div>
+      <div class="hero-title-sub">Num</div>
+      <div class="hero-tagline">Inversión · Comisión · Agencias · Clientes · <span id="heroPeriodo">—</span></div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-right-label" id="heroUpdateLabel">Sin datos cargados</div>
+      <button class="btn btn-outline" style="font-size:12px" onclick="document.getElementById('fileInput').click()">↑ Cargar Excel</button>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="hs" style="border-top:3px solid #f0f040">
+      <div class="hs-label">Inversión Total</div>
+      <div class="hs-value" id="hsInversion">—</div>
+      <div class="hs-sub">Guaraníes 2025</div>
+    </div>
+    <div class="hs" style="border-top:3px solid #4ade80">
+      <div class="hs-label">Comisión Total</div>
+      <div class="hs-value" id="hsComision">—</div>
+      <div class="hs-sub" id="hsComSub">% sobre inversión</div>
+    </div>
+    <div class="hs" style="border-top:3px solid #60a5fa">
+      <div class="hs-label">Clientes Activos</div>
+      <div class="hs-value" id="hsClientes">—</div>
+      <div class="hs-sub">Anunciantes con inversión</div>
+    </div>
+    <div class="hs" style="border-top:3px solid #a78bfa">
+      <div class="hs-label">Agencias</div>
+      <div class="hs-value" id="hsAgencias">—</div>
+      <div class="hs-sub">NASTA · BRICK · LUPE · OMD · ROGER</div>
+    </div>
   </div>
 </div>
 
@@ -131,37 +183,12 @@ input[type=file]{display:none}
   <div id="dashboard" style="display:none">
     <div class="page-header">
       <div>
-        <div class="page-title">Global <span>Num</span></div>
-        <div class="page-period" id="periodLabel">—</div>
+        <div class="period-label-sub" id="periodLabel" style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px">—</div>
       </div>
       <div class="period-tabs">
         <button class="ptab active" onclick="setPeriod('mensual',this)">Mensual</button>
         <button class="ptab" onclick="setPeriod('trimestral',this)">Trimestral</button>
         <button class="ptab" onclick="setPeriod('semestral',this)">Semestral</button>
-      </div>
-    </div>
-
-    <!-- KPIs -->
-    <div class="kpi-grid">
-      <div class="kpi">
-        <div class="kpi-label">Inversión Total</div>
-        <div class="kpi-val" id="kpiInversion">—</div>
-        <div class="kpi-sub" id="kpiInvSub">—</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Comisión Total</div>
-        <div class="kpi-val" id="kpiComision">—</div>
-        <div class="kpi-sub" id="kpiComSub">—</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Clientes Activos</div>
-        <div class="kpi-val" id="kpiClientes">—</div>
-        <div class="kpi-sub">Anunciantes con inversión</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Agencias</div>
-        <div class="kpi-val" id="kpiAgencias">—</div>
-        <div class="kpi-sub">NASTA · BRICK · LUPE · OMD · ROGER</div>
       </div>
     </div>
 
@@ -365,12 +392,14 @@ function render(d) {
   document.getElementById('periodLabel').textContent = 'Inversión publicitaria · ' + (d.periodo || '2025');
 
   const t = d.totales;
-  document.getElementById('kpiInversion').textContent = fmtGs(t.inversion);
-  document.getElementById('kpiInvSub').textContent    = 'Período: ' + (d.periodo || '2025');
-  document.getElementById('kpiComision').textContent  = fmtGs(t.comision);
-  document.getElementById('kpiComSub').textContent    = pct(t.comision, t.inversion) + ' sobre inversión';
-  document.getElementById('kpiClientes').textContent  = t.clientes;
-  document.getElementById('kpiAgencias').textContent  = t.agencias;
+  // Hero stats
+  document.getElementById('heroPeriodo').textContent      = d.periodo || '2025';
+  document.getElementById('heroUpdateLabel').textContent  = 'Última carga · ' + new Date().toLocaleDateString('es-PY');
+  document.getElementById('hsInversion').textContent      = fmtGs(t.inversion);
+  document.getElementById('hsComision').textContent       = fmtGs(t.comision);
+  document.getElementById('hsComSub').textContent         = pct(t.comision, t.inversion) + ' sobre inversión';
+  document.getElementById('hsClientes').textContent       = t.clientes;
+  document.getElementById('hsAgencias').textContent       = t.agencias;
 
   setPeriod('mensual', document.querySelector('.ptab.active'));
   renderCharts(d);
