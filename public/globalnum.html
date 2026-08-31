@@ -285,6 +285,13 @@ input[type=file]{display:none}
       <div class="chart-wrap" style="height:480px"><canvas id="cAgMes"></canvas></div>
     </div>
 
+    <!-- Inversión por cliente, agencia y mes (stacked horizontal) -->
+    <div class="chart-card wide" style="margin-bottom:16px" id="cardCliMesH">
+      <div class="chart-title">Top clientes por agencia y mes</div>
+      <div class="chart-subtitle">Importe Gs. — barras apiladas por mes · color por agencia</div>
+      <div class="chart-wrap" style="height:420px"><canvas id="cCliMesH"></canvas></div>
+    </div>
+
     <!-- Top clientes -->
     <div class="chart-card wide" style="margin-bottom:16px">
       <div class="chart-title">Top 15 clientes</div>
@@ -669,6 +676,65 @@ function renderCharts(d) {
       }
     }
   });
+
+  // Top clientes × agencia × mes (horizontal stacked bar — un dataset por agencia×mes)
+  destroyChart('cliMesH');
+  if (d.rawRows && d.rawRows.length) {
+    // top 20 clientes por inversión total
+    const cliTotales = {};
+    d.rawRows.forEach(r => { cliTotales[r.cliente] = (cliTotales[r.cliente]||0) + r.invGs; });
+    const topCli = Object.entries(cliTotales).sort((a,b)=>b[1]-a[1]).slice(0,20).map(e=>e[0]);
+
+    const agList2 = [...new Set(d.rawRows.map(r=>r.agencia))].sort();
+    const mesPresente = Array.from({length:12},(_,i)=>i).filter(i =>
+      d.rawRows.some(r => r.nMes === i+1 && r.invGs > 0)
+    );
+    const MES_COLORS = ['#3b82f6','#a855f7','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4','#84cc16','#6b7280'];
+
+    // Un dataset por agencia, apilado; dentro de cada agencia suma todos los meses
+    // Para ver también mes en tooltip: un dataset por agencia×mes
+    const datasets3 = [];
+    agList2.forEach(ag => {
+      mesPresente.forEach(i => {
+        const inv = topCli.map(cli =>
+          d.rawRows.filter(r => r.cliente===cli && r.agencia===ag && r.nMes===i+1).reduce((s,r)=>s+r.invGs, 0)
+        );
+        if (inv.some(v=>v>0)) {
+          const baseColor = AG_COLOR[ag] || '#6b7280';
+          const alpha = Math.round(55 + (i / 11) * 160).toString(16).padStart(2,'0');
+          datasets3.push({
+            label: ag + ' · ' + MES_LABEL[i],
+            data: inv,
+            backgroundColor: baseColor + alpha,
+            borderColor: 'transparent',
+            borderWidth: 0,
+            borderRadius: 2,
+            stack: ag,
+          });
+        }
+      });
+    });
+
+    _charts.cliMesH = new Chart(document.getElementById('cCliMesH'), {
+      type: 'bar',
+      data: { labels: topCli.map(c => c.length>32?c.slice(0,30)+'…':c), datasets: datasets3 },
+      options: {
+        indexAxis: 'y',
+        ...COMMON,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmtGsExacto(ctx.parsed.x) } }
+        },
+        scales: {
+          x: { stacked:true, ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID } },
+          y: { stacked:false, ticks:{ color:TICK, font:{...FONT,size:11} }, grid:{ color:'transparent' } }
+        }
+      }
+    });
+    document.getElementById('cardCliMesH').style.display = '';
+  } else {
+    document.getElementById('cardCliMesH').style.display = 'none';
+  }
 
   // Top 15 clientes (horizontal bar) — colores de agencias donde se pueda
   destroyChart('clientes');
