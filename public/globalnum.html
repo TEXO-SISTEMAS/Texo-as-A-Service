@@ -469,74 +469,77 @@ function renderPeriodTrimestral(wrap, d) {
 function destroyChart(key) { if (_charts[key]) { try { _charts[key].destroy(); } catch(e){} delete _charts[key]; } }
 
 function renderCharts(d) {
-  // Evolución mensual
+  const COMMON = { responsive:true, maintainAspectRatio:false };
+
+  // Evolución mensual — barra por mes con el color de la agencia principal, línea de tendencia
   destroyChart('evo');
+  const invData = d.porMes.map(m => m.inversion);
+  const minInv  = Math.min(...invData.filter(v=>v>0));
   _charts.evo = new Chart(document.getElementById('cEvo'), {
-    type: 'line',
+    type: 'bar',
     data: {
       labels: d.porMes.map(m => m.mes),
       datasets: [{
         label: 'Inversión',
-        data: d.porMes.map(m => m.inversion),
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37,99,235,.08)',
-        fill: true,
-        tension: .35,
-        borderWidth: 2.5,
-        pointRadius: 4,
-        pointBackgroundColor: '#2563eb',
+        data: invData,
+        backgroundColor: 'rgba(26,26,46,.12)',
+        borderColor: '#1a1a2e',
+        borderWidth: 1.5,
+        borderRadius: 4,
+        order: 2,
       },{
-        label: 'Comisión',
-        data: d.porMes.map(m => m.comision),
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16,185,129,.07)',
-        fill: true,
-        tension: .35,
+        type: 'line',
+        label: 'Tendencia',
+        data: invData,
+        borderColor: '#2563eb',
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
         pointRadius: 3,
-        pointBackgroundColor: '#10b981',
+        pointBackgroundColor: '#2563eb',
+        tension: .4,
+        order: 1,
       }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend:{ labels:{ color:TICK, font:FONT }}, tooltip:{
+      ...COMMON,
+      plugins:{ legend:{ labels:{ color:TICK, font:FONT }}, tooltip:{
         callbacks:{ label: ctx => ' ' + fmtGs(ctx.parsed.y) }
       }},
-      scales: {
-        x: { ticks:{ color:TICK, font:FONT }, grid:{ color:GRID }},
-        y: { ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }}
+      scales:{
+        x:{ ticks:{ color:TICK, font:FONT }, grid:{ color:'transparent' }},
+        y:{ min: Math.floor(minInv * 0.7),
+            ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }}
       }
     }
   });
 
-  // Por agencia
+  // Por agencia — barra simple, color por agencia, sin comisión
   destroyChart('agencia');
-  const agNames = d.agencias.map(a => a.nombre);
+  const agNames  = d.agencias.map(a => a.nombre);
   const agColors = agNames.map(n => AG_COLOR[n] || '#6b7280');
   _charts.agencia = new Chart(document.getElementById('cAgencia'), {
     type: 'bar',
     data: {
       labels: agNames,
       datasets: [{
-        label: 'Inversión',
         data: d.agencias.map(a => a.inversion),
-        backgroundColor: agColors.map(c => c + 'cc'),
+        backgroundColor: agColors,
         borderColor: agColors,
-        borderWidth: 1.5,
-      },{
-        label: 'Comisión',
-        data: d.agencias.map(a => a.comision),
-        backgroundColor: agColors.map(c => c + '44'),
-        borderColor: agColors.map(c => c + '88'),
-        borderWidth: 1,
+        borderWidth: 0,
+        borderRadius: 6,
       }]
     },
     options: {
-      responsive:true, maintainAspectRatio:true,
-      plugins:{ legend:{ labels:{ color:TICK, font:FONT }}, tooltip:{
-        callbacks:{ label: ctx => ' ' + fmtGs(ctx.parsed.y) }
+      ...COMMON,
+      plugins:{ legend:{ display:false }, tooltip:{
+        callbacks:{
+          title: ctx => ctx[0].label,
+          label: ctx => ' Inversión: ' + fmtGs(ctx.parsed.y),
+          afterLabel: ctx => ' Participación: ' + pct(ctx.parsed.y, d.totales.inversion),
+        }
       }},
       scales:{
-        x:{ ticks:{ color:TICK, font:FONT }, grid:{ color:GRID }},
+        x:{ ticks:{ color:TICK, font:{...FONT,weight:'600'} }, grid:{ color:'transparent' }},
         y:{ ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }}
       }
     }
@@ -550,41 +553,44 @@ function renderCharts(d) {
     type: 'doughnut',
     data: {
       labels: mdNames,
-      datasets: [{ data: d.medios.map(m => m.inversion), backgroundColor: mdColors, borderColor: '#fff', borderWidth: 2 }]
+      datasets: [{ data: d.medios.map(m => m.inversion), backgroundColor: mdColors, borderColor: '#fff', borderWidth: 3 }]
     },
     options: {
-      responsive:true, maintainAspectRatio:true, cutout:'60%',
-      plugins:{ legend:{ position:'bottom', labels:{ color:TICK, font:FONT, padding:10, boxWidth:12 }},
-        tooltip:{ callbacks:{ label: ctx => ' ' + ctx.label + ': ' + fmtGs(ctx.parsed) + ' (' + pct(ctx.parsed, d.totales.inversion) + ')' }}
+      ...COMMON, cutout:'62%',
+      plugins:{ legend:{ position:'bottom', labels:{ color:TICK, font:FONT, padding:12, boxWidth:12 }},
+        tooltip:{ callbacks:{ label: ctx => ' ' + ctx.label + ': ' + pct(ctx.parsed, d.totales.inversion) }}
       }
     }
   });
 
-  // Top clientes (horizontal bar)
+  // Top 15 clientes (horizontal bar) — colores de agencias donde se pueda
   destroyChart('clientes');
-  const cliNombres = d.topClientes.map(c => c.nombre.length > 28 ? c.nombre.slice(0,26)+'…' : c.nombre);
+  const cliNombres = d.topClientes.map(c => c.nombre.length > 30 ? c.nombre.slice(0,28)+'…' : c.nombre);
+  const cliColors  = d.topClientes.map((_, i) => {
+    const palette = ['#6c3fc5','#e85d26','#0ea5b0','#d4900a','#d42b4f','#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316','#a855f7','#06b6d4','#84cc16'];
+    return palette[i % palette.length];
+  });
   _charts.clientes = new Chart(document.getElementById('cClientes'), {
     type: 'bar',
     data: {
       labels: cliNombres,
       datasets: [{
-        label: 'Inversión',
         data: d.topClientes.map(c => c.inversion),
-        backgroundColor: 'rgba(26,26,46,.8)',
-        borderColor: '#1a1a2e',
-        borderWidth: 0,
+        backgroundColor: cliColors.map(c => c + 'cc'),
+        borderColor: cliColors,
+        borderWidth: 1,
         borderRadius: 4,
       }]
     },
     options: {
       indexAxis: 'y',
-      responsive:true, maintainAspectRatio:true,
+      ...COMMON,
       plugins:{ legend:{ display:false }, tooltip:{
         callbacks:{ label: ctx => ' ' + fmtGs(ctx.parsed.x) + ' · ' + pct(ctx.parsed.x, d.totales.inversion) }
       }},
       scales:{
         x:{ ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }},
-        y:{ ticks:{ color:TICK, font:{...FONT,size:11} }, grid:{ color:GRID }}
+        y:{ ticks:{ color:TICK, font:{...FONT,size:11} }, grid:{ color:'transparent' }}
       }
     }
   });
