@@ -877,16 +877,12 @@ function renderCharts(d) {
         const total = agList.reduce((s, a) => s + porAgMes[a][i], 0);
         return total > 0 ? +(porAgMes[ag][i] / total * 100).toFixed(1) : 0;
       }),
-      backgroundColor: (AG_COLOR[ag] || '#6b7280') + 'cc',
-      borderColor:     AG_COLOR[ag] || '#6b7280',
-      borderWidth: 1.5,
-      fill: true,
-      tension: 0.35,
-      pointRadius: 4,
-      pointHoverRadius: 6,
+      backgroundColor: AG_COLOR[ag] || '#6b7280',
+      borderWidth: 0,
+      borderRadius: 0,
     }));
     _charts.partAg = new Chart(document.getElementById('cPartAg'), {
-      type: 'line',
+      type: 'bar',
       data: { labels, datasets: pctData },
       options: {
         ...COMMON,
@@ -898,7 +894,7 @@ function renderCharts(d) {
           }
         },
         scales: {
-          x: { ticks: { color: TICK, font: FONT }, grid: { color: 'transparent' } },
+          x: { stacked: true, ticks: { color: TICK, font: FONT }, grid: { color: 'transparent' } },
           y: {
             stacked: true, min: 0, max: 100,
             ticks: { color: TICK, font: FONT, callback: v => v + '%' },
