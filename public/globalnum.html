@@ -324,6 +324,7 @@ function fmtGsShort(v) {
   return Math.round(v).toLocaleString('es-PY');
 }
 function pct(v, total) { return total > 0 ? (v/total*100).toFixed(1) + '%' : '—'; }
+function fmtGsExacto(v) { return v > 0 ? 'Gs. ' + Math.round(v).toLocaleString('es-PY') : '—'; }
 
 // ── CARGA ARCHIVO (parse en browser para evitar 413) ─────────────────────────
 const MES_NUM = { Ene:1,Feb:2,Mar:3,Abr:4,May:5,Jun:6,Jul:7,Ago:8,Sep:9,Oct:10,Nov:11,Dic:12 };
@@ -745,9 +746,9 @@ function renderPaginaDetalle() {
       <td style="font-size:13px;color:var(--muted)">${r.moneda||'—'}</td>
       <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.importe)}</td>
       <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.comision)}</td>
-      <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtGs(r.invGs)}</td>
+      <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtGsExacto(r.invGs)}</td>
       ${hasUsd ? `<td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtUsd(r.invUsd)}</td>` : ''}
-      <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--green)">${fmtGs(r.comGs)}</td>
+      <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--green)">${fmtGsExacto(r.comGs)}</td>
       <td style="font-size:13px;color:var(--muted)">${comPct}</td>
     </tr>`;
   }).join('');
