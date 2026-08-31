@@ -88,7 +88,7 @@ app.use(cookieParser());
 const JWT_SECRET = process.env.JWT_SECRET || 'texo-dev-secret-change-in-prod';
 const SUPER_ADMIN = 'danilo.sosa@texo.com.py';
 // Usuarios adicionales con acceso (se pueden gestionar luego desde /admin.html)
-const USUARIOS_EXTRA = ['alejandro.rolandi@texo.com.py'];
+const USUARIOS_EXTRA = ['alejandro.rolandi@texo.com.py', 'luis.gonzalez@texo.com.py', 'osmar.colman@texo.com.py'];
 
 // Cache de usuarios permitidos (se refresca cada 5 min)
 let _usuariosCache = null;
