@@ -289,7 +289,7 @@ input[type=file]{display:none}
     <div class="chart-card wide" style="margin-bottom:16px" id="cardCliMesH">
       <div class="chart-title">Top clientes por agencia y mes</div>
       <div class="chart-subtitle">Importe Gs. — barras apiladas por mes · color por agencia</div>
-      <div class="chart-wrap" style="height:420px"><canvas id="cCliMesH"></canvas></div>
+      <div class="chart-wrap" style="height:320px"><canvas id="cCliMesH"></canvas></div>
     </div>
 
     <!-- Top clientes -->
@@ -677,57 +677,38 @@ function renderCharts(d) {
     }
   });
 
-  // Top clientes × agencia × mes (horizontal stacked bar — un dataset por agencia×mes)
+  // Top 10 clientes × agencia (horizontal stacked bar, un dataset por agencia)
   destroyChart('cliMesH');
   if (d.rawRows && d.rawRows.length) {
-    // top 20 clientes por inversión total
     const cliTotales = {};
     d.rawRows.forEach(r => { cliTotales[r.cliente] = (cliTotales[r.cliente]||0) + r.invGs; });
-    const topCli = Object.entries(cliTotales).sort((a,b)=>b[1]-a[1]).slice(0,20).map(e=>e[0]);
-
+    const topCli = Object.entries(cliTotales).sort((a,b)=>b[1]-a[1]).slice(0,10).map(e=>e[0]);
     const agList2 = [...new Set(d.rawRows.map(r=>r.agencia))].sort();
-    const mesPresente = Array.from({length:12},(_,i)=>i).filter(i =>
-      d.rawRows.some(r => r.nMes === i+1 && r.invGs > 0)
-    );
-    const MES_COLORS = ['#3b82f6','#a855f7','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4','#84cc16','#6b7280'];
 
-    // Un dataset por agencia, apilado; dentro de cada agencia suma todos los meses
-    // Para ver también mes en tooltip: un dataset por agencia×mes
-    const datasets3 = [];
-    agList2.forEach(ag => {
-      mesPresente.forEach(i => {
-        const inv = topCli.map(cli =>
-          d.rawRows.filter(r => r.cliente===cli && r.agencia===ag && r.nMes===i+1).reduce((s,r)=>s+r.invGs, 0)
-        );
-        if (inv.some(v=>v>0)) {
-          const baseColor = AG_COLOR[ag] || '#6b7280';
-          const alpha = Math.round(55 + (i / 11) * 160).toString(16).padStart(2,'0');
-          datasets3.push({
-            label: ag + ' · ' + MES_LABEL[i],
-            data: inv,
-            backgroundColor: baseColor + alpha,
-            borderColor: 'transparent',
-            borderWidth: 0,
-            borderRadius: 2,
-            stack: ag,
-          });
-        }
-      });
-    });
+    const datasets3 = agList2.map(ag => ({
+      label: ag,
+      data: topCli.map(cli =>
+        d.rawRows.filter(r => r.cliente===cli && r.agencia===ag).reduce((s,r)=>s+r.invGs, 0)
+      ),
+      backgroundColor: (AG_COLOR[ag]||'#6b7280') + 'cc',
+      borderColor: AG_COLOR[ag]||'#6b7280',
+      borderWidth: 0,
+      borderRadius: 3,
+    }));
 
     _charts.cliMesH = new Chart(document.getElementById('cCliMesH'), {
       type: 'bar',
-      data: { labels: topCli.map(c => c.length>32?c.slice(0,30)+'…':c), datasets: datasets3 },
+      data: { labels: topCli.map(c => c.length>35?c.slice(0,33)+'…':c), datasets: datasets3 },
       options: {
         indexAxis: 'y',
         ...COMMON,
         plugins: {
-          legend: { display: false },
+          legend: { position:'bottom', labels:{ color:TICK, font:FONT, boxWidth:12, padding:14 } },
           tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmtGsExacto(ctx.parsed.x) } }
         },
         scales: {
           x: { stacked:true, ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID } },
-          y: { stacked:false, ticks:{ color:TICK, font:{...FONT,size:11} }, grid:{ color:'transparent' } }
+          y: { stacked:true, ticks:{ color:TICK, font:{...FONT,size:12} }, grid:{ color:'transparent' } }
         }
       }
     });
