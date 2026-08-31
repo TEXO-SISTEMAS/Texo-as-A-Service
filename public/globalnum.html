@@ -69,30 +69,32 @@ nav .active{font-weight:700;padding:5px 11px;border-radius:6px;background:#f0f04
 .period-tabs{display:flex;gap:6px;margin-bottom:20px}
 .ptab{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;font-family:inherit}
 .ptab.active{background:var(--accent);color:#fff;border-color:transparent}
+/* SECTION LABELS */
+.sec-label{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px}
+.sec-bar{width:36px;height:3px;background:var(--accent);border-radius:2px;margin-bottom:18px}
 /* PERIOD BREAKDOWN */
-.period-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
-.period-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.period-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
+.period-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px}
 .period-card.full{grid-column:1/-1}
-.period-header{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.period-rows{display:grid;gap:8px}
+.period-header{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.period-rows{display:grid;gap:10px}
 .period-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.period-row-label{font-size:13px;font-weight:600;flex-shrink:0}
-.period-row-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-.period-row-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s}
-.mini-fill-yellow{background:#f0f040!important}
-.period-row-val{font-size:13px;font-weight:700;text-align:right;min-width:90px;flex-shrink:0}
-.period-row-com{font-size:11px;color:var(--muted);min-width:70px;text-align:right;flex-shrink:0}
+.period-row-label{font-size:13px;font-weight:700;flex-shrink:0;color:var(--text);min-width:40px}
+.period-row-bar{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.period-row-fill{height:100%;border-radius:4px;background:#f0f040;transition:width .5s ease}
+.period-row-val{font-size:13px;font-weight:800;text-align:right;min-width:90px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.period-row-com{font-size:11px;color:var(--muted);min-width:72px;text-align:right;flex-shrink:0}
 /* CHARTS */
-.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:28px}
 .charts-grid.triple{grid-template-columns:2fr 1fr}
 .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px}
 .chart-card.wide{grid-column:1/-1}
-.chart-title{font-size:13px;font-weight:700;margin-bottom:18px;color:var(--text)}
-.chart-title span{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
+.chart-title{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:16px}
+.chart-title span{font-weight:400;color:var(--muted);font-size:11px;margin-left:6px;letter-spacing:0;text-transform:none}
 canvas{display:block;width:100%!important}
 /* TABLE */
 .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
-.table-header{padding:18px 22px 14px;font-size:13px;font-weight:700;border-bottom:1px solid var(--border)}
+.table-header{padding:18px 22px 14px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);border-bottom:1px solid var(--border)}
 table{width:100%;border-collapse:collapse}
 th{background:#f0f2f7;padding:10px 16px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);white-space:nowrap}
 td{padding:10px 16px;font-size:13px;border-top:1px solid var(--border)}
@@ -466,12 +468,13 @@ function renderCharts(d) {
       datasets: [{
         label: 'Inversión',
         data: d.porMes.map(m => m.inversion),
-        borderColor: '#1a1a2e',
-        backgroundColor: 'rgba(26,26,46,.07)',
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37,99,235,.08)',
         fill: true,
         tension: .35,
+        borderWidth: 2.5,
         pointRadius: 4,
-        pointBackgroundColor: '#1a1a2e',
+        pointBackgroundColor: '#2563eb',
       },{
         label: 'Comisión',
         data: d.porMes.map(m => m.comision),
