@@ -467,6 +467,9 @@ ${medAgLines.join('\n') || '  Sin datos'}
 
 Top canales/proveedores:
 ${(summary.canales||[]).map((c,i)=>`  ${i+1}. ${c.nombre}: ${fmtB(c.inversion)}`).join('\n')}
+
+Top clientes por mes (top 10 por mes):
+${Object.entries(summary.topClientesPorMes||{}).map(([mes,clis])=>`  ${mes}:\n${clis.map(c=>`    - ${c.nombre}: ${fmtB(c.inv)}`).join('\n')}`).join('\n')}
 ` : 'No hay datos cargados aún.';
 
     const systemPrompt = `Sos un analista senior de inversión publicitaria del holding Texo as a Service (Paraguay).

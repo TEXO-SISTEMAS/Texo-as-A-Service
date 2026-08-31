@@ -1649,19 +1649,35 @@ function iaSetSummary(d) {
     if (r.medio && porMedAgMat[r.medio]) porMedAgMat[r.medio][r.agencia] = (porMedAgMat[r.medio][r.agencia]||0) + r.invGs;
   });
 
+  // Top clientes por mes
+  const cliMesMap = {};
+  (d.rawRows||[]).forEach(r => {
+    if (!r.cliente || !r.nMes || r.nMes<1 || r.nMes>12) return;
+    const mes = (d.porMes[r.nMes-1]||{}).mes || r.nMes;
+    if (!cliMesMap[mes]) cliMesMap[mes] = {};
+    cliMesMap[mes][r.cliente] = (cliMesMap[mes][r.cliente]||0) + r.invGs;
+  });
+  const topClientesPorMes = {};
+  for (const [mes, clis] of Object.entries(cliMesMap)) {
+    topClientesPorMes[mes] = Object.entries(clis)
+      .sort((a,b)=>b[1]-a[1]).slice(0,10)
+      .map(([nombre,inv]) => ({ nombre, inv }));
+  }
+
   _gnSummary = {
-    periodo:        d.periodo || '—',
-    inversionTotal: d.totales.inversion || 0,
-    comisionTotal:  d.totales.comision  || 0,
-    clientes:       d.totales.clientes  || 0,
-    agencias:       d.totales.agencias  || 0,
-    porAgencia:     (d.agencias   || []).map(a => ({ nombre:a.nombre, inversion:a.inversion, pct: d.totales.inversion>0?(a.inversion/d.totales.inversion*100).toFixed(1):'0' })),
-    topClientes:    (d.topClientes|| []).map(c => ({ nombre:c.nombre, inversion:c.inversion })),
-    porMes:         (d.porMes     || []).map(m => ({ mes:m.mes, inversion:m.inversion })),
-    medios:         (d.medios     || []).map(m => ({ nombre:m.nombre, inversion:m.inversion })),
-    canales:        (d.canales    || []).map(c => ({ nombre:c.nombre, inversion:c.inversion })),
-    porAgenciaMes:  porAgMesMat,
+    periodo:         d.periodo || '—',
+    inversionTotal:  d.totales.inversion || 0,
+    comisionTotal:   d.totales.comision  || 0,
+    clientes:        d.totales.clientes  || 0,
+    agencias:        d.totales.agencias  || 0,
+    porAgencia:      (d.agencias   || []).map(a => ({ nombre:a.nombre, inversion:a.inversion, pct: d.totales.inversion>0?(a.inversion/d.totales.inversion*100).toFixed(1):'0' })),
+    topClientes:     (d.topClientes|| []).map(c => ({ nombre:c.nombre, inversion:c.inversion })),
+    porMes:          (d.porMes     || []).map(m => ({ mes:m.mes, inversion:m.inversion })),
+    medios:          (d.medios     || []).map(m => ({ nombre:m.nombre, inversion:m.inversion })),
+    canales:         (d.canales    || []).map(c => ({ nombre:c.nombre, inversion:c.inversion })),
+    porAgenciaMes:   porAgMesMat,
     porMedioAgencia: porMedAgMat,
+    topClientesPorMes,
   };
 }
 </script>
