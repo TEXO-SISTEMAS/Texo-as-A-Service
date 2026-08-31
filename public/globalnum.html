@@ -110,13 +110,13 @@ tbody td:first-child{text-align:left;font-weight:600;font-size:14px}
 .mini-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;width:100%}
 .mini-fill{height:100%;border-radius:2px;background:var(--accent)}
 /* TABLA AG-MES */
-#tAgMes th{padding:9px 14px;text-align:right;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted2);border-bottom:2px solid var(--border);white-space:nowrap}
-#tAgMes th:first-child{text-align:left}
-#tAgMes td{padding:9px 14px;text-align:right;font-size:13px;white-space:nowrap;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
-#tAgMes td:first-child{text-align:left;font-weight:600;color:var(--text)}
-#tAgMes tfoot td{padding:10px 14px;text-align:right;font-size:13px;font-weight:700;white-space:nowrap;border-top:2px solid var(--border);color:var(--text)}
-#tAgMes tfoot td:first-child{text-align:left}
-#tAgMes tbody tr:hover td{background:rgba(0,0,0,.03)}
+#tAgMes th,#tMedAg th{padding:9px 14px;text-align:right;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted2);border-bottom:2px solid var(--border);white-space:nowrap}
+#tAgMes th:first-child,#tMedAg th:first-child{text-align:left}
+#tAgMes td,#tMedAg td{padding:9px 14px;text-align:right;font-size:13px;white-space:nowrap;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+#tAgMes td:first-child,#tMedAg td:first-child{text-align:left;font-weight:600;color:var(--text)}
+#tAgMes tfoot td,#tMedAg tfoot td{padding:10px 14px;text-align:right;font-size:13px;font-weight:700;white-space:nowrap;border-top:2px solid var(--border);color:var(--text)}
+#tAgMes tfoot td:first-child,#tMedAg tfoot td:first-child{text-align:left}
+#tAgMes tbody tr:hover td,#tMedAg tbody tr:hover td{background:rgba(0,0,0,.03)}
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:99}
 .toast.show{opacity:1}
@@ -434,6 +434,26 @@ input[type=file]{display:none}
           <thead id="tAgMesHead"></thead>
           <tbody id="tAgMesBody"></tbody>
           <tfoot id="tAgMesFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tabla medio × agencia -->
+    <div class="chart-card wide" style="margin-bottom:16px" id="cardTablaMedAg">
+      <div style="margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:2px">Inversión por medio y agencia</div>
+        <div class="chart-subtitle">Importe Gs. · filtrar por mes</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <select id="filterTablaMedAgMes" onchange="renderTablaMedAg()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px;cursor:pointer">
+          <option value="">Todos los meses</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="tMedAg" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead id="tMedAgHead"></thead>
+          <tbody id="tMedAgBody"></tbody>
+          <tfoot id="tMedAgFoot"></tfoot>
         </table>
       </div>
     </div>
@@ -890,10 +910,17 @@ function renderCharts(d) {
   // Tabla mes × agencia — poblar select de medios y renderizar
   if (d.rawRows && d.rawRows.length) {
     const mediosDisp = [...new Set(d.rawRows.map(r=>r.medio).filter(Boolean))].sort();
+    const mesesDisp2 = [...new Set(d.rawRows.map(r=>r.nMes))].sort((a,b)=>a-b);
+    // tabla mes × agencia
     const selMedTab = document.getElementById('filterTablaAgMesMedio');
     selMedTab.innerHTML = '<option value="">Todos los medios</option>' +
       mediosDisp.map(m=>`<option>${m}</option>`).join('');
     renderTablaAgMes();
+    // tabla medio × agencia
+    const selMesTab = document.getElementById('filterTablaMedAgMes');
+    selMesTab.innerHTML = '<option value="">Todos los meses</option>' +
+      mesesDisp2.map(n=>`<option value="${n}">${MES_LABEL[n-1]}</option>`).join('');
+    renderTablaMedAg();
   }
 
   // Top 10 clientes × agencia — poblar select de mes y renderizar
@@ -980,6 +1007,48 @@ function renderTablaAgMes() {
       <td>Total general</td>
       ${agencias.map(ag=>`<td style="color:${agColor[ag]||'inherit'}">${fN(totAg[ag])}</td>`).join('')}
       <td>${fN(totGeneral)}</td>
+    </tr>`;
+}
+
+// ── TABLA MEDIO × AGENCIA ─────────────────────────────────────────────────────
+function renderTablaMedAg() {
+  if (!_d || !_d.rawRows || !_d.rawRows.length) return;
+  const mes  = document.getElementById('filterTablaMedAgMes').value;
+  const rows = mes ? _d.rawRows.filter(r => r.nMes === +mes) : _d.rawRows;
+
+  const agencias = [...new Set(_d.rawRows.map(r => r.agencia))].sort();
+  const medios   = [...new Set(_d.rawRows.map(r => r.medio).filter(Boolean))].sort();
+
+  // pivot: medio → agencia → suma
+  const pivot = {};
+  medios.forEach(m => { pivot[m] = {}; agencias.forEach(ag => { pivot[m][ag] = 0; }); });
+  rows.forEach(r => { if (r.medio && pivot[r.medio]) pivot[r.medio][r.agencia] = (pivot[r.medio][r.agencia]||0) + r.invGs; });
+
+  const totAg  = {};
+  agencias.forEach(ag => { totAg[ag] = medios.reduce((s,m)=>s+(pivot[m][ag]||0),0); });
+  const totGen = agencias.reduce((s,ag)=>s+totAg[ag],0);
+
+  const fN = v => v > 0 ? Math.round(v).toLocaleString('es-PY') : '—';
+  const agColor = {NASTA:'#6c3fc5',BRICK:'#e85d26',LUPE:'#0ea5b0',OMD:'#d4900a',ROGER:'#d42b4f'};
+
+  document.getElementById('tMedAgHead').innerHTML =
+    `<tr><th>Medio</th>${agencias.map(ag=>`<th style="color:${agColor[ag]||'inherit'}">${ag}</th>`).join('')}<th>Total</th></tr>`;
+
+  document.getElementById('tMedAgBody').innerHTML = medios.map(med => {
+    const totMed = agencias.reduce((s,ag)=>s+(pivot[med][ag]||0),0);
+    if (totMed === 0) return '';
+    return `<tr>
+      <td>${med}</td>
+      ${agencias.map(ag=>`<td>${fN(pivot[med][ag])}</td>`).join('')}
+      <td style="font-weight:700">${fN(totMed)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tMedAgFoot').innerHTML =
+    `<tr>
+      <td>Total general</td>
+      ${agencias.map(ag=>`<td style="color:${agColor[ag]||'inherit'}">${fN(totAg[ag])}</td>`).join('')}
+      <td>${fN(totGen)}</td>
     </tr>`;
 }
 
