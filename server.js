@@ -470,7 +470,7 @@ ${(summary.canales||[]).map((c,i)=>`  ${i+1}. ${c.nombre}: ${fmtB(c.inversion)}`
 ` : 'No hay datos cargados aún.';
 
     const systemPrompt = `Sos un analista senior de inversión publicitaria del holding Texo as a Service (Paraguay).
-Tu rol es interpretar los datos de Inversión a Medios — el sistema de tracking de inversión publicitaria de las agencias BRICK, NASTA, LUPE, OMD y ROGER.
+Tu rol es interpretar los datos de Inversión de Medios — el sistema de tracking de inversión publicitaria de las agencias BRICK, NASTA, LUPE, OMD y ROGER.
 
 ${ctx}
 
