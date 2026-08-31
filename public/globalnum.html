@@ -116,6 +116,20 @@ tbody td:first-child{text-align:left;font-weight:600;font-size:14px}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
 input[type=file]{display:none}
+/* DETALLE TABLE */
+.detalle-search-row{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.detalle-search{flex:1;min-width:220px;padding:8px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+.detalle-search:focus{border-color:var(--accent)}
+.detalle-select{padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text);cursor:pointer;outline:none}
+.detalle-select:focus{border-color:var(--accent)}
+.detalle-count{font-size:12px;color:var(--muted);white-space:nowrap;margin-left:auto}
+.pag-row{display:flex;align-items:center;gap:8px;margin-top:12px;justify-content:flex-end}
+.pag-btn{padding:5px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;background:var(--surface);font-family:inherit;color:var(--text);transition:all .15s}
+.pag-btn:hover:not(:disabled){background:var(--accent);color:#fff;border-color:var(--accent)}
+.pag-btn:disabled{opacity:.35;cursor:default}
+.pag-info{font-size:13px;color:var(--muted)}
+.ag-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;flex-shrink:0}
+.detalle-empty{padding:40px 0;text-align:center;color:var(--muted);font-size:14px}
 /* Responsive */
 @media(max-width:900px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
@@ -203,11 +217,45 @@ input[type=file]{display:none}
     <!-- Período breakdown -->
     <div class="period-grid" id="periodBreakdown"></div>
 
-    <!-- Evolución mensual -->
+    <!-- Detalle de inversión -->
     <div class="chart-card wide" style="margin-bottom:16px">
-      <div class="chart-title">Evolución mensual</div>
-      <div class="chart-subtitle">Inversión vs. Comisión en Gs.</div>
-      <div class="chart-wrap"><canvas id="cEvo"></canvas></div>
+      <div class="chart-title">Detalle de inversión</div>
+      <div class="chart-subtitle">Por agencia · cliente · medio · tipo · grupo · mes</div>
+      <div id="detalleNoData" class="detalle-empty" style="display:none">Recargá el Excel para ver el detalle de transacciones</div>
+      <div id="detalleData" style="display:none">
+        <div class="detalle-search-row">
+          <input class="detalle-search" type="text" id="detalleSearch" placeholder="Buscar por cliente, agencia, medio, tipo, grupo..." oninput="filtrarDetalle()">
+          <select class="detalle-select" id="filterAgencia" onchange="filtrarDetalle()"><option value="">Todas las agencias</option></select>
+          <select class="detalle-select" id="filterMedio"   onchange="filtrarDetalle()"><option value="">Todos los medios</option></select>
+          <select class="detalle-select" id="filterMes"     onchange="filtrarDetalle()"><option value="">Todos los meses</option></select>
+          <span class="detalle-count" id="detalleCount"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="tDetalle">
+            <thead><tr>
+              <th style="text-align:left">Agencia</th>
+              <th style="text-align:left">Cliente</th>
+              <th style="text-align:left">Medio</th>
+              <th style="text-align:left">Tipo</th>
+              <th style="text-align:left">Grupo / Proveedor</th>
+              <th style="text-align:left">Canal</th>
+              <th>Mes</th>
+              <th>Año</th>
+              <th>Moneda</th>
+              <th>Inv. Gs.</th>
+              <th id="thUsd" style="display:none">Inv. USD</th>
+              <th>Com. Gs.</th>
+              <th>% Com.</th>
+            </tr></thead>
+            <tbody id="tbDetalle"></tbody>
+          </table>
+        </div>
+        <div class="pag-row">
+          <button class="pag-btn" id="pagPrev" onclick="cambiarPagina(-1)">← Anterior</button>
+          <span class="pag-info" id="pagInfo"></span>
+          <button class="pag-btn" id="pagNext" onclick="cambiarPagina(1)">Siguiente →</button>
+        </div>
+      </div>
     </div>
 
     <!-- Agencias + Medios -->
@@ -298,25 +346,35 @@ function parsearEnBrowser(wb) {
   const idx = n => H.indexOf(n);
   const iAgencia=idx('Agencia'), iCliente=idx('Cliente'), iMedio=idx('Medio');
   const iTipo=idx('Tipo (original)'), iGrupo=idx('Grupo / Proveedor'), iCanal=idx('Canal');
-  const iMes=idx('Mes'), iNMes=idx('Nº Mes');
+  const iMes=idx('Mes'), iNMes=idx('Nº Mes'), iAnio=idx('Año');
+  const iMoneda=idx('Moneda');
   const iImporteGs=idx('Importe Gs'), iComGs=idx('Comisión Gs');
+  // Detectar columnas USD (varios nombres posibles)
+  const iImpUsd = ['Importe USD','Inversión USD','Importe $','USD'].reduce((acc,n)=>acc>=0?acc:idx(n), -1);
+  const iComUsd = ['Comisión USD','Comision USD','Com USD'].reduce((acc,n)=>acc>=0?acc:idx(n), -1);
 
   let totalInversion=0, totalComision=0;
   const clientesSet=new Set(), agenciasSet=new Set();
   const porMes=Array.from({length:12},(_,i)=>({mes:MES_LABEL[i],nMes:i+1,inversion:0,comision:0}));
   const porAgencia={}, porMedio={}, porCliente={}, porCanal={};
+  const rawRows=[];
 
   for (let i=1; i<rows.length; i++) {
     const r=rows[i];
     if (!r||!r[iAgencia]) continue;
     const agencia=String(r[iAgencia]).trim();
     const cliente=r[iCliente]?String(r[iCliente]).trim():'—';
+    const tipoOrig=r[iTipo]?String(r[iTipo]).trim():'—';
     const medio=normalizarMedio(r[iMedio]||r[iTipo]);
     const canal=r[iCanal]?String(r[iCanal]).trim():'—';
     const grupo=r[iGrupo]?String(r[iGrupo]).trim():'—';
     const nMes=typeof r[iNMes]==='number'?r[iNMes]:(MES_NUM[r[iMes]]||0);
+    const anio=iAnio>=0&&r[iAnio]?parseInt(r[iAnio])||null:null;
+    const moneda=iMoneda>=0&&r[iMoneda]?String(r[iMoneda]).trim():null;
     const inv=parseFloat(r[iImporteGs])||0;
     const com=parseFloat(r[iComGs])||0;
+    const invUsd=iImpUsd>=0?parseFloat(r[iImpUsd])||0:0;
+    const comUsd=iComUsd>=0?parseFloat(r[iComUsd])||0:0;
     if (nMes<1||nMes>12) continue;
 
     totalInversion+=inv; totalComision+=com;
@@ -331,6 +389,7 @@ function parsearEnBrowser(wb) {
     const cKey=grupo!=='—'?grupo:canal;
     if (!porCanal[cKey]) porCanal[cKey]={inversion:0,comision:0};
     porCanal[cKey].inversion+=inv; porCanal[cKey].comision+=com;
+    rawRows.push({agencia,cliente,medio,tipo:tipoOrig,grupo,canal,nMes,mes:MES_LABEL[nMes-1],anio,moneda,invGs:inv,comGs:com,invUsd,comUsd});
   }
 
   const sumRange=(arr,a,b)=>arr.slice(a,b).reduce((acc,m)=>({inversion:acc.inversion+m.inversion,comision:acc.comision+m.comision}),{inversion:0,comision:0});
@@ -351,6 +410,7 @@ function parsearEnBrowser(wb) {
     medios:   toArr(porMedio),
     topClientes: toArr(porCliente).slice(0,15),
     canales:  toArr(porCanal).slice(0,10),
+    rawRows,
   };
 }
 
@@ -414,6 +474,7 @@ function render(d) {
   document.getElementById('hsAgencias').textContent       = t.agencias;
 
   setPeriod('mensual', document.querySelector('.ptab.active'));
+  renderDetalleTabla(d.rawRows);
   renderCharts(d);
   renderTablaCanales(d.canales, t.inversion);
 }
@@ -470,52 +531,6 @@ function destroyChart(key) { if (_charts[key]) { try { _charts[key].destroy(); }
 
 function renderCharts(d) {
   const COMMON = { responsive:true, maintainAspectRatio:false };
-
-  // Evolución mensual — barra por mes con el color de la agencia principal, línea de tendencia
-  destroyChart('evo');
-  const invData = d.porMes.map(m => m.inversion);
-  const minInv  = Math.min(...invData.filter(v=>v>0));
-  _charts.evo = new Chart(document.getElementById('cEvo'), {
-    type: 'bar',
-    data: {
-      labels: d.porMes.map(m => m.mes),
-      datasets: [{
-        label: 'Inversión',
-        data: invData,
-        backgroundColor: 'rgba(108,63,197,.55)',
-        hoverBackgroundColor: 'rgba(108,63,197,.8)',
-        borderColor: 'rgba(108,63,197,.0)',
-        borderWidth: 0,
-        borderRadius: 6,
-        order: 2,
-      },{
-        type: 'line',
-        label: 'Tendencia',
-        data: invData,
-        borderColor: '#f0f040',
-        backgroundColor: 'rgba(240,240,64,.08)',
-        fill: true,
-        borderWidth: 2.5,
-        pointRadius: 3,
-        pointBackgroundColor: '#f0f040',
-        pointBorderColor: '#1a1a2e',
-        pointBorderWidth: 1.5,
-        tension: .4,
-        order: 1,
-      }]
-    },
-    options: {
-      ...COMMON,
-      plugins:{ legend:{ labels:{ color:TICK, font:FONT }}, tooltip:{
-        callbacks:{ label: ctx => ' ' + fmtGs(ctx.parsed.y) }
-      }},
-      scales:{
-        x:{ ticks:{ color:TICK, font:FONT }, grid:{ color:'transparent' }},
-        y:{ min: Math.floor(minInv * 0.7),
-            ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }}
-      }
-    }
-  });
 
   // Por agencia — barra simple, color por agencia, sin comisión
   destroyChart('agencia');
@@ -598,6 +613,104 @@ function renderCharts(d) {
       }
     }
   });
+}
+
+// ── DETALLE TABLE ─────────────────────────────────────────────────────────────
+let _rawRows = [];
+let _filtered = [];
+let _pagPage  = 1;
+const _pagSize = 50;
+
+function renderDetalleTabla(rows) {
+  _rawRows = rows || [];
+  if (!_rawRows.length) {
+    document.getElementById('detalleNoData').style.display = '';
+    document.getElementById('detalleData').style.display = 'none';
+    return;
+  }
+  document.getElementById('detalleNoData').style.display = 'none';
+  document.getElementById('detalleData').style.display = '';
+
+  const agencias = [...new Set(_rawRows.map(r=>r.agencia))].sort();
+  const medios   = [...new Set(_rawRows.map(r=>r.medio))].sort();
+  const meses    = [...new Set(_rawRows.map(r=>r.nMes))].sort((a,b)=>a-b);
+
+  const selAg  = document.getElementById('filterAgencia');
+  const selMed = document.getElementById('filterMedio');
+  const selMes = document.getElementById('filterMes');
+  selAg.innerHTML  = '<option value="">Todas las agencias</option>' + agencias.map(a=>`<option>${a}</option>`).join('');
+  selMed.innerHTML = '<option value="">Todos los medios</option>'  + medios.map(m=>`<option>${m}</option>`).join('');
+  selMes.innerHTML = '<option value="">Todos los meses</option>'   + meses.map(n=>`<option value="${n}">${MES_LABEL[n-1]}</option>`).join('');
+
+  const hasUsd = _rawRows.some(r=>r.invUsd>0);
+  document.getElementById('thUsd').style.display = hasUsd ? '' : 'none';
+
+  filtrarDetalle();
+}
+
+function filtrarDetalle() {
+  const q   = (document.getElementById('detalleSearch').value||'').toLowerCase().trim();
+  const ag  = document.getElementById('filterAgencia').value;
+  const med = document.getElementById('filterMedio').value;
+  const mes = document.getElementById('filterMes').value;
+
+  _filtered = _rawRows.filter(r => {
+    if (ag  && r.agencia !== ag)   return false;
+    if (med && r.medio   !== med)  return false;
+    if (mes && r.nMes    !== +mes) return false;
+    if (q) {
+      const txt = [r.agencia,r.cliente,r.medio,r.tipo,r.grupo,r.canal,r.mes,r.moneda||''].join(' ').toLowerCase();
+      if (!txt.includes(q)) return false;
+    }
+    return true;
+  });
+
+  _pagPage = 1;
+  renderPaginaDetalle();
+}
+
+function cambiarPagina(delta) {
+  const total = Math.ceil(_filtered.length / _pagSize);
+  _pagPage = Math.max(1, Math.min(_pagPage + delta, total));
+  renderPaginaDetalle();
+}
+
+function renderPaginaDetalle() {
+  const total = Math.ceil(_filtered.length / _pagSize) || 1;
+  const from  = (_pagPage - 1) * _pagSize;
+  const page  = _filtered.slice(from, from + _pagSize);
+  const hasUsd = _rawRows.some(r=>r.invUsd>0);
+
+  const fmtUsd = v => v > 0 ? '$ ' + v.toLocaleString('es-PY') : '—';
+
+  const tbody = document.getElementById('tbDetalle');
+  tbody.innerHTML = page.map(r => {
+    const agKey   = r.agencia.toUpperCase().split(' ')[0];
+    const color   = AG_COLOR[agKey] || '#6b7280';
+    const comPct  = r.invGs > 0 ? (r.comGs / r.invGs * 100).toFixed(1) + '%' : '—';
+    return `<tr>
+      <td style="text-align:left"><span class="ag-dot" style="background:${color}"></span>${r.agencia}</td>
+      <td style="text-align:left;max-width:180px;white-space:normal;font-size:13px">${r.cliente}</td>
+      <td style="text-align:left;font-size:13px">${r.medio}</td>
+      <td style="text-align:left;color:var(--muted);font-size:12px">${r.tipo}</td>
+      <td style="text-align:left;color:var(--muted);font-size:12px">${r.grupo}</td>
+      <td style="text-align:left;color:var(--muted);font-size:12px">${r.canal}</td>
+      <td style="font-size:13px">${r.mes}</td>
+      <td style="font-size:13px">${r.anio||'—'}</td>
+      <td style="font-size:13px;color:var(--muted)">${r.moneda||'—'}</td>
+      <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtGs(r.invGs)}</td>
+      ${hasUsd ? `<td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtUsd(r.invUsd)}</td>` : ''}
+      <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--green)">${fmtGs(r.comGs)}</td>
+      <td style="font-size:13px;color:var(--muted)">${comPct}</td>
+    </tr>`;
+  }).join('');
+
+  const from1 = _filtered.length ? from + 1 : 0;
+  const to1   = Math.min(from + _pagSize, _filtered.length);
+  document.getElementById('detalleCount').textContent = `${from1}–${to1} de ${_filtered.length.toLocaleString('es-PY')} filas`;
+  document.getElementById('pagInfo').textContent = `Pág. ${_pagPage} de ${total}`;
+  document.getElementById('pagPrev').disabled = _pagPage <= 1;
+  document.getElementById('pagNext').disabled = _pagPage >= total;
 }
 
 // ── TABLA CANALES ─────────────────────────────────────────────────────────────
