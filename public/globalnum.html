@@ -418,13 +418,6 @@ input[type=file]{display:none}
       <div class="chart-insight" id="insightAgMes"></div>
     </div>
 
-    <!-- Participación de agencias por mes (área apilada 100%) -->
-    <div class="chart-card wide" style="margin-bottom:16px" id="cardPartAg">
-      <div class="chart-title">Participación de agencias por mes</div>
-      <div class="chart-subtitle">% del total mensual — evolución relativa</div>
-      <div class="chart-wrap" style="height:340px"><canvas id="cPartAg"></canvas></div>
-      <div class="chart-insight" id="insightPartAg"></div>
-    </div>
 
 
     <!-- Tabla mes × agencia -->
@@ -858,56 +851,6 @@ function renderCharts(d) {
     document.getElementById('cardAgMes').style.display = 'none';
   }
 
-  // Participación de agencias por mes — área apilada al 100%
-  destroyChart('partAg');
-  if (d.rawRows && d.rawRows.length) {
-    const agList = [...new Set(d.rawRows.map(r=>r.agencia))].sort();
-    const porAgMes = {};
-    agList.forEach(ag => { porAgMes[ag] = Array(12).fill(0); });
-    d.rawRows.forEach(r => {
-      if (porAgMes[r.agencia] && r.nMes >= 1 && r.nMes <= 12) porAgMes[r.agencia][r.nMes-1] += r.invGs;
-    });
-    // solo meses con datos
-    const mesesIdx = MES_LABEL.map((_, i) => i).filter(i => agList.some(ag => porAgMes[ag][i] > 0));
-    const labels   = mesesIdx.map(i => MES_LABEL[i]);
-    // convertir a porcentaje mensual
-    const pctData  = agList.map(ag => ({
-      label: ag,
-      data: mesesIdx.map(i => {
-        const total = agList.reduce((s, a) => s + porAgMes[a][i], 0);
-        return total > 0 ? +(porAgMes[ag][i] / total * 100).toFixed(1) : 0;
-      }),
-      backgroundColor: AG_COLOR[ag] || '#6b7280',
-      borderWidth: 0,
-      borderRadius: 0,
-    }));
-    _charts.partAg = new Chart(document.getElementById('cPartAg'), {
-      type: 'bar',
-      data: { labels, datasets: pctData },
-      options: {
-        ...COMMON,
-        plugins: {
-          legend: { labels: { color: TICK, font: FONT, boxWidth: 12, padding: 16 } },
-          tooltip: {
-            mode: 'index', intersect: false,
-            callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` }
-          }
-        },
-        scales: {
-          x: { stacked: true, ticks: { color: TICK, font: FONT }, grid: { color: 'transparent' } },
-          y: {
-            stacked: true, min: 0, max: 100,
-            ticks: { color: TICK, font: FONT, callback: v => v + '%' },
-            grid: { color: GRID }
-          }
-        }
-      }
-    });
-    document.getElementById('cardPartAg').style.display = '';
-  } else {
-    document.getElementById('cardPartAg').style.display = 'none';
-  }
-
   // Por agencia — barra simple, color por agencia, sin comisión
   destroyChart('agencia');
   const agNames  = d.agencias.map(a => a.nombre);
@@ -1282,33 +1225,6 @@ function renderInsights(d) {
         ciRow('Dominante', `<strong>${topMed.nombre}</strong> · ${pctI(topMed.inversion, inv)} · ${fGsI(topMed.inversion)}`) +
         ciRow('Digital',   digital ? `${pctI(digital.inversion, inv)} del total ${ciBadge(pctDig >= 30 ? 'Fuerte presencia' : pctDig >= 15 ? 'En crecimiento' : 'Oportunidad', pctDig >= 30 ? 'ok' : pctDig >= 15 ? 'warn' : 'bad')}` : 'Sin datos de digital') +
         ciRow('Recomendación', 'Mix equilibrado: TV+Digital+Radio para mayor alcance y frecuencia');
-    }
-
-    // ── Participación de agencias por mes ────────────────────────────────────
-    const elPartAg = document.getElementById('insightPartAg');
-    if (elPartAg && d.rawRows && d.rawRows.length) {
-      const agList = [...new Set(d.rawRows.map(r=>r.agencia))].sort();
-      const porAgMes = {};
-      agList.forEach(ag => { porAgMes[ag] = Array(12).fill(0); });
-      d.rawRows.forEach(r => { if (porAgMes[r.agencia] && r.nMes>=1&&r.nMes<=12) porAgMes[r.agencia][r.nMes-1]+=r.invGs; });
-      // participación promedio anual por agencia
-      const totAnual = agList.reduce((s,ag)=>s+porAgMes[ag].reduce((a,b)=>a+b,0),0);
-      const promPct  = ag => totAnual>0 ? (porAgMes[ag].reduce((a,b)=>a+b,0)/totAnual*100).toFixed(1) : '0';
-      // agencia con mayor variabilidad (desviación de su participación mensual)
-      const variab = agList.map(ag => {
-        const meses = porAgMes[ag].map((v,i)=>{ const t=agList.reduce((s,a)=>s+porAgMes[a][i],0); return t>0?v/t*100:0; }).filter(v=>v>0);
-        if (!meses.length) return { ag, cv: 0 };
-        const m = meses.reduce((a,b)=>a+b,0)/meses.length;
-        const sd = Math.sqrt(meses.reduce((s,v)=>s+Math.pow(v-m,2),0)/meses.length);
-        return { ag, cv: m>0?sd/m:0 };
-      }).sort((a,b)=>b.cv-a.cv);
-      const liderAg = agList.reduce((a,b)=>promPct(b)>promPct(a)?b:a, agList[0]);
-      elPartAg.innerHTML =
-        ciRow('Objetivo', 'Ver cómo cambia el peso relativo de cada agencia mes a mes, independientemente del volumen. Detecta si una agencia está ganando o cediendo participación a lo largo del año.') +
-        `<div class="ci-formula">Participación % = Inversión agencia en el mes ÷ Inversión total del mes × 100%</div>` +
-        ciRow('Mayor participación', `<strong>${liderAg}</strong> · ${promPct(liderAg)}% promedio anual`) +
-        ciRow('Más variable', `<strong>${variab[0].ag}</strong> · su cuota mensual fluctúa más entre meses ${ciBadge(variab[0].cv > 0.3 ? 'Inestable' : 'Normal', variab[0].cv > 0.3 ? 'warn' : 'ok')}`) +
-        ciRow('Recomendación', 'Una línea plana indica agencia estable · una línea irregular puede reflejar campañas puntuales o dependencia de pocos clientes');
     }
 
     // ── Inversión por agencia y mes ───────────────────────────────────────────
