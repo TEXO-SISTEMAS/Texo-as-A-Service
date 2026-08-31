@@ -10,22 +10,22 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0f1117;--surface:#1a1d27;--border:#2a2d3a;--border2:#333649;
-  --text:#e8eaf0;--muted:rgba(232,234,240,.45);--muted2:rgba(232,234,240,.25);
-  --accent:#f0f040;--green:#4ade80;--red:#f87171;--warn:#fbbf24;--blue:#60a5fa;
-  --white:#1e2130;
+  --bg:#eef0f5;--surface:#ffffff;--border:#e2e4e9;--border2:#c8cdd8;
+  --text:#0f1117;--muted:#6b7280;--muted2:#9ca3af;
+  --accent:#1a1a2e;--yellow:#f0f040;--green:#16a34a;--red:#d42b4f;--warn:#d4900a;--blue:#2563eb;
   --C-NASTA:#6c3fc5;--C-BRICK:#e85d26;--C-LUPE:#0ea5b0;--C-OMD:#d4900a;--C-ROGER:#d42b4f;
   --C-TV:#3b82f6;--C-RADIO:#a855f7;--C-DIGITAL:#10b981;--C-PRENSA:#f59e0b;--C-CABLE:#ef4444;--C-OOH:#ec4899;--C-OTROS:#6b7280;
 }
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;display:flex;flex-direction:column;min-height:100vh}
 /* TOPBAR */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:56px;background:rgba(15,17,23,.97);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;flex-shrink:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:60px;background:var(--accent);position:sticky;top:0;z-index:20;flex-shrink:0}
 .topbar-left{display:flex;align-items:center;gap:16px}
-.logo{font-size:15px;font-weight:700;color:#fff;letter-spacing:.02em;white-space:nowrap}
+.logo{font-size:20px;font-weight:800;letter-spacing:.01em;color:#fff;white-space:nowrap}
+.logo span{color:#f0f040;font-weight:300}
 nav{display:flex;gap:4px;align-items:center}
 nav a{font-size:13px;padding:5px 11px;border-radius:6px;color:rgba(255,255,255,.55);text-decoration:none;transition:color .15s}
 nav a:hover{color:#fff}
-nav .active{font-weight:700;padding:5px 11px;border-radius:6px;background:var(--accent);color:#0f1117;font-size:13px}
+nav .active{font-weight:700;padding:5px 11px;border-radius:6px;background:#f0f040;color:#0f1117;font-size:13px}
 .topbar-right{display:flex;align-items:center;gap:8px}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 15px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
 .btn-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.3)}
@@ -42,7 +42,7 @@ nav .active{font-weight:700;padding:5px 11px;border-radius:6px;background:var(--
 /* HEADER */
 .page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;gap:16px;flex-wrap:wrap}
 .page-title{font-size:28px;font-weight:800;letter-spacing:-.02em}
-.page-title span{color:var(--accent)}
+.page-title span{color:var(--accent);font-weight:300}
 .page-period{font-size:13px;color:var(--muted);margin-top:4px}
 /* KPIs */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
@@ -53,7 +53,7 @@ nav .active{font-weight:700;padding:5px 11px;border-radius:6px;background:var(--
 /* PERIOD TABS */
 .period-tabs{display:flex;gap:6px;margin-bottom:20px}
 .ptab{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;font-family:inherit}
-.ptab.active{background:var(--accent);color:#0f1117;border-color:transparent}
+.ptab.active{background:var(--accent);color:#fff;border-color:transparent}
 /* PERIOD BREAKDOWN */
 .period-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
 .period-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
@@ -64,6 +64,7 @@ nav .active{font-weight:700;padding:5px 11px;border-radius:6px;background:var(--
 .period-row-label{font-size:13px;font-weight:600;flex-shrink:0}
 .period-row-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
 .period-row-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s}
+.mini-fill-yellow{background:#f0f040!important}
 .period-row-val{font-size:13px;font-weight:700;text-align:right;min-width:90px;flex-shrink:0}
 .period-row-com{font-size:11px;color:var(--muted);min-width:70px;text-align:right;flex-shrink:0}
 /* CHARTS */
@@ -78,17 +79,17 @@ canvas{display:block;width:100%!important}
 .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
 .table-header{padding:18px 22px 14px;font-size:13px;font-weight:700;border-bottom:1px solid var(--border)}
 table{width:100%;border-collapse:collapse}
-th{background:#151824;padding:10px 16px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+th{background:#f0f2f7;padding:10px 16px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);white-space:nowrap}
 td{padding:10px 16px;font-size:13px;border-top:1px solid var(--border)}
-tr:hover td{background:rgba(255,255,255,.02)}
+tr:hover td{background:rgba(0,0,0,.02)}
 .td-bar{width:120px}
 .mini-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;width:100%}
 .mini-fill{height:100%;border-radius:2px;background:var(--accent)}
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .25s;z-index:99}
 .toast.show{opacity:1}
-.toast.success{background:#166534;color:#4ade80;border:1px solid rgba(74,222,128,.3)}
-.toast.error{background:#7f1d1d;color:#f87171;border:1px solid rgba(248,113,113,.3)}
+.toast.success{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.toast.error{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
 .spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
 input[type=file]{display:none}
@@ -105,7 +106,7 @@ input[type=file]{display:none}
 <div class="topbar">
   <div class="topbar-left">
     <a href="/home" class="btn btn-outline" style="font-size:13px;text-decoration:none">← Inicio</a>
-    <div class="logo">Texo as a Service</div>
+    <div class="logo">Texo <span>as a Service</span></div>
     <nav>
       <a href="/index">Salud Financiera</a>
       <a href="/adlens">AdLens</a>
@@ -213,8 +214,8 @@ input[type=file]{display:none}
 let _d = null;
 let _charts = {};
 const FONT = { family:"'Inter',sans-serif", size:12 };
-const TICK  = 'rgba(232,234,240,.45)';
-const GRID  = 'rgba(255,255,255,.06)';
+const TICK  = '#9ca3af';
+const GRID  = 'rgba(0,0,0,.06)';
 
 const AG_COLOR = { NASTA:'#6c3fc5', BRICK:'#e85d26', LUPE:'#0ea5b0', OMD:'#d4900a', ROGER:'#d42b4f' };
 const MD_COLOR = { 'TV ABIERTA':'#3b82f6', RADIO:'#a855f7', DIGITAL:'#10b981', PRENSA:'#f59e0b', 'TV CABLE':'#ef4444', 'VIA PUBLICA':'#ec4899', OTROS:'#6b7280' };
@@ -436,12 +437,12 @@ function renderCharts(d) {
       datasets: [{
         label: 'Inversión',
         data: d.porMes.map(m => m.inversion),
-        borderColor: '#f0f040',
-        backgroundColor: 'rgba(240,240,64,.08)',
+        borderColor: '#1a1a2e',
+        backgroundColor: 'rgba(26,26,46,.07)',
         fill: true,
         tension: .35,
         pointRadius: 4,
-        pointBackgroundColor: '#f0f040',
+        pointBackgroundColor: '#1a1a2e',
       },{
         label: 'Comisión',
         data: d.porMes.map(m => m.comision),
