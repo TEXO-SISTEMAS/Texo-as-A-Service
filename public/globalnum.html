@@ -311,6 +311,11 @@ input[type=file]{display:none}
       <div class="hs-value" id="hsComision">—</div>
       <div class="hs-sub" id="hsComSub">% sobre inversión</div>
     </div>
+    <div class="hs" style="border-top:3px solid #34d399">
+      <div class="hs-label">Comisión en USD</div>
+      <div class="hs-value" id="hsComUsd">—</div>
+      <div class="hs-sub" id="hsComUsdSub">Ingreso Texo aprox.</div>
+    </div>
     <div class="hs" style="border-top:3px solid #60a5fa">
       <div class="hs-label">Clientes Activos</div>
       <div class="hs-value" id="hsClientes">—</div>
@@ -546,6 +551,18 @@ function normalizarMedio(tipo) {
 }
 
 function parsearEnBrowser(wb) {
+  // Leer tasa de cambio desde PARAMETROS
+  let tipoCambio = 6000;
+  try {
+    const wsP = wb.Sheets['PARAMETROS'];
+    if (wsP) {
+      const rp = XLSX.utils.sheet_to_json(wsP, { header:1, defval:null });
+      for (const row of rp) {
+        if (row && String(row[0]||'').includes('cambio')) { tipoCambio = parseFloat(row[1]) || 6000; break; }
+      }
+    }
+  } catch(e) {}
+
   const ws = wb.Sheets['CUBO'];
   if (!ws) throw new Error('No se encontró la hoja CUBO en el archivo');
   const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:null });
@@ -613,6 +630,7 @@ function parsearEnBrowser(wb) {
 
   return {
     periodo,
+    tipoCambio,
     totales:{inversion:totalInversion,comision:totalComision,clientes:clientesSet.size,agencias:agenciasSet.size},
     semestres:[{label:'S1 · Ene–Jun',...s1},{label:'S2 · Jul–Dic',...s2}],
     trimestres:[{label:'Q1 · Ene–Mar',...q1},{label:'Q2 · Abr–Jun',...q2},{label:'Q3 · Jul–Sep',...q3},{label:'Q4 · Oct–Dic',...q4}],
@@ -715,6 +733,10 @@ function render(d) {
   document.getElementById('hsComSub').textContent         = pct(t.comision, t.inversion) + ' sobre inversión';
   document.getElementById('hsClientes').textContent       = t.clientes;
   document.getElementById('hsAgencias').textContent       = t.agencias;
+  const tc = d.tipoCambio || 6000;
+  const comUsd = t.comision / tc;
+  document.getElementById('hsComUsd').textContent = '$ ' + Math.round(comUsd).toLocaleString('es-PY');
+  document.getElementById('hsComUsdSub').textContent = 'TC: ' + tc.toLocaleString('es-PY') + ' Gs/USD';
 
   setPeriod('mensual', document.querySelector('.ptab.active'));
   renderDetalleTabla(d.rawRows);

@@ -18,6 +18,19 @@ function normalizarMedio(tipo) {
 
 function parseGlobalnum(buffer) {
   const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+
+  // Leer tasa de cambio desde hoja PARAMETROS
+  let tipoCambio = 6000;
+  try {
+    const wsP = wb.Sheets['PARAMETROS'];
+    if (wsP) {
+      const rp = XLSX.utils.sheet_to_json(wsP, { header: 1, defval: null });
+      for (const row of rp) {
+        if (row && String(row[0] || '').includes('cambio')) { tipoCambio = parseFloat(row[1]) || 6000; break; }
+      }
+    }
+  } catch(e) {}
+
   const ws = wb.Sheets['CUBO'];
   if (!ws) throw new Error('Hoja CUBO no encontrada');
 
@@ -143,6 +156,7 @@ function parseGlobalnum(buffer) {
 
   return {
     periodo,
+    tipoCambio,
     totales: { inversion: totalInversion, comision: totalComision, clientes: clientesSet.size, agencias: agenciasSet.size },
     semestres: [
       { label: 'S1 · Ene–Jun', meses: 'Ene–Jun', ...s1 },
