@@ -72,6 +72,19 @@ async function saveChat(nombre, data) {
   return res.data;
 }
 
+async function updateChat(fileId, data) {
+  const drive = getDrive();
+  const stream = Readable.from([JSON.stringify(data)]);
+  const res = await drive.files.update({
+    fileId,
+    requestBody: { mimeType: 'application/json' },
+    media: { mimeType: 'application/json', body: stream },
+    fields: 'id, name, modifiedTime',
+    supportsAllDrives: true
+  });
+  return res.data;
+}
+
 async function listChats() {
   const drive = getDrive();
   const res = await drive.files.list({
@@ -255,4 +268,4 @@ async function saveGlobalnum(data) {
   });
 }
 
-module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, listChats, getChat, deleteChat, getMarketing, saveMarketing, getMarketingIntel, saveMarketingIntel, getUsuarios, saveUsuarios, getLatestGlobalnum, saveGlobalnum };
+module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, updateChat, listChats, getChat, deleteChat, getMarketing, saveMarketing, getMarketingIntel, saveMarketingIntel, getUsuarios, saveUsuarios, getLatestGlobalnum, saveGlobalnum };

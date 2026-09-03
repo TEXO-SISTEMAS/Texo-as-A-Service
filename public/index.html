@@ -3427,6 +3427,7 @@ async function sendChat() {
       appendMsg('assistant', json.reply);
       setChatStatus('Guardando...', true);
       saveChatSession();
+      autoSaveToDrive();
       setTimeout(() => setChatStatus('Guardado automáticamente ✓'), 800);
       setTimeout(() => setChatStatus('Conversación activa'), 3500);
     } else {
@@ -3470,6 +3471,8 @@ async function restoreChatSession() {
 // ── HISTORIAL ──────────────────────────────────────────────────────────────────
 function newChat() {
   chatHistory = [];
+  _autoSaveId = null;
+  clearTimeout(_autoSaveTimer);
   try { localStorage.removeItem('chatSession'); } catch(e) {}
   const wrap = document.getElementById('chatMessages');
   wrap.innerHTML = '<div class="chat-msg assistant rendered">¡Hola! Soy tu asistente financiero de <strong>Texo</strong>. Puedo analizar los datos de rentabilidad, EBITDA, eficiencia y más de tus agencias.<br><br>Usá las preguntas de abajo para empezar, o escribí lo que necesitás.</div>';
@@ -3541,6 +3544,29 @@ async function deleteHistItem(e, id) {
   if (!confirm('¿Eliminar esta conversación?')) return;
   await fetch(`/api/chat/history/${id}`, { method: 'DELETE' });
   await loadHistorial();
+}
+
+let _autoSaveTimer = null;
+let _autoSaveId = null; // id de la conversación en Drive (para actualizarla en lugar de crear una nueva)
+async function autoSaveToDrive() {
+  // Debounce: espera 2s antes de guardar para no saturar con una sola sesión larga
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(async () => {
+    if (chatHistory.length < 2) return;
+    try {
+      const firstMsg = chatHistory.find(m => m.role === 'user')?.content || 'Conversación';
+      const title = firstMsg.length > 60 ? firstMsg.substring(0, 60) + '...' : firstMsg;
+      const body = { messages: chatHistory, title };
+      if (_autoSaveId) body.id = _autoSaveId;
+      const resp = await fetch('/api/chat/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (data.id) _autoSaveId = data.id;
+    } catch(e) { /* silencioso */ }
+  }, 2000);
 }
 
 async function saveCurrentChat() {
