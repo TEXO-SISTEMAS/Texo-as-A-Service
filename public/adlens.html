@@ -6,6 +6,7 @@
 <title>Texo as a Service — AdLens</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <style>
 :root{
   --bg:#eef0f5;--white:#ffffff;--border:#e2e4e9;--border2:#c8cdd8;
@@ -221,6 +222,60 @@ body{display:flex;flex-direction:column;min-height:100vh}
   .upload-fields{grid-template-columns:1fr}
   .bar-label{min-width:80px;max-width:100px}
 }
+/* ── CHAT ADLENS ── */
+.adlens-chat-sidebar{position:fixed;top:0;right:0;height:100vh;width:0;background:#fff;z-index:200;display:flex;flex-direction:column;overflow:hidden;transition:width .25s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(0,0,0,.1);border-left:1px solid #e5e7eb}
+.adlens-chat-inner{display:flex;flex-direction:column;height:100%;min-width:360px;overflow:hidden;position:relative}
+.chat-header{background:var(--accent,#0f1117);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.chat-header-icon{width:32px;height:32px;border-radius:8px;background:#f0f040;color:#0f1117;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:800}
+.chat-header-text{flex:1}
+.chat-header-title{font-size:15px;font-weight:700}
+.chat-header-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
+.chat-close{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;padding:0 2px;line-height:1;transition:color .15s}
+.chat-close:hover{color:#fff}
+.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:2px}
+.chat-msg{max-width:90%;line-height:1.55;font-size:13.5px;border-radius:12px;padding:10px 13px}
+.chat-msg.user{align-self:flex-end;background:var(--accent,#0f1117);color:#fff;border-bottom-right-radius:4px}
+.chat-msg.assistant{align-self:flex-start;background:#f4f5f7;color:#0f1117;border-bottom-left-radius:4px}
+.chat-msg.rendered{white-space:normal}
+.chat-msg.rendered p{margin:0 0 8px}.chat-msg.rendered p:last-child{margin-bottom:0}
+.chat-msg.rendered strong{font-weight:700}
+.chat-msg.rendered ul,.chat-msg.rendered ol{padding-left:18px;margin:4px 0 8px}
+.chat-msg.typing{align-self:flex-start;background:#f4f5f7;padding:13px;display:flex;gap:5px;align-items:center}
+.chat-dot{width:6px;height:6px;border-radius:50%;background:#9ca3af;animation:adlens-bounce .9s infinite}
+.chat-dot:nth-child(2){animation-delay:.15s}.chat-dot:nth-child(3){animation-delay:.3s}
+@keyframes adlens-bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.adlens-chat-suggestions{padding:6px 14px 10px;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0}
+.adlens-chat-chip{background:#f0f4ff;border:1.5px solid #d0dcff;color:var(--accent,#0f1117);font-size:12px;font-weight:600;border-radius:20px;padding:5px 12px;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit;line-height:1.3}
+.adlens-chat-chip:hover{background:var(--accent,#0f1117);color:#f0f040;border-color:var(--accent,#0f1117)}
+.chat-disclaimer{font-size:11px;color:#9ca3af;text-align:center;padding:0 12px 9px;flex-shrink:0;line-height:1.4}
+.chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #e5e7eb;flex-shrink:0;background:#fff}
+.chat-input{flex:1;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 11px;font-family:inherit;font-size:13.5px;resize:none;outline:none;line-height:1.4;max-height:100px;overflow-y:auto;transition:border-color .15s}
+.chat-input:focus{border-color:var(--accent,#0f1117)}
+.chat-send{width:36px;height:36px;border-radius:8px;border:none;background:var(--accent,#0f1117);color:#f0f040;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;transition:opacity .15s;align-self:flex-end}
+.chat-send:disabled{opacity:.4;cursor:default}
+.adlens-chat-statusbar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:#f8f9fb;border-top:1px solid #e5e7eb;font-size:11.5px;color:#9ca3af;flex-shrink:0}
+.adlens-status-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.adlens-status-dot.saving{background:#f59e0b;animation:adlens-pulse .8s infinite}
+.chat-statusbar-actions{margin-left:auto;display:flex;gap:8px}
+.adlens-status-btn{background:none;border:none;color:#9ca3af;cursor:pointer;font-size:12px;font-weight:600;padding:2px 6px;border-radius:4px;transition:all .15s;font-family:inherit}
+.adlens-status-btn:hover{background:#eaecef;color:#0f1117}
+.adlens-hist-panel{position:absolute;top:0;left:0;right:0;bottom:0;background:#fff;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:10}
+.adlens-hist-panel.open{transform:translateX(0)}
+.chat-hist-header{background:var(--accent,#0f1117);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.chat-hist-header h3{font-size:15px;font-weight:700;flex:1}
+.chat-hist-list{flex:1;overflow-y:auto;padding:12px}
+.chat-hist-empty{color:#9ca3af;font-size:13px;text-align:center;padding:40px 20px}
+.chat-hist-item{padding:12px 14px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:background .15s}
+.chat-hist-item:hover{background:#f8f9fb}
+.chat-hist-item-title{font-size:13.5px;font-weight:600;color:#0f1117;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-hist-item-del{float:right;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px;padding:0 2px;line-height:1;transition:color .15s;margin-top:-2px}
+.chat-hist-item-del:hover{color:#ef4444}
+.adlens-hist-actions{padding:12px;border-top:1px solid #e5e7eb;flex-shrink:0}
+.adlens-hist-btn{width:100%;padding:8px;font-size:13px;border-radius:6px;font-weight:600;cursor:pointer;border:1.5px solid #d1d5db;background:transparent;color:#0f1117;font-family:inherit;transition:all .15s}
+.adlens-hist-btn:hover{background:#f4f5f7}
+@keyframes adlens-pulse{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
 </head>
 <body>
@@ -237,7 +292,57 @@ body{display:flex;flex-direction:column;min-height:100vh}
     </nav>
   </div>
   <div class="topbar-right">
+    <button class="btn btn-ai" id="btnChat" onclick="toggleAdlensChat()" style="background:#f0f040;color:#0f1117;border:none;font-weight:700;padding:7px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;transition:opacity .15s">✦ Asistente IA</button>
     <button class="btn btn-primary" onclick="document.getElementById('uploadModal').style.display='flex'">↑ Cargar datos</button>
+  </div>
+</div>
+
+<!-- CHAT ADLENS -->
+<div class="adlens-chat-sidebar" id="adlensChatSidebar">
+  <div class="adlens-chat-inner">
+    <div class="chat-header">
+      <div class="chat-header-icon">IA</div>
+      <div class="chat-header-text">
+        <div class="chat-header-title">Analista AdLens</div>
+        <div class="chat-header-sub">Mercado Publicitario · Texo as a Service</div>
+      </div>
+      <button class="chat-close" onclick="toggleAdlensChat()" title="Cerrar">✕</button>
+    </div>
+    <div class="chat-messages" id="adlensChatMessages">
+      <div class="chat-msg assistant rendered">¡Hola! Soy tu analista de <strong>AdLens</strong>. Puedo ayudarte a entender el mercado publicitario paraguayo: inversiones, anunciantes, media mix, SOI por grupo y tendencias.<br><br>Usá las preguntas de abajo para empezar.</div>
+    </div>
+    <div class="adlens-chat-suggestions" id="adlensChatSuggestions">
+      <button class="adlens-chat-chip" onclick="adlensChip(this,'¿Cuáles son los 5 anunciantes con mayor inversión?')">Top 5 anunciantes</button>
+      <button class="adlens-chat-chip" onclick="adlensChip(this,'¿Cuál es el media mix actual y qué medio lidera?')">Media mix</button>
+      <button class="adlens-chat-chip" onclick="adlensChip(this,'¿Qué grupo empresarial tiene mayor SOI?')">SOI por grupo</button>
+      <button class="adlens-chat-chip" onclick="adlensChip(this,'Dame un resumen general del mercado publicitario')">Resumen del mercado</button>
+      <button class="adlens-chat-chip" onclick="adlensChip(this,'¿Cuál es la tendencia de inversión en los últimos años?')">Tendencia de inversión</button>
+    </div>
+    <div class="chat-disclaimer">Responde exclusivamente sobre datos de AdLens — mercado publicitario paraguayo</div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="adlensChatInput" rows="1" placeholder="Escribí tu pregunta aquí..." onkeydown="adlensKeydown(event)" oninput="adlensResize(this)"></textarea>
+      <button class="chat-send" id="adlensChatSend" onclick="sendAdlensChat()">➤</button>
+    </div>
+    <div class="adlens-chat-statusbar" id="adlensChatStatusbar">
+      <div class="adlens-status-dot" id="adlensStatusDot"></div>
+      <span id="adlensStatusText">Conversación activa</span>
+      <div class="chat-statusbar-actions">
+        <button class="adlens-status-btn" onclick="openAdlensHistorial()">📋 Mis chats</button>
+        <button class="adlens-status-btn" onclick="confirmNewAdlensChat()">+ Nuevo</button>
+      </div>
+    </div>
+    <!-- Panel historial -->
+    <div class="adlens-hist-panel" id="adlensHistPanel">
+      <div class="chat-hist-header">
+        <h3>Mis conversaciones</h3>
+        <button class="chat-close" onclick="closeAdlensHistorial()">✕</button>
+      </div>
+      <div style="padding:10px 12px 0;font-size:12.5px;color:rgba(255,255,255,.75)">Tus consultas se guardan automáticamente.</div>
+      <div class="chat-hist-list" id="adlensHistList"><div class="chat-hist-empty">Cargando...</div></div>
+      <div class="adlens-hist-actions">
+        <button class="adlens-hist-btn" onclick="newAdlensChat();closeAdlensHistorial()">+ Nueva consulta</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2846,6 +2951,206 @@ async function uploadFromEmpty() {
 }
 
 loadAdlens();
+
+// ── CHAT ADLENS ─────────────────────────────────────────────────────────────
+let _adlensChatOpen = false;
+let _adlensAutoSaveId = null;
+let _adlensAutoSaveTimer = null;
+const ADLENS_LS_KEY = 'adlens-chat-session';
+const ADLENS_HIST_PREFIX = 'adlens-chat-';
+
+function toggleAdlensChat() {
+  _adlensChatOpen = !_adlensChatOpen;
+  const sidebar = document.getElementById('adlensChatSidebar');
+  const chip = document.getElementById('auth-chip');
+  const w = _adlensChatOpen ? '400px' : '0';
+  sidebar.style.width = w;
+  if (chip) chip.style.right = _adlensChatOpen ? '416px' : '20px';
+  if (_adlensChatOpen) restoreAdlensChat();
+}
+
+function adlensResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function adlensKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdlensChat(); }
+}
+
+function adlensChip(btn, text) {
+  document.getElementById('adlensChatSuggestions').style.display = 'none';
+  const inp = document.getElementById('adlensChatInput');
+  inp.value = text;
+  sendAdlensChat();
+}
+
+function setChatStatusAdlens(text, saving) {
+  const dot = document.getElementById('adlensStatusDot');
+  const span = document.getElementById('adlensStatusText');
+  if (span) span.textContent = text;
+  if (dot) { dot.className = 'adlens-status-dot' + (saving ? ' saving' : ''); }
+}
+
+function saveAdlensLocal(msgs) {
+  try { localStorage.setItem(ADLENS_LS_KEY, JSON.stringify(msgs)); } catch(e) {}
+}
+
+function getAdlensLocal() {
+  try { return JSON.parse(localStorage.getItem(ADLENS_LS_KEY) || '[]'); } catch(e) { return []; }
+}
+
+function adlensAutoSaveToDrive() {
+  clearTimeout(_adlensAutoSaveTimer);
+  _adlensAutoSaveTimer = setTimeout(async () => {
+    const msgs = getAdlensLocal();
+    if (!msgs.length) return;
+    setChatStatusAdlens('Guardando...', true);
+    try {
+      const title = msgs.find(m => m.role === 'user')?.content?.slice(0, 60) || 'Consulta AdLens';
+      const body = { messages: msgs, title, nombre: ADLENS_HIST_PREFIX + Date.now() + '.json' };
+      if (_adlensAutoSaveId) body.id = _adlensAutoSaveId;
+      const r = await fetch('/api/chat/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (d.id) _adlensAutoSaveId = d.id;
+      setChatStatusAdlens('Guardado ✓', false);
+    } catch(e) { setChatStatusAdlens('Error al guardar', false); }
+  }, 2000);
+}
+
+async function sendAdlensChat() {
+  const inp = document.getElementById('adlensChatInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  adlensResize(inp);
+  document.getElementById('adlensChatSuggestions').style.display = 'none';
+  appendAdlensMsg('user', text);
+  document.getElementById('adlensChatSend').disabled = true;
+  setChatStatusAdlens('Pensando...', true);
+
+  const typing = document.createElement('div');
+  typing.className = 'chat-msg typing';
+  typing.innerHTML = '<div class="chat-dot"></div><div class="chat-dot"></div><div class="chat-dot"></div>';
+  document.getElementById('adlensChatMessages').appendChild(typing);
+  scrollAdlensChat();
+
+  const history = getAdlensLocal();
+  const messages = [...history, { role: 'user', content: text }];
+  try {
+    const r = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, context: 'adlens' })
+    });
+    const d = await r.json();
+    typing.remove();
+    const reply = d.reply || d.error || 'Sin respuesta';
+    appendAdlensMsg('assistant', reply);
+    const updatedMsgs = [...messages, { role: 'assistant', content: reply }];
+    saveAdlensLocal(updatedMsgs);
+    adlensAutoSaveToDrive();
+    setChatStatusAdlens('Conversación activa', false);
+  } catch(e) {
+    typing.remove();
+    appendAdlensMsg('assistant', 'Error al conectar con el servidor.');
+    setChatStatusAdlens('Error', false);
+  }
+  document.getElementById('adlensChatSend').disabled = false;
+}
+
+function appendAdlensMsg(role, content) {
+  const box = document.getElementById('adlensChatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + role + ' rendered';
+  if (typeof marked !== 'undefined') {
+    div.innerHTML = marked.parse(content);
+  } else {
+    div.textContent = content;
+  }
+  box.appendChild(div);
+  scrollAdlensChat();
+}
+
+function scrollAdlensChat() {
+  const box = document.getElementById('adlensChatMessages');
+  if (box) box.scrollTop = box.scrollHeight;
+}
+
+function restoreAdlensChat() {
+  const msgs = getAdlensLocal();
+  if (!msgs.length) return;
+  const box = document.getElementById('adlensChatMessages');
+  box.innerHTML = '';
+  document.getElementById('adlensChatSuggestions').style.display = 'none';
+  msgs.forEach(m => appendAdlensMsg(m.role, m.content));
+}
+
+function newAdlensChat() {
+  saveAdlensLocal([]);
+  _adlensAutoSaveId = null;
+  clearTimeout(_adlensAutoSaveTimer);
+  const box = document.getElementById('adlensChatMessages');
+  box.innerHTML = '<div class="chat-msg assistant rendered">¡Hola! Soy tu analista de <strong>AdLens</strong>. Puedo ayudarte a entender el mercado publicitario paraguayo: inversiones, anunciantes, media mix, SOI por grupo y tendencias.<br><br>Usá las preguntas de abajo para empezar.</div>';
+  document.getElementById('adlensChatSuggestions').style.display = 'flex';
+  setChatStatusAdlens('Conversación activa', false);
+}
+
+function confirmNewAdlensChat() {
+  const msgs = getAdlensLocal();
+  if (!msgs.length || confirm('¿Empezar una nueva conversación? La actual se guardará en Historial.')) {
+    newAdlensChat();
+  }
+}
+
+async function openAdlensHistorial() {
+  document.getElementById('adlensHistPanel').classList.add('open');
+  const list = document.getElementById('adlensHistList');
+  list.innerHTML = '<div class="chat-hist-empty">Cargando...</div>';
+  try {
+    const r = await fetch('/api/chat/history?prefix=' + ADLENS_HIST_PREFIX);
+    const d = await r.json();
+    const items = (Array.isArray(d) ? d : []).filter(f => f.nombre && f.nombre.startsWith(ADLENS_HIST_PREFIX));
+    if (!items.length) { list.innerHTML = '<div class="chat-hist-empty">Sin conversaciones guardadas aún.</div>'; return; }
+    list.innerHTML = '';
+    items.forEach(f => {
+      const it = document.createElement('div');
+      it.className = 'chat-hist-item';
+      const label = f.name.replace(ADLENS_HIST_PREFIX, '').replace('.json', '');
+      it.innerHTML = `<button class="chat-hist-item-del" onclick="event.stopPropagation();deleteAdlensHistItem('${f.id}',this.parentElement)" title="Eliminar">✕</button><div class="chat-hist-item-title">${f.title || f.nombre || label}</div>`;
+      it.onclick = () => loadAdlensHistItem(f.id);
+      list.appendChild(it);
+    });
+  } catch(e) { list.innerHTML = '<div class="chat-hist-empty">Error al cargar historial.</div>'; }
+}
+
+function closeAdlensHistorial() {
+  document.getElementById('adlensHistPanel').classList.remove('open');
+}
+
+async function loadAdlensHistItem(fileId) {
+  closeAdlensHistorial();
+  try {
+    const r = await fetch('/api/chat/history/' + fileId);
+    const d = await r.json();
+    const msgs = d.messages || [];
+    saveAdlensLocal(msgs);
+    _adlensAutoSaveId = fileId;
+    const box = document.getElementById('adlensChatMessages');
+    box.innerHTML = '';
+    document.getElementById('adlensChatSuggestions').style.display = 'none';
+    msgs.forEach(m => appendAdlensMsg(m.role, m.content));
+    setChatStatusAdlens('Conversación cargada', false);
+  } catch(e) { alert('Error al cargar la conversación.'); }
+}
+
+async function deleteAdlensHistItem(fileId, el) {
+  if (!confirm('¿Eliminar esta conversación?')) return;
+  try {
+    await fetch('/api/chat/history/' + fileId, { method: 'DELETE' });
+    el.remove();
+  } catch(e) { alert('Error al eliminar.'); }
+}
 </script>
 </body>
 </html>

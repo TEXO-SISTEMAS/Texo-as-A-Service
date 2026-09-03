@@ -166,6 +166,13 @@ input[type=file]{display:none}
 .chat-send{width:36px;height:36px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .chat-send:hover{background:#2d2d50}.chat-send:disabled{opacity:.4;cursor:default}
 .chat-saving{font-size:11px;color:var(--muted2);padding:0 14px 6px;text-align:right;flex-shrink:0}
+.chat-statusbar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:#f8f9fb;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted2);flex-shrink:0}
+.chat-statusbar-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.chat-statusbar-dot.saving{background:#f59e0b;animation:gn-pulse .8s infinite}
+.chat-statusbar-actions{margin-left:auto;display:flex;gap:8px}
+.chat-statusbar-btn{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:12px;font-weight:600;padding:2px 6px;border-radius:4px;transition:all .15s;font-family:inherit}
+.chat-statusbar-btn:hover{background:#eaecef;color:var(--text)}
+@keyframes gn-pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .chat-hist-panel{position:absolute;top:0;left:0;right:0;bottom:0;background:var(--surface);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:10}
 .chat-hist-panel.open{transform:translateX(0)}
 .chat-sidebar-inner{position:relative}
@@ -248,11 +255,9 @@ input[type=file]{display:none}
         <div class="chat-header-title">Analista de Inversión</div>
         <div class="chat-header-sub">Inversión Publicitaria · Texo as a Service</div>
       </div>
-      <button class="chat-close" onclick="openHistorialGN()" style="font-size:12px;font-weight:700;letter-spacing:.05em;padding:4px 8px;border-radius:5px;background:rgba(255,255,255,.12);margin-right:4px">Historial</button>
-      <button class="chat-close" onclick="newChatGN()" title="Nueva conversación" style="font-size:18px;line-height:1;margin-right:2px">+</button>
       <button class="chat-close" onclick="toggleChat()" title="Cerrar">✕</button>
     </div>
-    <div class="chat-chips">
+    <div class="chat-chips" id="chatChipsGN">
       <button class="chat-chip" onclick="gnChip('¿Qué tendencias destacan en la inversión este período?')">📈 Tendencias</button>
       <button class="chat-chip" onclick="gnChip('¿Qué agencia tiene mejor desempeño?')">🏆 Mejor agencia</button>
       <button class="chat-chip" onclick="gnChip('¿Qué cliente tiene mayor concentración y qué riesgo implica?')">⚠️ Concentración</button>
@@ -260,27 +265,34 @@ input[type=file]{display:none}
       <button class="chat-chip" onclick="gnChip('¿En qué mes se invirtió más y cuál fue el más bajo?')">📅 Estacionalidad</button>
     </div>
     <div class="chat-messages" id="chatMessagesGN">
-      <div class="chat-msg assistant rendered">Hola, soy tu analista de <strong>inversión publicitaria</strong> de Texo. Podés preguntarme sobre clientes, agencias, medios, meses, comisiones o pedirme una recomendación estratégica. ¿En qué te ayudo?</div>
+      <div class="chat-msg assistant rendered">¡Hola! Soy tu analista de <strong>inversión publicitaria</strong> de Texo. Podés preguntarme sobre clientes, agencias, medios, meses, comisiones o pedirme una recomendación estratégica.<br><br>Usá los botones de arriba para empezar.</div>
     </div>
-    <div class="chat-saving" id="chatSavingGN"></div>
     <div class="chat-disclaimer">Responde exclusivamente sobre datos de inversión publicitaria de Inversión Publicitaria</div>
     <div class="chat-input-row">
-      <textarea class="chat-input" id="chatInputGN" rows="1" placeholder="Preguntá sobre los datos de inversión…" onkeydown="gnKeydown(event)" oninput="gnResize(this)"></textarea>
+      <textarea class="chat-input" id="chatInputGN" rows="1" placeholder="Escribí tu pregunta aquí…" onkeydown="gnKeydown(event)" oninput="gnResize(this)"></textarea>
       <button class="chat-send" id="chatSendGN" onclick="sendChatGN()">➤</button>
+    </div>
+    <div class="chat-statusbar" id="chatStatusbarGN">
+      <div class="chat-statusbar-dot" id="chatStatusDotGN"></div>
+      <span id="chatStatusTextGN">Conversación activa</span>
+      <div class="chat-statusbar-actions">
+        <button class="chat-statusbar-btn" onclick="openHistorialGN()" title="Ver conversaciones anteriores">📋 Mis chats</button>
+        <button class="chat-statusbar-btn" onclick="confirmNewChatGN()" title="Empezar nueva consulta">+ Nuevo</button>
+      </div>
     </div>
 
     <!-- Panel historial -->
     <div class="chat-hist-panel" id="chatHistPanelGN">
       <div class="chat-hist-header">
-        <h3>Historial de conversaciones</h3>
+        <h3>Mis conversaciones</h3>
         <button class="chat-close" onclick="closeHistorialGN()">✕</button>
       </div>
+      <div style="padding:10px 12px 0;font-size:12.5px;color:rgba(255,255,255,.75)">Tus consultas se guardan automáticamente.</div>
       <div class="chat-hist-list" id="chatHistListGN">
         <div class="chat-hist-empty">Cargando...</div>
       </div>
       <div class="chat-hist-actions">
-        <button class="btn-sm btn-sm-primary" onclick="saveCurrentChatGN()">Guardar esta conversación</button>
-        <button class="btn-sm btn-sm-outline" onclick="newChatGN();closeHistorialGN()">+ Nueva</button>
+        <button class="btn-sm btn-sm-outline" onclick="newChatGN();closeHistorialGN()">+ Nueva consulta</button>
       </div>
     </div>
   </div>
@@ -1467,6 +1479,8 @@ function toggleChat() {
     gnRestoreSession();
     setTimeout(() => document.getElementById('chatInputGN').focus(), 280);
   }
+  const chip = document.getElementById('auth-chip');
+  if (chip) chip.style.right = _gnChatOpen ? (_gnChatWidth + 16) + 'px' : '20px';
 }
 
 try {
@@ -1486,7 +1500,42 @@ try {
 
 function gnResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 function gnKeydown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatGN(); } }
-function gnChip(txt) { document.getElementById('chatInputGN').value = txt; sendChatGN(); }
+function gnChip(txt) {
+  const chips = document.getElementById('chatChipsGN');
+  if (chips) chips.style.display = 'none';
+  document.getElementById('chatInputGN').value = txt;
+  sendChatGN();
+}
+
+function setChatStatusGN(text, saving = false) {
+  const dot = document.getElementById('chatStatusDotGN');
+  const label = document.getElementById('chatStatusTextGN');
+  if (!dot || !label) return;
+  label.textContent = text;
+  dot.classList.toggle('saving', saving);
+}
+
+function confirmNewChatGN() {
+  if (_gnHistory.length < 2) { newChatGN(); return; }
+  if (confirm('¿Empezar una nueva conversación? La actual se guardó automáticamente en "Mis chats".')) newChatGN();
+}
+
+let _gnAutoSaveId = null, _gnAutoSaveTimer = null;
+async function gnAutoSaveToDrive() {
+  clearTimeout(_gnAutoSaveTimer);
+  _gnAutoSaveTimer = setTimeout(async () => {
+    if (_gnHistory.length < 2) return;
+    try {
+      const firstMsg = _gnHistory.find(m => m.role === 'user')?.content || 'Conversación';
+      const title = firstMsg.length > 60 ? firstMsg.substring(0, 60) + '...' : firstMsg;
+      const body = { messages: _gnHistory, title, nombre: `globalnum-chat-${Date.now()}.json` };
+      if (_gnAutoSaveId) body.id = _gnAutoSaveId;
+      const resp = await fetch('/api/chat/save', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const data = await resp.json().catch(() => ({}));
+      if (data.id) _gnAutoSaveId = data.id;
+    } catch(e) {}
+  }, 2000);
+}
 
 function gnAppend(role, text) {
   const wrap = document.getElementById('chatMessagesGN');
@@ -1556,20 +1605,28 @@ async function sendChatGN() {
     gnAppend('assistant', reply);
     _gnHistory.push({ role:'assistant', content: reply });
     gnSaveSession();
+    setChatStatusGN('Guardando...', true);
+    gnAutoSaveToDrive();
+    setTimeout(() => setChatStatusGN('Guardado automáticamente ✓'), 800);
+    setTimeout(() => setChatStatusGN('Conversación activa'), 3500);
   } catch(e) {
     gnTyping(false);
     gnAppend('assistant', 'Error de conexión. Intentá nuevamente.');
+    setChatStatusGN('Sin conexión');
   }
   document.getElementById('chatSendGN').disabled = false;
   document.getElementById('chatInputGN').focus();
 }
 
 function newChatGN() {
-  _gnHistory = []; _gnRestored = true;
+  _gnHistory = []; _gnRestored = true; _gnAutoSaveId = null;
+  clearTimeout(_gnAutoSaveTimer);
   try { localStorage.removeItem('gnChatSession'); } catch(e) {}
   const wrap = document.getElementById('chatMessagesGN');
-  wrap.innerHTML = '<div class="chat-msg assistant rendered">Nueva conversación iniciada. ¿En qué te puedo ayudar con los datos de inversión?</div>';
-  document.getElementById('chatSavingGN').textContent = '';
+  wrap.innerHTML = '<div class="chat-msg assistant rendered">¡Hola! Soy tu analista de <strong>inversión publicitaria</strong> de Texo. Podés preguntarme sobre clientes, agencias, medios, meses, comisiones o pedirme una recomendación estratégica.<br><br>Usá los botones de arriba para empezar.</div>';
+  const chips = document.getElementById('chatChipsGN');
+  if (chips) chips.style.display = '';
+  setChatStatusGN('Conversación activa');
   document.getElementById('chatInputGN').focus();
 }
 
