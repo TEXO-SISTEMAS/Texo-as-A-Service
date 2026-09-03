@@ -483,6 +483,33 @@ body.fullscreen .main { padding-top:64px; }
 .btn-sm-outline:hover{background:#f4f5f7}
 .chat-saving{font-size:11px;color:var(--muted2);padding:0 14px 6px;text-align:right;flex-shrink:0}
 
+/* chips de sugerencias */
+.chat-suggestions{padding:6px 14px 10px;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0}
+.chat-chip{
+  background:#f0f4ff;border:1.5px solid #d0dcff;color:var(--accent);
+  font-size:12px;font-weight:600;border-radius:20px;padding:5px 12px;
+  cursor:pointer;transition:all .15s;white-space:nowrap;font-family:'Inter',sans-serif;
+  line-height:1.3;
+}
+.chat-chip:hover{background:var(--accent);color:#f0f040;border-color:var(--accent)}
+.chat-chip-section{padding:5px 14px 2px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);flex-shrink:0}
+
+/* status bar del chat */
+.chat-statusbar{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 14px;background:#f8f9fb;border-top:1px solid var(--border);
+  font-size:11.5px;color:var(--muted2);flex-shrink:0;
+}
+.chat-statusbar-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.chat-statusbar-dot.saving{background:#f59e0b;animation:pulse .8s infinite}
+.chat-statusbar-actions{margin-left:auto;display:flex;gap:8px}
+.chat-statusbar-btn{
+  background:none;border:none;color:var(--muted2);cursor:pointer;font-size:12px;
+  font-weight:600;padding:2px 6px;border-radius:4px;transition:all .15s;font-family:'Inter',sans-serif;
+}
+.chat-statusbar-btn:hover{background:#eaecef;color:var(--text)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
 /* ── SCORE GRUPAL ── */
 .hero-score-block{text-align:right;flex-shrink:0;min-width:130px;padding-top:4px}
 .hero-score-num{font-size:76px;font-weight:900;line-height:1;letter-spacing:-.04em}
@@ -1063,31 +1090,47 @@ body.fullscreen .main { padding-top:64px; }
           <div class="chat-header-title">Asistente Financiero</div>
           <div class="chat-header-sub">Texo as a Service · Salud Financiera</div>
         </div>
-        <button class="chat-close" onclick="openHistorial()" style="font-size:12px;font-weight:700;letter-spacing:.05em;padding:4px 8px;border-radius:5px;background:rgba(255,255,255,.12);margin-right:4px">Historial</button>
-        <button class="chat-close" onclick="newChat()" title="Nueva conversación" style="font-size:18px;line-height:1;margin-right:2px">+</button>
         <button class="chat-close" onclick="toggleChat()" title="Cerrar">✕</button>
       </div>
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-msg assistant rendered">Hola, soy tu asistente de Salud Financiera de <strong>Texo as a Service</strong>. Puedo ayudarte a interpretar los datos de rentabilidad, EBITDA, eficiencia, innovación y concentración de las agencias. ¿En qué te puedo ayudar?</div>
+        <div class="chat-msg assistant rendered">¡Hola! Soy tu asistente financiero de <strong>Texo</strong>. Puedo analizar los datos de rentabilidad, EBITDA, eficiencia y más de tus agencias.<br><br>Usá las preguntas de abajo para empezar, o escribí lo que necesitás.</div>
       </div>
-      <div class="chat-saving" id="chatSaving"></div>
+      <!-- chips de sugerencias (se ocultan al primer envío) -->
+      <div class="chat-suggestions" id="chatSuggestions">
+        <button class="chat-chip" onclick="sendChip(this,'¿Cuál es la agencia más rentable?')">¿Cuál agencia es más rentable?</button>
+        <button class="chat-chip" onclick="sendChip(this,'¿Qué agencias tienen el EBITDA más alto?')">EBITDA por agencia</button>
+        <button class="chat-chip" onclick="sendChip(this,'Haceme un resumen general del grupo Texo')">Resumen del grupo</button>
+        <button class="chat-chip" onclick="sendChip(this,'¿Cuáles son las agencias con más personas?')">Personas por agencia</button>
+        <button class="chat-chip" onclick="sendChip(this,'¿Cuál es el margen de rentabilidad del grupo?')">Margen del grupo</button>
+        <button class="chat-chip" onclick="sendChip(this,'Mostrá un gráfico de revenue por agencia')">Gráfico de revenue</button>
+      </div>
       <div class="chat-disclaimer">Responde exclusivamente sobre Salud Financiera de Texo as a Service</div>
       <div class="chat-input-row">
-        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Consultá sobre los datos financieros..." onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
+        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Escribí tu pregunta aquí..." onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
         <button class="chat-send" id="chatSend" onclick="sendChat()">➤</button>
+      </div>
+      <!-- barra de estado con acciones contextuales -->
+      <div class="chat-statusbar" id="chatStatusbar">
+        <div class="chat-statusbar-dot" id="chatStatusDot"></div>
+        <span id="chatStatusText">Conversación activa</span>
+        <div class="chat-statusbar-actions">
+          <button class="chat-statusbar-btn" onclick="openHistorial()" title="Ver conversaciones anteriores">📋 Mis chats</button>
+          <button class="chat-statusbar-btn" onclick="confirmNewChat()" title="Empezar nueva consulta">+ Nuevo</button>
+        </div>
       </div>
 
       <!-- PANEL HISTORIAL -->
       <div class="chat-hist-panel" id="chatHistPanel">
         <div class="chat-hist-header">
-          <h3>Historial de conversaciones</h3>
+          <h3>Mis conversaciones</h3>
           <button class="chat-close" onclick="closeHistorial()">✕</button>
         </div>
+        <div style="padding:10px 12px 0;font-size:12.5px;color:rgba(255,255,255,.75)">Tus consultas anteriores se guardan automáticamente.</div>
         <div class="chat-hist-list" id="chatHistList">
           <div class="chat-hist-empty">Cargando...</div>
         </div>
         <div class="chat-hist-actions">
-          <button class="btn-sm btn-sm-outline" onclick="newChat();closeHistorial()">+ Nueva</button>
+          <button class="btn-sm btn-sm-outline" onclick="newChat();closeHistorial()">+ Nueva consulta</button>
         </div>
       </div>
     </div>
@@ -1209,6 +1252,7 @@ function baseOpts(pct=false){
 
 function renderDashboard(data){
   window._dashData = data;
+  if (_dashDataReadyResolve) { _dashDataReadyResolve(); _dashDataReadyResolve = null; }
   destroyCharts();
   const ag=data.agencias;
   document.getElementById('noData').style.display='none';
@@ -2531,6 +2575,9 @@ function renderDashboard(data){
   initScrollSpy();
 }
 
+let _dashDataReadyResolve;
+window._dashDataReady = new Promise(res => { _dashDataReadyResolve = res; });
+
 window.addEventListener('DOMContentLoaded',async()=>{ await loadUploads(); await loadLatest(); await loadLatestIngresos(); });
 
 // ── INGRESOS 2026 ─────────────────────────────────────────────────────────────
@@ -3320,10 +3367,38 @@ function removeTyping() {
   if (el) el.remove();
 }
 
+function sendChip(btn, text) {
+  // ocultar los chips al primer uso
+  const sug = document.getElementById('chatSuggestions');
+  if (sug) sug.style.display = 'none';
+  const input = document.getElementById('chatInput');
+  input.value = text;
+  sendChat();
+}
+
+function confirmNewChat() {
+  if (chatHistory.length < 2) { newChat(); return; }
+  if (confirm('¿Empezar una nueva conversación? La actual se guardó automáticamente en "Mis chats".')) {
+    newChat();
+  }
+}
+
+function setChatStatus(text, saving = false) {
+  const dot = document.getElementById('chatStatusDot');
+  const label = document.getElementById('chatStatusText');
+  if (!dot || !label) return;
+  label.textContent = text;
+  dot.classList.toggle('saving', saving);
+}
+
 async function sendChat() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
   if (!text) return;
+
+  // ocultar sugerencias al primer mensaje
+  const sug = document.getElementById('chatSuggestions');
+  if (sug) sug.style.display = 'none';
 
   input.value = '';
   input.style.height = 'auto';
@@ -3332,6 +3407,7 @@ async function sendChat() {
   appendMsg('user', text);
   chatHistory.push({ role: 'user', content: text });
   showTyping();
+  setChatStatus('Pensando...', true);
 
   try {
     const resp = await fetch('/api/chat', {
@@ -3344,13 +3420,18 @@ async function sendChat() {
     if (json.reply) {
       chatHistory.push({ role: 'assistant', content: json.reply });
       appendMsg('assistant', json.reply);
+      setChatStatus('Guardando...', true);
       saveChatSession();
+      setTimeout(() => setChatStatus('Guardado automáticamente ✓'), 800);
+      setTimeout(() => setChatStatus('Conversación activa'), 3500);
     } else {
       appendMsg('assistant', 'Error: ' + (json.error || 'Respuesta inválida'));
+      setChatStatus('Conversación activa');
     }
   } catch (err) {
     removeTyping();
     appendMsg('assistant', 'Error de conexión. Intenta nuevamente.');
+    setChatStatus('Sin conexión');
   }
 
   document.getElementById('chatSend').disabled = false;
@@ -3361,18 +3442,23 @@ function saveChatSession() {
   try { localStorage.setItem('chatSession', JSON.stringify(chatHistory)); } catch(e) {}
 }
 
-function restoreChatSession() {
+async function restoreChatSession() {
   try {
     const saved = localStorage.getItem('chatSession');
     if (!saved) return;
     const history = JSON.parse(saved);
     if (!history?.length) return;
     chatHistory = history;
+    // Esperar datos del dashboard antes de renderizar (para que los gráficos funcionen)
+    const hasCharts = history.some(m => m.content?.includes('[[CHART:'));
+    if (hasCharts) await window._dashDataReady;
     const wrap = document.getElementById('chatMessages');
     wrap.innerHTML = '';
     chatHistory.forEach(m => appendMsg(m.role, m.content));
-    document.getElementById('chatSaving').textContent = '✓ Sesión restaurada';
-    setTimeout(() => { document.getElementById('chatSaving').textContent = ''; }, 2500);
+    const sug = document.getElementById('chatSuggestions');
+    if (sug) sug.style.display = 'none';
+    setChatStatus('Sesión restaurada ✓');
+    setTimeout(() => setChatStatus('Conversación activa'), 2500);
   } catch(e) {}
 }
 
@@ -3381,8 +3467,10 @@ function newChat() {
   chatHistory = [];
   try { localStorage.removeItem('chatSession'); } catch(e) {}
   const wrap = document.getElementById('chatMessages');
-  wrap.innerHTML = '<div class="chat-msg assistant rendered">Hola, soy tu asistente de Salud Financiera de <strong>Texo as a Service</strong>. Puedo ayudarte a interpretar los datos de rentabilidad, EBITDA, eficiencia, innovación y concentración de las agencias. ¿En qué te puedo ayudar?</div>';
-  document.getElementById('chatSaving').textContent = '';
+  wrap.innerHTML = '<div class="chat-msg assistant rendered">¡Hola! Soy tu asistente financiero de <strong>Texo</strong>. Puedo analizar los datos de rentabilidad, EBITDA, eficiencia y más de tus agencias.<br><br>Usá las preguntas de abajo para empezar, o escribí lo que necesitás.</div>';
+  const sug = document.getElementById('chatSuggestions');
+  if (sug) sug.style.display = '';
+  setChatStatus('Conversación activa');
   document.getElementById('chatInput').focus();
 }
 
@@ -3431,17 +3519,9 @@ async function loadHistItem(id) {
     chatHistory = data.messages || [];
     const wrap = document.getElementById('chatMessages');
     wrap.innerHTML = '';
-    chatHistory.forEach(m => {
-      const div = document.createElement('div');
-      if (m.role === 'assistant') {
-        div.className = 'chat-msg assistant rendered';
-        div.innerHTML = marked.parse(m.content);
-      } else {
-        div.className = 'chat-msg user';
-        div.textContent = m.content;
-      }
-      wrap.appendChild(div);
-    });
+    const hasCharts = chatHistory.some(m => m.content?.includes('[[CHART:'));
+    if (hasCharts) await window._dashDataReady;
+    chatHistory.forEach(m => appendMsg(m.role, m.content));
     wrap.scrollTop = wrap.scrollHeight;
     document.getElementById('chatSaving').textContent = '✓ Conversación cargada';
     setTimeout(() => { document.getElementById('chatSaving').textContent = ''; }, 2000);
