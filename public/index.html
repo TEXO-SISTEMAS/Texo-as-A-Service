@@ -3145,6 +3145,9 @@ function toggleChat() {
   }
   document.getElementById('btnChat').classList.toggle('active', chatOpen);
   if (chatOpen) setTimeout(() => document.getElementById('chatInput').focus(), 300);
+  // mover el auth chip para que no tape la status bar del chat
+  const chip = document.getElementById('auth-chip');
+  if (chip) chip.style.right = chatOpen ? (chatWidth + 16) + 'px' : '20px';
 }
 
 try {
@@ -3170,6 +3173,8 @@ try {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       localStorage.setItem('chatWidth', chatWidth);
+      const chip = document.getElementById('auth-chip');
+      if (chip && chatOpen) chip.style.right = (chatWidth + 16) + 'px';
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     }
