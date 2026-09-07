@@ -66,8 +66,21 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
     <div class="card-title">Usuarios con acceso</div>
 
     <div class="add-row">
-      <input type="email" id="emailInput" placeholder="nuevo@texo.com.py" autocomplete="off">
+      <input type="email" id="emailInput" placeholder="nuevo@texo.com.py" autocomplete="off" style="flex:2">
+      <select id="agenciaInput" style="background:#0f1117;border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;font-family:inherit;outline:none;cursor:pointer;min-width:140px">
+        <option value="">Acceso completo</option>
+        <option value="NASTA">NASTA</option>
+        <option value="BRICK">BRICK</option>
+        <option value="LUPE">LUPE</option>
+        <option value="OMD">OMD</option>
+        <option value="ROGER">ROGER</option>
+        <option value="AMPLIFY">AMPLIFY</option>
+      </select>
       <button class="btn btn-primary" onclick="agregarUsuario()">+ Agregar</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+      Los dominios <strong style="color:rgba(240,240,64,.7)">@nasta.com.py, @brick.com.py, @lupe.com.py</strong>, etc. se asignan automáticamente a su agencia al iniciar sesión.
+      Podés forzar una agencia específica o dejar <em>Acceso completo</em> para que vean todo.
     </div>
 
     <div class="user-list" id="userList">
@@ -107,31 +120,42 @@ function renderUsuarios() {
     list.innerHTML = '<div class="empty">No hay usuarios agregados aún.</div>';
     return;
   }
+  const AGENCIA_COLOR = { NASTA:'#a855f7', BRICK:'#3b82f6', LUPE:'#ec4899', OMD:'#f59e0b', ROGER:'#14b8a6', AMPLIFY:'#f97316' };
   list.innerHTML = [
     // Super admin siempre primero
     `<div class="user-row">
       <div>
         <div class="user-email">danilo.sosa@texo.com.py</div>
-        <div class="user-meta">Administrador principal</div>
+        <div class="user-meta">Administrador principal · acceso completo</div>
       </div>
       <div class="user-right"><span class="user-badge">ADMIN</span></div>
     </div>`,
-    ...usuarios.map(u => `
+    ...usuarios.map(u => {
+      const ag = u.agencia;
+      const agColor = ag ? (AGENCIA_COLOR[ag] || '#6b7280') : null;
+      const agBadge = ag
+        ? `<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:4px;background:${agColor}25;color:${agColor};border:1px solid ${agColor}50">${ag}</span>`
+        : `<span style="font-size:11px;color:var(--muted);padding:2px 6px">Acceso completo</span>`;
+      return `
     <div class="user-row" id="row-${CSS.escape(u.email)}">
       <div>
         <div class="user-email">${u.email}</div>
         <div class="user-meta">Agregado ${u.agregado_en ? new Date(u.agregado_en).toLocaleDateString('es-PY',{day:'numeric',month:'long',year:'numeric'}) : '—'}</div>
       </div>
       <div class="user-right">
+        ${agBadge}
         <button class="btn btn-danger" onclick="eliminarUsuario('${u.email}')">Eliminar</button>
       </div>
-    </div>`)
+    </div>`;
+    })
   ].join('');
 }
 
 async function agregarUsuario() {
   const input = document.getElementById('emailInput');
+  const agenciaInput = document.getElementById('agenciaInput');
   const email = input.value.trim().toLowerCase();
+  const agencia = agenciaInput.value || null;
   if (!email || !email.includes('@')) { showToast('Ingresá un email válido', 'error'); return; }
   if (email === 'danilo.sosa@texo.com.py') { showToast('Ya sos el admin principal', 'error'); return; }
   if (usuarios.find(u => u.email === email)) { showToast('Ese usuario ya existe', 'error'); return; }
@@ -141,11 +165,12 @@ async function agregarUsuario() {
     const r = await fetch('/api/admin/usuarios', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, agencia })
     });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error);
     input.value = '';
+    agenciaInput.value = '';
     await cargarUsuarios();
     showToast('✓ Usuario agregado', 'success');
   } catch(e) {

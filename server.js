@@ -90,24 +90,57 @@ const SUPER_ADMIN = 'danilo.sosa@texo.com.py';
 // Usuarios adicionales con acceso (se pueden gestionar luego desde /admin.html)
 const USUARIOS_EXTRA = ['alejandro.rolandi@texo.com.py', 'luis.gonzalez@texo.com.py', 'osmar.colman@texo.com.py', 'danilososavazquez@gmail.com'];
 
-// Cache de usuarios permitidos (se refresca cada 5 min)
+// Dominios que se mapean automáticamente a una agencia
+const DOMAIN_AGENCIA = {
+  'nasta.com.py': 'NASTA',
+  'brick.com.py': 'BRICK',
+  'lupe.com.py': 'LUPE',
+  'omd.com.py': 'OMD',
+  'roger.com.py': 'ROGER',
+  'amplify.com.py': 'AMPLIFY',
+};
+
+// Cache de usuarios (objetos completos con email + agencia)
 let _usuariosCache = null;
 let _usuariosCacheTs = 0;
-async function getUsuariosPermitidos() {
+async function getUsuariosData() {
   if (_usuariosCache && Date.now() - _usuariosCacheTs < 5 * 60 * 1000) return _usuariosCache;
   try {
     const data = await drive.getUsuarios();
-    // Los usuarios guardados pueden ser strings o {email, ...}
-    _usuariosCache = (data.usuarios || []).map(u => (u.email || u).toLowerCase());
-    if (!_usuariosCache.includes(SUPER_ADMIN)) _usuariosCache.push(SUPER_ADMIN);
-    USUARIOS_EXTRA.forEach(e => { if (!_usuariosCache.includes(e)) _usuariosCache.push(e); });
+    _usuariosCache = data.usuarios || [];
     _usuariosCacheTs = Date.now();
     return _usuariosCache;
   } catch(e) {
-    return [SUPER_ADMIN, ...USUARIOS_EXTRA];
+    return [];
   }
 }
+async function getUsuariosPermitidos() {
+  const lista = await getUsuariosData();
+  const emails = lista.map(u => (u.email || u).toLowerCase());
+  if (!emails.includes(SUPER_ADMIN)) emails.push(SUPER_ADMIN);
+  USUARIOS_EXTRA.forEach(e => { if (!emails.includes(e)) emails.push(e); });
+  return emails;
+}
+// Devuelve el nombre de agencia para un email dado (null = acceso completo)
+async function resolverAgencia(email) {
+  const emailLower = email.toLowerCase();
+  // 1. Super admin y usuarios extra → acceso completo
+  if (emailLower === SUPER_ADMIN || USUARIOS_EXTRA.includes(emailLower)) return null;
+  // 2. Buscar en lista Drive (asignación explícita tiene prioridad)
+  const lista = await getUsuariosData();
+  const stored = lista.find(u => (u.email || '').toLowerCase() === emailLower);
+  if (stored?.agencia) return stored.agencia;
+  // 3. Detección automática por dominio
+  const domain = emailLower.split('@')[1];
+  return DOMAIN_AGENCIA[domain] || null;
+}
 function invalidarCacheUsuarios() { _usuariosCache = null; _usuariosCacheTs = 0; }
+
+// Filtra el array de agencias según el rol del usuario
+function filtrarAgencias(agencias, agencia) {
+  if (!agencia || !Array.isArray(agencias)) return agencias;
+  return agencias.filter(a => a.nombre?.toUpperCase() === agencia.toUpperCase());
+}
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
@@ -161,9 +194,9 @@ app.get('/auth/google/callback', async (req, res) => {
     oauth2Client.setCredentials(tokens);
     const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
     const { data: userInfo } = await oauth2.userinfo.get();
-    // Acceso abierto a cualquier cuenta Google
+    const agencia = await resolverAgencia(userInfo.email);
     const token = jwt.sign(
-      { email: userInfo.email, name: userInfo.name, picture: userInfo.picture || null },
+      { email: userInfo.email, name: userInfo.name, picture: userInfo.picture || null, agencia },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -229,13 +262,13 @@ app.get('/api/admin/usuarios', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/usuarios', requireAdmin, async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, agencia } = req.body;
     if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
     const data = await drive.getUsuarios();
     const lista = data.usuarios || [];
     const emailLower = email.toLowerCase().trim();
     if (lista.find(u => u.email.toLowerCase() === emailLower)) return res.status(409).json({ error: 'El usuario ya existe' });
-    lista.push({ email: emailLower, agregado_en: new Date().toISOString(), agregado_por: req.user.email });
+    lista.push({ email: emailLower, agencia: agencia || null, agregado_en: new Date().toISOString(), agregado_por: req.user.email });
     await drive.saveUsuarios({ usuarios: lista });
     invalidarCacheUsuarios();
     res.json({ ok: true });
@@ -299,6 +332,7 @@ app.get('/api/uploads', async (req, res) => {
 app.get('/api/uploads/:id', async (req, res) => {
   try {
     const data = await drive.getUpload(req.params.id);
+    if (req.user?.agencia && data.agencias) data.agencias = filtrarAgencias(data.agencias, req.user.agencia);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -310,6 +344,7 @@ app.get('/api/latest', async (req, res) => {
   try {
     const data = await drive.getLatest();
     if (!data) return res.json({ empty: true });
+    if (req.user?.agencia && data.agencias) data.agencias = filtrarAgencias(data.agencias, req.user.agencia);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -643,8 +678,12 @@ REGLAS:
       return res.json({ reply: response.content[0].text });
     }
 
-    const agenciasResumen = data?.agencias?.length
-      ? data.agencias.map(a => {
+    const agenciasInput = req.user?.agencia
+      ? filtrarAgencias(data?.agencias, req.user.agencia)
+      : data?.agencias;
+
+    const agenciasResumen = agenciasInput?.length
+      ? agenciasInput.map(a => {
           const fmt   = v => (v/1e6).toFixed(2)+'M';
           const fmtPC = v => Math.round(v/1e3)+'M'; // per cápita en millones de Gs.
           const margen = a.revenue_total > 0 ? (a.ebitda / a.revenue_total * 100).toFixed(1) : '—';
