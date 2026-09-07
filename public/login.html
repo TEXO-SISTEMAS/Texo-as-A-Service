@@ -131,6 +131,8 @@ body::before{
     const el = document.getElementById('errMsg');
     el.textContent = err === 'auth_failed'
       ? 'Error al autenticar con Google. Intentá nuevamente.'
+      : err === 'no_access'
+      ? 'Tu cuenta no tiene acceso al sistema. Contactá a Danilo para solicitar acceso.'
       : 'Acceso denegado. Contactá al administrador.';
     el.classList.add('show');
   }
