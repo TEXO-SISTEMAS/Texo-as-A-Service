@@ -222,10 +222,9 @@ app.get('/auth/google/callback', async (req, res) => {
     const { data: userInfo } = await oauth2.userinfo.get();
     const emailLower = userInfo.email.toLowerCase();
 
-    // Verificar que el email tiene acceso permitido
+    // Verificar que el email tiene acceso permitido (lista explícita únicamente)
     const permitidos = await getUsuariosPermitidos();
-    const dominioPermitido = Object.keys(DOMAIN_AGENCIA).includes(emailLower.split('@')[1]);
-    if (!permitidos.includes(emailLower) && !dominioPermitido) {
+    if (!permitidos.includes(emailLower)) {
       return res.redirect('/login?error=no_access');
     }
 
