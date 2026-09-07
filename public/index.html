@@ -2582,11 +2582,6 @@ window.addEventListener('DOMContentLoaded',async()=>{
   // Detectar agencia del usuario para mostrar banner y limpiar historial si cambió
   try {
     const me = await fetch('/api/me').then(r=>r.json());
-    const agenciaCached = localStorage.getItem('_userAgencia');
-    if (me.agencia && agenciaCached && agenciaCached !== me.agencia) {
-      // La agencia cambió → limpiar sesión de chat anterior para evitar datos mezclados
-      localStorage.removeItem('chat-session');
-    }
     localStorage.setItem('_userAgencia', me.agencia || '');
     window._userAgencia = me.agencia || null;
     if (me.agencia) {
@@ -3467,13 +3462,17 @@ async function sendChat() {
   document.getElementById('chatInput').focus();
 }
 
+function chatSessionKey() {
+  return window._userAgencia ? 'chatSession-' + window._userAgencia : 'chatSession';
+}
+
 function saveChatSession() {
-  try { localStorage.setItem('chatSession', JSON.stringify(chatHistory)); } catch(e) {}
+  try { localStorage.setItem(chatSessionKey(), JSON.stringify(chatHistory)); } catch(e) {}
 }
 
 async function restoreChatSession() {
   try {
-    const saved = localStorage.getItem('chatSession');
+    const saved = localStorage.getItem(chatSessionKey());
     if (!saved) return;
     const history = JSON.parse(saved);
     if (!history?.length) return;
@@ -3496,7 +3495,7 @@ function newChat() {
   chatHistory = [];
   _autoSaveId = null;
   clearTimeout(_autoSaveTimer);
-  try { localStorage.removeItem('chatSession'); } catch(e) {}
+  try { localStorage.removeItem(chatSessionKey()); } catch(e) {}
   const wrap = document.getElementById('chatMessages');
   wrap.innerHTML = '<div class="chat-msg assistant rendered">¡Hola! Soy tu asistente financiero de <strong>Texo</strong>. Puedo analizar los datos de rentabilidad, EBITDA, eficiencia y más de tus agencias.<br><br>Usá las preguntas de abajo para empezar, o escribí lo que necesitás.</div>';
   const sug = document.getElementById('chatSuggestions');
