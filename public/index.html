@@ -2584,6 +2584,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
     const me = await fetch('/api/me').then(r=>r.json());
     localStorage.setItem('_userAgencia', me.agencia || '');
     window._userAgencia = me.agencia || null;
+    window._userEmail = me.email || null;
     if (me.agencia) {
       const banner = document.createElement('div');
       banner.style.cssText = 'background:#1a1d2e;border-bottom:1px solid rgba(255,255,255,.1);padding:9px 44px;display:flex;align-items:center;gap:10px;font-size:12.5px;color:rgba(255,255,255,.65)';
@@ -3567,9 +3568,13 @@ async function loadHistItem(id, nombre) {
     }
     const resp = await fetch(`/api/chat/history/${id}`);
     const data = await resp.json();
-    // Doble verificación: si el JSON guardado tiene agencia diferente, bloquear
+    // Doble verificación por agencia y por usuario
     if (window._userAgencia && data.agencia && data.agencia !== window._userAgencia) {
       alert('Esta conversación pertenece a otra agencia y no puede ser cargada.');
+      return;
+    }
+    if (window._userEmail && data.userEmail && data.userEmail !== window._userEmail) {
+      alert('Esta conversación pertenece a otro usuario y no puede ser cargada.');
       return;
     }
     chatHistory = data.messages || [];
@@ -3597,7 +3602,9 @@ async function deleteHistItem(e, id) {
 let _autoSaveTimer = null;
 let _autoSaveId = null; // id de la conversación en Drive (para actualizarla en lugar de crear una nueva)
 function sfChatPrefix() {
-  return 'chat-sf-' + (window._userAgencia || 'all') + '-';
+  const agencia = window._userAgencia || 'all';
+  const userSlug = window._userEmail ? window._userEmail.replace('@', '_at_') : 'shared';
+  return `chat-sf-${agencia}-${userSlug}-`;
 }
 
 async function autoSaveToDrive() {
@@ -3611,6 +3618,7 @@ async function autoSaveToDrive() {
         messages: chatHistory,
         title,
         agencia: window._userAgencia || null,
+        userEmail: window._userEmail || null,
         nombre: sfChatPrefix() + Date.now() + '.json'
       };
       if (_autoSaveId) body.id = _autoSaveId;
