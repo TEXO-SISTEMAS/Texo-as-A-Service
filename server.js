@@ -609,9 +609,9 @@ app.get('/api/chat/history/:id', async (req, res) => {
 
 app.post('/api/chat/save', async (req, res) => {
   try {
-    const { messages, title, nombre: bodyNombre, id: existingId } = req.body;
+    const { messages, title, agencia, nombre: bodyNombre, id: existingId } = req.body;
     if (!messages?.length) return res.status(400).json({ error: 'messages requerido' });
-    const payload = { title, messages, saved_at: new Date().toISOString() };
+    const payload = { title, messages, agencia: agencia || null, saved_at: new Date().toISOString() };
     let saved;
     if (existingId) {
       saved = await drive.updateChat(existingId, payload);

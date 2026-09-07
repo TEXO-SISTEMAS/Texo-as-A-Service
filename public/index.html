@@ -3518,7 +3518,20 @@ async function loadHistorial() {
   list.innerHTML = '<div class="chat-hist-empty">Cargando...</div>';
   try {
     const resp = await fetch('/api/chat/history');
-    const items = await resp.json();
+    const allItems = await resp.json();
+
+    // Filtrar: si el usuario tiene agencia asignada, mostrar solo sus conversaciones
+    // Los archivos nuevos tienen prefijo "chat-sf-AGENCIA-" o "chat-sf-all-"
+    // Los archivos viejos no tienen prefijo de agencia (nombre: "chat-TIMESTAMP.json")
+    const prefix = sfChatPrefix(); // e.g. "chat-sf-NASTA-"
+    const items = window._userAgencia
+      ? allItems.filter(item => item.nombre && item.nombre.startsWith(prefix))
+      : allItems.filter(item => item.nombre && (
+          item.nombre.startsWith('chat-sf-all-') ||
+          item.nombre.startsWith('chat-sf-') ||
+          item.nombre.startsWith('chat-')
+        ));
+
     if (!items.length) {
       list.innerHTML = '<div class="chat-hist-empty">No hay conversaciones guardadas</div>';
       return;
@@ -3534,7 +3547,7 @@ async function loadHistorial() {
       div.innerHTML = `
         <button class="chat-hist-item-del" onclick="deleteHistItem(event,'${item.id}')">✕</button>
         <div class="chat-hist-item-title">${title}</div>`;
-      div.addEventListener('click', () => loadHistItem(item.id));
+      div.addEventListener('click', () => loadHistItem(item.id, item.nombre));
       list.appendChild(div);
     });
   } catch(e) {
@@ -3542,10 +3555,23 @@ async function loadHistorial() {
   }
 }
 
-async function loadHistItem(id) {
+async function loadHistItem(id, nombre) {
   try {
+    // Verificar que la conversación pertenece a la agencia actual antes de cargar
+    if (window._userAgencia && nombre) {
+      const expectedPrefix = sfChatPrefix();
+      if (!nombre.startsWith(expectedPrefix)) {
+        alert('Esta conversación pertenece a otra agencia y no puede ser cargada.');
+        return;
+      }
+    }
     const resp = await fetch(`/api/chat/history/${id}`);
     const data = await resp.json();
+    // Doble verificación: si el JSON guardado tiene agencia diferente, bloquear
+    if (window._userAgencia && data.agencia && data.agencia !== window._userAgencia) {
+      alert('Esta conversación pertenece a otra agencia y no puede ser cargada.');
+      return;
+    }
     chatHistory = data.messages || [];
     const wrap = document.getElementById('chatMessages');
     wrap.innerHTML = '';
@@ -3570,15 +3596,23 @@ async function deleteHistItem(e, id) {
 
 let _autoSaveTimer = null;
 let _autoSaveId = null; // id de la conversación en Drive (para actualizarla en lugar de crear una nueva)
+function sfChatPrefix() {
+  return 'chat-sf-' + (window._userAgencia || 'all') + '-';
+}
+
 async function autoSaveToDrive() {
-  // Debounce: espera 2s antes de guardar para no saturar con una sola sesión larga
   clearTimeout(_autoSaveTimer);
   _autoSaveTimer = setTimeout(async () => {
     if (chatHistory.length < 2) return;
     try {
       const firstMsg = chatHistory.find(m => m.role === 'user')?.content || 'Conversación';
       const title = firstMsg.length > 60 ? firstMsg.substring(0, 60) + '...' : firstMsg;
-      const body = { messages: chatHistory, title };
+      const body = {
+        messages: chatHistory,
+        title,
+        agencia: window._userAgencia || null,
+        nombre: sfChatPrefix() + Date.now() + '.json'
+      };
       if (_autoSaveId) body.id = _autoSaveId;
       const resp = await fetch('/api/chat/save', {
         method: 'POST',
