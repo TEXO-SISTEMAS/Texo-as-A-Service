@@ -754,8 +754,12 @@ ${ebLines ? `\nEBITDA por empresa (P&L interno):\n${ebLines}` : ''}
 ${topCli ? `\nTop clientes (% facturación):\n${topCli}` : ''}`;
     }
 
-    const systemPrompt = `Eres un asistente especializado exclusivamente en Salud Financiera de agencias de publicidad. Tu fuente de información es el Excel de Salud Financiera, corte ${fechaCorte}, y el Detalle de Ingresos 2026 cuando esté disponible.
+    const agenciaRestriccion = req.user?.agencia
+      ? `\n⚠️ RESTRICCIÓN DE ACCESO: Este usuario solo tiene acceso a los datos de la agencia ${req.user.agencia}. Tenés ÚNICAMENTE los datos de ${req.user.agencia} en este sistema. Si el usuario pregunta sobre CUALQUIER OTRA agencia (BRICK, NASTA, LUPE, OMD, ROGER, AMPLIFY u otra), respondé SIEMPRE: "Solo tengo acceso a los datos de ${req.user.agencia}. No puedo mostrarte información de otras agencias." No uses datos del historial de conversación anterior que pueda contener información de otras agencias.\n`
+      : '';
 
+    const systemPrompt = `Eres un asistente especializado exclusivamente en Salud Financiera de agencias de publicidad. Tu fuente de información es el Excel de Salud Financiera, corte ${fechaCorte}, y el Detalle de Ingresos 2026 cuando esté disponible.
+${agenciaRestriccion}
 DATOS ACTUALES DE LAS AGENCIAS:
 ${agenciasResumen}
 

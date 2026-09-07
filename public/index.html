@@ -2579,9 +2579,16 @@ let _dashDataReadyResolve;
 window._dashDataReady = new Promise(res => { _dashDataReadyResolve = res; });
 
 window.addEventListener('DOMContentLoaded',async()=>{
-  // Detectar agencia del usuario para mostrar banner
+  // Detectar agencia del usuario para mostrar banner y limpiar historial si cambió
   try {
     const me = await fetch('/api/me').then(r=>r.json());
+    const agenciaCached = localStorage.getItem('_userAgencia');
+    if (me.agencia && agenciaCached && agenciaCached !== me.agencia) {
+      // La agencia cambió → limpiar sesión de chat anterior para evitar datos mezclados
+      localStorage.removeItem('chat-session');
+    }
+    localStorage.setItem('_userAgencia', me.agencia || '');
+    window._userAgencia = me.agencia || null;
     if (me.agencia) {
       const banner = document.createElement('div');
       banner.style.cssText = 'background:#1a1d2e;border-bottom:1px solid rgba(255,255,255,.1);padding:9px 44px;display:flex;align-items:center;gap:10px;font-size:12.5px;color:rgba(255,255,255,.65)';
