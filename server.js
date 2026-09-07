@@ -142,6 +142,67 @@ function filtrarAgencias(agencias, agencia) {
   return agencias.filter(a => a.nombre?.toUpperCase() === agencia.toUpperCase());
 }
 
+// Filtra el dataset de GlobalNum (inversión a medios) por agencia
+function filtrarGlobalnum(data, agencia) {
+  if (!agencia || !data) return data;
+  const ag = agencia.toUpperCase();
+  const result = { ...data };
+
+  // Filtrar array de agencias
+  result.agencias = (data.agencias || []).filter(a => a.nombre?.toUpperCase() === ag);
+
+  // Recalcular totales con solo esta agencia
+  const agObj = result.agencias[0] || {};
+  result.totales = {
+    ...(data.totales || {}),
+    inversion: agObj.inversion || 0,
+    comision:  agObj.comision  || 0,
+    agencias:  result.agencias.length,
+  };
+
+  // Filtrar porAgenciaMes (mapa ag → {mes → valor})
+  if (data.porAgenciaMes) {
+    result.porAgenciaMes = {};
+    for (const [k, v] of Object.entries(data.porAgenciaMes)) {
+      if (k.toUpperCase() === ag) result.porAgenciaMes[k] = v;
+    }
+  }
+
+  // Filtrar porMedioAgencia (mapa medio → {ag → valor})
+  if (data.porMedioAgencia) {
+    result.porMedioAgencia = {};
+    for (const [medio, ags] of Object.entries(data.porMedioAgencia)) {
+      const entrada = Object.entries(ags).find(([k]) => k.toUpperCase() === ag);
+      if (entrada) result.porMedioAgencia[medio] = { [entrada[0]]: entrada[1] };
+    }
+  }
+
+  return result;
+}
+
+// Filtra el dataset de AdLens (BigQuery/Excel) por agencia
+function filtrarAdlens(data, agencia) {
+  if (!agencia || !data) return data;
+  const ag = agencia.toUpperCase();
+  const result = { ...data };
+
+  // Filtrar array por_agencia (inversión por agencia compradora)
+  if (Array.isArray(data.por_agencia)) {
+    result.por_agencia = data.por_agencia.filter(a =>
+      (a.agencia || '').toUpperCase() === ag
+    );
+  }
+
+  // Filtrar mediosDetalle por agencia si existe
+  if (Array.isArray(data.mediosDetalle)) {
+    result.mediosDetalle = data.mediosDetalle.filter(r =>
+      (r.agencia || '').toUpperCase() === ag
+    );
+  }
+
+  return result;
+}
+
 // Filtra el dataset completo de ingresos y recalcula totales
 function filtrarIngresos(data, agencia) {
   if (!agencia || !data) return data;
@@ -473,18 +534,19 @@ app.post('/api/save-globalnum', async (req, res) => {
   }
 });
 
-app.get('/api/latest-globalnum', async (req, res) => {
+app.get('/api/latest-globalnum', requireAuth, async (req, res) => {
   try {
     const data = await drive.getLatestGlobalnum();
     if (!data) return res.json({ empty: true });
-    res.json(data);
+    const resultado = req.user?.agencia ? filtrarGlobalnum(data, req.user.agencia) : data;
+    res.json(resultado);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // ── GLOBALNUM — IA ANALISTA ───────────────────────────────────────────────────
-app.post('/api/ask-globalnum', async (req, res) => {
+app.post('/api/ask-globalnum', requireAuth, async (req, res) => {
   try {
     const { summary, messages } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensajes inválidos' });
@@ -542,9 +604,13 @@ Top clientes por mes (top 10 por mes):
 ${Object.entries(summary.topClientesPorMes||{}).map(([mes,clis])=>`  ${mes}:\n${clis.map(c=>`    - ${c.nombre}: ${fmtB(c.inv)}`).join('\n')}`).join('\n')}
 ` : 'No hay datos cargados aún.';
 
+    const agenciaRestriccionGN = req.user?.agencia
+      ? `\n⚠️ RESTRICCIÓN DE ACCESO: Este usuario solo tiene acceso a los datos de la agencia ${req.user.agencia}. Si pregunta sobre CUALQUIER OTRA agencia, respondé siempre: "Solo tengo acceso a los datos de ${req.user.agencia}. No puedo mostrarte información de otras agencias."\n`
+      : '';
+
     const systemPrompt = `Sos un analista senior de inversión publicitaria del holding Texo as a Service (Paraguay).
 Tu rol es interpretar los datos de Inversión Publicitaria — el sistema de tracking de inversión publicitaria de las agencias BRICK, NASTA, LUPE, OMD y ROGER.
-
+${agenciaRestriccionGN}
 ${ctx}
 
 REGLAS:
@@ -1144,7 +1210,8 @@ app.get('/api/adlens/latest', requireAuth, async (req, res) => {
   try {
     const data = await drive.getMarketingIntel('adlens');
     if (!data) return res.status(404).json({ error: 'Sin datos' });
-    res.json(data);
+    const resultado = req.user?.agencia ? filtrarAdlens(data, req.user.agencia) : data;
+    res.json(resultado);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -1163,7 +1230,8 @@ app.get('/api/adlens/bigquery', requireAuth, async (req, res) => {
     const bigquery = require('./bigquery');
     const data = await bigquery.buildAdlensData();
     _bqCache = { data, ts: Date.now() };
-    res.json(data);
+    const resultado = req.user?.agencia ? filtrarAdlens(data, req.user.agencia) : data;
+    res.json(resultado);
   } catch (e) {
     console.error('ERROR /api/adlens/bigquery:', e);
     res.status(500).json({ error: e.message });
