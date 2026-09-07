@@ -142,6 +142,32 @@ function filtrarAgencias(agencias, agencia) {
   return agencias.filter(a => a.nombre?.toUpperCase() === agencia.toUpperCase());
 }
 
+// Filtra el dataset completo de ingresos y recalcula totales
+function filtrarIngresos(data, agencia) {
+  if (!agencia || !data) return data;
+  const result = { ...data };
+  const agFiltradas = filtrarAgencias(data.agencias, agencia);
+  result.agencias = agFiltradas;
+  // Recalcular totales con la agencia filtrada
+  const totalFac = agFiltradas.reduce((s, a) => s + (a.facturacion || 0), 0);
+  const totalRev = agFiltradas.reduce((s, a) => s + (a.revenue || 0), 0);
+  const totalTx  = agFiltradas.reduce((s, a) => s + (a.transacciones || 0), 0);
+  result.totales = {
+    ...(data.totales || {}),
+    facturacion: totalFac,
+    revenue: totalRev,
+    margen: totalFac > 0 ? totalRev / totalFac : 0,
+    transacciones: totalTx,
+  };
+  // Filtrar EBITDA por empresa
+  if (data.ebitda) {
+    result.ebitda = data.ebitda.filter(e =>
+      e.empresa?.toUpperCase().includes(agencia.toUpperCase())
+    );
+  }
+  return result;
+}
+
 function getOAuth2Client() {
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -404,7 +430,8 @@ app.get('/api/latest-ingresos', async (req, res) => {
   try {
     const data = await drive.getMarketingIntel('ingresos');
     if (!data) return res.json({ empty: true });
-    res.json(data);
+    const resultado = req.user?.agencia ? filtrarIngresos(data, req.user.agencia) : data;
+    res.json(resultado);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -704,20 +731,21 @@ REGLAS:
     // ── Resumen ingresos 2026 ──────────────────────────────────────────────────
     let ingresosResumen = '';
     if (ingresosData && ingresosData.totales) {
+      const ingFiltrado = req.user?.agencia ? filtrarIngresos(ingresosData, req.user.agencia) : ingresosData;
       const fmtM = v => (parseFloat(v)||0) >= 1e9 ? ((v/1e9).toFixed(1)+'B Gs.') : (v/1e6).toFixed(0)+'M Gs.';
-      const t = ingresosData.totales;
-      const agLines = (ingresosData.agencias||[]).map(a =>
+      const t = ingFiltrado.totales;
+      const agLines = (ingFiltrado.agencias||[]).map(a =>
         `  ${a.nombre}: Facturación ${fmtM(a.facturacion)}, Revenue ${fmtM(a.revenue)}, Margen ${(a.margen*100).toFixed(1)}%, ${a.transacciones} facturas`
       ).join('\n');
-      const topCli = (ingresosData.topClientes||[]).slice(0,5).map(c =>
+      const topCli = (ingFiltrado.topClientes||[]).slice(0,5).map(c =>
         `  ${c.nombre.replace(/\s*-\s*\d{9,}.*$/,'').trim()}: ${(c.pct*100).toFixed(1)}%`
       ).join('\n');
-      const ebLines = (ingresosData.ebitda||[]).map(e =>
+      const ebLines = (ingFiltrado.ebitda||[]).map(e =>
         `  ${e.empresa}: EBITDA ${fmtM(e.ebitda)} (sin 3709: ${fmtM(e.ebitda_sin3709)}), margen ${(e.margen_ebitda*100).toFixed(1)}%, ${e.personas} personas`
       ).join('\n');
       ingresosResumen = `
 
-DATOS DE DETALLE DE INGRESOS 2026 (período ${ingresosData.periodo || ''}):
+DATOS DE DETALLE DE INGRESOS 2026 (período ${ingFiltrado.periodo || ''}):
 Facturación total: ${fmtM(t.facturacion)} | Revenue total: ${fmtM(t.revenue)} | Margen: ${(t.margen*100).toFixed(1)}% | Transacciones: ${t.transacciones}
 
 Por agencia:
