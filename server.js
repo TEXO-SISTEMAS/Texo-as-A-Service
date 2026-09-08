@@ -622,7 +622,7 @@ REGLAS:
 6. Para comparaciones o tendencias, usá los datos del período disponible.`;
 
     const response = await getAnthropic().messages.create({
-      model: 'claude-sonnet-5',
+      model: MODEL_CHAT,
       max_tokens: 1024,
       system: systemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content }))
@@ -718,6 +718,8 @@ app.delete('/api/chat/history/:id', async (req, res) => {
 //   [3] bloque DATOS          → varía por usuario / agencia / período
 // Las partes [1]+[2] se marcan con cache_control para cobrarse ~10% en llamadas repetidas.
 // NADA dinámico (fecha, usuario, timestamp) puede entrar en [1] o [2].
+
+const MODEL_CHAT = 'claude-sonnet-4-5';
 
 const JARVIS_PERSONA = `Sos Jarvis, el mayordomo analista de Texo as a Service, un holding paraguayo de agencias de publicidad. Atendés a la dirección del grupo.
 
@@ -842,7 +844,7 @@ REGLAS:
 4. Usá lenguaje ejecutivo pero accesible. Sin jerga innecesaria.`;
 
       const response = await getAnthropic().messages.create({
-        model: 'claude-sonnet-5',
+        model: MODEL_CHAT,
         max_tokens: 1024,
         system: mktSystemPrompt,
         messages: messages.map(m => ({ role: m.role, content: m.content }))
@@ -871,7 +873,7 @@ REGLAS:
 5. Cuando uses datos históricos de AdLens, citálos como "Según datos de AdLens".`;
 
       const response = await getAnthropic().messages.create({
-        model: 'claude-sonnet-5',
+        model: MODEL_CHAT,
         max_tokens: 1024,
         system: adlensPrompt,
         messages: messages.map(m => ({ role: m.role, content: m.content }))
@@ -940,20 +942,18 @@ ${agenciasResumen}
 ${ingresosResumen}`;
 
     const response = await getAnthropic().messages.create({
-      model: 'claude-sonnet-5',
+      model: MODEL_CHAT,
       max_tokens: 1400,
-      system: [
-        { type: 'text', text: JARVIS_PERSONA },
-        { type: 'text', text: METODOLOGIA_SF, cache_control: { type: 'ephemeral' } },
-        { type: 'text', text: bloqueDatos },
-      ],
+      system: `${JARVIS_PERSONA}\n\n${METODOLOGIA_SF}\n\n${bloqueDatos}`,
       messages: messages.map(m => ({ role: m.role, content: m.content }))
     });
 
-    res.json({ reply: response.content[0].text });
+    const reply = (response.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+    if (!reply) return res.status(502).json({ error: 'El modelo no devolvió texto', stop_reason: response.stop_reason });
+    res.json({ reply });
   } catch (err) {
     console.error('ERROR /api/chat:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || String(err), status: err.status || null });
   }
 });
 
