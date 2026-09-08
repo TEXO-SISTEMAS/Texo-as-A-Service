@@ -741,7 +741,7 @@ Reglas de fondo:
 const METODOLOGIA_SF = `=== METODOLOGÍA — SALUD FINANCIERA ===
 
 QUÉ MIDE ESTA CAPA
-La Salud Financiera evalúa la rentabilidad real de cada agencia del grupo Texo y del holding en conjunto. Cruza el P&L del período (Excel "SALUD FINANCIERA POR ARENA POAS") con métricas derivadas. Las agencias son BRICK, NASTA, LUPE, OMD y ROGER. Todos los montos están en miles de guaraníes (miles de Gs.).
+La Salud Financiera evalúa la rentabilidad real de cada agencia del grupo Texo y del holding en conjunto. Cruza el P&L del período (Excel "SALUD FINANCIERA POR ARENA POAS") con métricas derivadas. Las agencias son BRICK, NASTA, LUPE, OMD y ROGER. En el Excel original los montos vienen en miles de Gs.; en el bloque DATOS de más abajo ya están convertidos a millones de Gs.
 
 DE DÓNDE SALEN LOS DATOS
 Un Excel con una hoja por agencia (SALUD BRICK, SALUD NASTA, etc.) más una hoja CONSOLIDADO AGENCIAS; un parser lo convierte a JSON. El bloque DATOS de más abajo ya viene filtrado por la agencia del usuario cuando corresponde. Hay un segundo dataset, el "Detalle de Ingresos 2026" (período enero–junio 2026), con su propio P&L interno: cuando lo uses aclará "Según el Detalle de Ingresos 2026"; para las cifras del Excel decí "Según los datos de Salud Financiera".
@@ -887,8 +887,9 @@ REGLAS:
 
     const agenciasResumen = agenciasInput?.length
       ? agenciasInput.map(a => {
-          const fmt   = v => (v/1e6).toFixed(2)+'M';
-          const fmtPC = v => Math.round(v/1e3)+'M'; // per cápita en millones de Gs.
+          // Los montos del Excel están en miles de Gs.; se expresan en millones de Gs. para el modelo.
+          const fmt   = v => 'Gs. ' + (( parseFloat(v)||0 )/1e3).toLocaleString('es-PY', { maximumFractionDigits: 0 }) + ' millones';
+          const fmtPC = fmt;
           const margen = a.revenue_total > 0 ? (a.ebitda / a.revenue_total * 100).toFixed(1) : '—';
           const margenSin = a.revenue_total > 0 ? (a.ebitda_sin3709 / a.revenue_total * 100).toFixed(1) : '—';
           const rendInv = a.total_egresos > 0 ? (a.ebitda / a.total_egresos * 100).toFixed(1) : '—';
@@ -898,7 +899,7 @@ REGLAS:
           CC_KEYS.forEach((k,i)=>{ const v=parseFloat(a[k]||0); if(v>maxVal){maxVal=v;maxName=CC_LABELS[i];} });
           const concPct = a.facturacion_cc > 0 ? (maxVal/a.facturacion_cc*100).toFixed(1) : '—';
           const innov = fmt((a.cc_otras_innovaciones||0)+(a.cc_pr_influencer||0)+(a.cc_social_media||0));
-          return `Agencia ${a.nombre}: Facturación total=${fmt(a.facturacion_total)} (CC=${fmt(a.facturacion_cc)}, DC=${fmt(a.facturacion_dc)}), Revenue=${fmt(a.revenue_total)}, EBITDA=${fmt(a.ebitda)} (margen ${margen}%), EBITDA sin3709=${fmt(a.ebitda_sin3709)} (margen ${margenSin}%), Rendimiento inversión=${rendInv}%, Percápita EBITDA=${fmtPC(a.percapita_ebitda)} Miles de Gs., Personas=${a.cantidad_personas}, Monto3709=${fmt(a.monto3709)}, Aporte innovación=${innov}, Expertise foco=${maxName} (${concPct}% del CC), Gastos RRHH=${fmt(a.gastos_rrhh)}, Gastos comerciales=${fmt(a.gastos_comerciales)}, Gastos admin=${fmt(a.gastos_admin)}, Total egresos=${fmt(a.total_egresos)}`;
+          return `Agencia ${a.nombre}: Facturación total=${fmt(a.facturacion_total)} (CC=${fmt(a.facturacion_cc)}, DC=${fmt(a.facturacion_dc)}), Revenue=${fmt(a.revenue_total)}, EBITDA=${fmt(a.ebitda)} (margen ${margen}%), EBITDA sin3709=${fmt(a.ebitda_sin3709)} (margen ${margenSin}%), Rendimiento inversión=${rendInv}%, Percápita EBITDA=${fmtPC(a.percapita_ebitda)}, Personas=${a.cantidad_personas}, Monto3709=${fmt(a.monto3709)}, Aporte innovación=${innov}, Expertise foco=${maxName} (${concPct}% del CC), Gastos RRHH=${fmt(a.gastos_rrhh)}, Gastos comerciales=${fmt(a.gastos_comerciales)}, Gastos admin=${fmt(a.gastos_admin)}, Total egresos=${fmt(a.total_egresos)}`;
         }).join('\n')
       : 'No hay datos de agencias disponibles.';
 
@@ -936,6 +937,7 @@ ${topCli ? `\nTop clientes (% facturación):\n${topCli}` : ''}`;
 
     const bloqueDatos = `${agenciaRestriccion}
 === DATOS DEL PERÍODO — SALUD FINANCIERA (corte ${fechaCorte}) ===
+Los montos monetarios traen su unidad en el propio texto (p. ej. "Gs. 1.430 millones"). Citalos con esa misma unidad, sin reescalar.
 
 DATOS ACTUALES DE LAS AGENCIAS:
 ${agenciasResumen}
