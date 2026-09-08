@@ -423,6 +423,21 @@ body.fullscreen .main { padding-top:64px; }
   flex-shrink:0;transition:opacity .15s;align-self:flex-end;
 }
 .chat-send:disabled{opacity:.4;cursor:default}
+.chat-mic{
+  width:36px;height:36px;border-radius:8px;flex-shrink:0;align-self:flex-end;
+  border:1.5px solid var(--border);background:var(--white);color:var(--accent);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;
+  transition:background .15s,border-color .15s,transform .15s;
+}
+.chat-mic:hover{border-color:var(--accent)}
+.chat-mic.listening{background:#d42b4f;border-color:#d42b4f;color:#fff;animation:micPulse 1.1s ease-in-out infinite}
+@keyframes micPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.chat-voice-btn{
+  background:none;border:none;cursor:pointer;font-size:15px;padding:4px 6px;border-radius:6px;
+  opacity:.4;transition:opacity .15s,background .15s;line-height:1;
+}
+.chat-voice-btn:hover{background:rgba(255,255,255,.12)}
+.chat-voice-btn.on{opacity:1}
 .chat-disclaimer{font-size:11px;color:var(--muted2);text-align:center;padding:0 12px 9px;flex-shrink:0;line-height:1.4}
 .chat-chart-wrap{width:100%;height:190px;position:relative;margin-top:10px;background:#fff;border-radius:8px;padding:8px;border:1px solid var(--border)}
 
@@ -1090,6 +1105,7 @@ body.fullscreen .main { padding-top:64px; }
           <div class="chat-header-title">Asistente Financiero</div>
           <div class="chat-header-sub">Texo as a Service · Salud Financiera</div>
         </div>
+        <button class="chat-voice-btn" id="chatVoiceBtn" onclick="toggleVoice()" title="Leer las respuestas en voz alta">🔈</button>
         <button class="chat-close" onclick="toggleChat()" title="Cerrar">✕</button>
       </div>
       <div class="chat-messages" id="chatMessages">
@@ -1107,6 +1123,7 @@ body.fullscreen .main { padding-top:64px; }
       <div class="chat-disclaimer">Responde exclusivamente sobre Salud Financiera de Texo as a Service</div>
       <div class="chat-input-row">
         <textarea class="chat-input" id="chatInput" rows="1" placeholder="Escribí tu pregunta aquí..." onkeydown="chatKeydown(event)" oninput="autoResize(this)"></textarea>
+        <button class="chat-mic" id="chatMic" onclick="toggleMic()" title="Preguntar por voz" hidden>🎙</button>
         <button class="chat-send" id="chatSend" onclick="sendChat()">➤</button>
       </div>
       <!-- barra de estado con acciones contextuales -->
@@ -3211,6 +3228,109 @@ function chatKeydown(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
 }
 
+/* ── VOZ ──────────────────────────────────────────────────────────────────
+   Web Speech API nativa del navegador. Salida (leer respuestas) + entrada (micrófono). */
+const _synth = window.speechSynthesis || null;
+let _voice = null;
+let _voiceOn = false;
+let _audioUnlocked = false;
+
+function pickVoice() {
+  if (!_synth) return;
+  const vs = _synth.getVoices();
+  _voice = vs.find(v => v.name === 'Google español')
+        || vs.find(v => /^es-/i.test(v.lang) && v.lang.toLowerCase() !== 'es-es')
+        || vs.find(v => /^es/i.test(v.lang)) || null;
+}
+if (_synth) { _synth.addEventListener('voiceschanged', pickVoice); pickVoice(); }
+
+// Desbloqueo de audio: los navegadores no dejan hablar hasta el primer gesto del usuario.
+function unlockAudio() {
+  if (_audioUnlocked || !_synth) return;
+  _audioUnlocked = true;
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; _synth.speak(u); } catch(e) {}
+}
+document.addEventListener('click', unlockAudio, { once: false });
+document.addEventListener('keydown', unlockAudio, { once: false });
+
+// Limpia markdown y marcadores para que la lectura suene natural.
+function stripForSpeech(text) {
+  return (text || '')
+    .replace(/\[\[(?:CHART|SCROLL):[^\]]+\]\]/g, '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/^\s*\|.*\|\s*$/gm, '')          // filas de tabla
+    .replace(/[*_#`>]/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // links
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Primeras 1-2 oraciones, hasta ~320 caracteres.
+function briefForSpeech(text) {
+  const clean = stripForSpeech(text);
+  if (clean.length <= 320) return clean;
+  const cut = clean.slice(0, 320);
+  const lastStop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('? '), cut.lastIndexOf('! '));
+  return (lastStop > 80 ? cut.slice(0, lastStop + 1) : cut) + '…';
+}
+
+function speak(text) {
+  if (!_synth || !_voiceOn || !text) return;
+  _synth.cancel();
+  const u = new SpeechSynthesisUtterance(briefForSpeech(text));
+  if (_voice) { u.voice = _voice; u.lang = _voice.lang; } else { u.lang = 'es-MX'; }
+  u.rate = 1.03;
+  _synth.speak(u);
+}
+
+function toggleVoice() {
+  _voiceOn = !_voiceOn;
+  try { localStorage.setItem('chatVoiceOn', _voiceOn ? '1' : '0'); } catch(e) {}
+  const btn = document.getElementById('chatVoiceBtn');
+  if (btn) { btn.classList.toggle('on', _voiceOn); btn.textContent = _voiceOn ? '🔊' : '🔈'; btn.title = _voiceOn ? 'Voz activada — tocá para silenciar' : 'Leer las respuestas en voz alta'; }
+  if (!_voiceOn && _synth) _synth.cancel();
+}
+
+try {
+  if (localStorage.getItem('chatVoiceOn') === '1') toggleVoice();
+} catch(e) {}
+
+/* ── MICRÓFONO ── */
+const _SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+let _rec = null, _listening = false;
+
+if (_SR && document.getElementById('chatMic')) {
+  document.getElementById('chatMic').hidden = false;
+  _rec = new _SR();
+  _rec.lang = 'es-MX';
+  _rec.interimResults = false;
+  _rec.maxAlternatives = 1;
+  _rec.onresult = e => {
+    const t = e.results[0][0].transcript;
+    const input = document.getElementById('chatInput');
+    input.value = t;
+    autoResize(input);
+    sendChat();
+  };
+  _rec.onend = () => { _listening = false; updateMicUI(); };
+  _rec.onerror = () => { _listening = false; updateMicUI(); };
+}
+
+function updateMicUI() {
+  const btn = document.getElementById('chatMic');
+  if (btn) btn.classList.toggle('listening', _listening);
+  if (_listening) setChatStatus('● Escuchando…', true);
+  else if (document.getElementById('chatStatusText')?.textContent === '● Escuchando…') setChatStatus('Conversación activa');
+}
+
+function toggleMic() {
+  if (!_rec) return;
+  unlockAudio();
+  if (_listening) { _rec.stop(); return; }
+  if (_synth) _synth.cancel();
+  try { _rec.start(); _listening = true; updateMicUI(); } catch(e) { _listening = false; }
+}
+
 const AGENCY_COLORS = ['#e85d26','#6c3fc5','#0ea5b0','#d4900a','#d42b4f'];
 const AGENCY_NAMES  = ['BRICK','NASTA','LUPE','OMD','ROGER'];
 const CHAT_GRID = 'rgba(0,0,0,.06)';
@@ -3444,6 +3564,7 @@ async function sendChat() {
     if (json.reply) {
       chatHistory.push({ role: 'assistant', content: json.reply });
       appendMsg('assistant', json.reply);
+      speak(json.reply);
       setChatStatus('Guardando...', true);
       saveChatSession();
       autoSaveToDrive();
