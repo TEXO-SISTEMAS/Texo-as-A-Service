@@ -551,7 +551,8 @@ app.post('/api/ask-globalnum', requireAuth, async (req, res) => {
     const { summary, messages } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensajes inválidos' });
 
-    const fmtB = v => v >= 1e9 ? (v/1e9).toFixed(1)+'B Gs.' : v >= 1e6 ? (v/1e6).toFixed(0)+'M Gs.' : Math.round(v).toLocaleString('es-PY')+' Gs.';
+    // Cifra completa, sin abreviar: puntos de miles + "Gs" al final (ej. 65.495.179.490 Gs)
+    const fmtB = v => Math.round(Math.abs(Number(v) || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' Gs';
 
     // Serializar matriz mes × agencia
     const agMesLines = [];
@@ -612,6 +613,12 @@ ${Object.entries(summary.topClientesPorMes||{}).map(([mes,clis])=>`  ${mes}:\n${
 Tu rol es interpretar los datos de Inversión Publicitaria — el sistema de tracking de inversión publicitaria de las agencias BRICK, NASTA, LUPE, OMD y ROGER.
 ${agenciaRestriccionGN}
 ${ctx}
+
+FORMATO DE CIFRAS (OBLIGATORIO):
+- Escribí SIEMPRE los montos en guaraníes con el número completo, sin abreviar: separá los miles con puntos y poné "Gs" al final. Ejemplo correcto: 65.495.179.490 Gs.
+- PROHIBIDO abreviar o redondear a una escala: nunca "65.495 millones", nunca "65,5 mil millones", nunca "65 MM", nunca "≈ 65 B".
+- PROHIBIDO usar las palabras "millones", "miles de millones" o "billones" para describir un monto.
+- Los montos de los DATOS de arriba ya vienen en ese formato exacto: copiá el número tal cual, sin transformarlo.
 
 REGLAS:
 1. Respondé siempre en español, con lenguaje ejecutivo pero directo.

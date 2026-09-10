@@ -530,21 +530,15 @@ const GRID  = 'rgba(0,0,0,.06)';
 const AG_COLOR = { NASTA:'#6c3fc5', BRICK:'#e85d26', LUPE:'#0ea5b0', OMD:'#d4900a', ROGER:'#d42b4f' };
 const MD_COLOR = { 'TV ABIERTA':'#3b82f6', RADIO:'#a855f7', DIGITAL:'#10b981', PRENSA:'#f59e0b', 'TV CABLE':'#ef4444', 'VIA PUBLICA':'#ec4899', OTROS:'#6b7280' };
 
-function fmtGs(v) {
-  if (!v) return 'Gs. 0';
-  if (v >= 1e12) return 'Gs. ' + (v/1e12).toFixed(1) + 'B';
-  if (v >= 1e9)  return 'Gs. ' + (v/1e9).toFixed(1) + 'B';
-  if (v >= 1e6)  return 'Gs. ' + (v/1e6).toFixed(0) + 'M';
-  return 'Gs. ' + Math.round(v).toLocaleString('es-PY');
+// Cifra completa, sin abreviar: puntos como separador de miles + "Gs" al final (ej. 65.495.179.490 Gs)
+function groupGs(v) {
+  const n = Math.round(Math.abs(Number(v) || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (Number(v) < 0 ? '-' : '') + n + ' Gs';
 }
-function fmtGsShort(v) {
-  if (!v) return '0';
-  if (v >= 1e9)  return (v/1e9).toFixed(1) + 'B';
-  if (v >= 1e6)  return (v/1e6).toFixed(0) + 'M';
-  return Math.round(v).toLocaleString('es-PY');
-}
+function fmtGs(v)       { return v ? groupGs(v) : '0 Gs'; }
+function fmtGsShort(v)  { return v ? groupGs(v) : '0 Gs'; }
+function fmtGsExacto(v) { return v > 0 ? groupGs(v) : '—'; }
 function pct(v, total) { return total > 0 ? (v/total*100).toFixed(1) + '%' : '—'; }
-function fmtGsExacto(v) { return v > 0 ? 'Gs. ' + Math.round(v).toLocaleString('es-PY') : '—'; }
 
 // ── CARGA ARCHIVO (parse en browser para evitar 413) ─────────────────────────
 const MES_NUM = { Ene:1,Feb:2,Mar:3,Abr:4,May:5,Jun:6,Jul:7,Ago:8,Sep:9,Oct:10,Nov:11,Dic:12 };
@@ -884,7 +878,7 @@ function renderCharts(d) {
         },
         scales: {
           x: { ticks: { color: TICK, font: FONT }, grid: { color: 'transparent' } },
-          y: { ticks: { color: TICK, font: FONT, callback: v => fmtGsShort(v) }, grid: { color: GRID } }
+          y: { ticks: { color: TICK, font: FONT, callback: v => fmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid: { color: GRID } }
         }
       }
     });
@@ -931,7 +925,7 @@ function renderCharts(d) {
           }
         },
         scales: {
-          x: { stacked: true, ticks: { color: TICK, font: FONT, callback: v => fmtGsShort(v) }, grid: { color: GRID } },
+          x: { stacked: true, ticks: { color: TICK, font: FONT, callback: v => fmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid: { color: GRID } },
           y: { stacked: true, ticks: { color: TICK, font: FONT }, grid: { color: 'transparent' } }
         }
       }
@@ -968,7 +962,7 @@ function renderCharts(d) {
       }},
       scales:{
         x:{ ticks:{ color:TICK, font:{...FONT,weight:'600'} }, grid:{ color:'transparent' }},
-        y:{ ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }}
+        y:{ ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid:{ color:GRID }}
       }
     }
   });
@@ -1035,7 +1029,7 @@ function renderCharts(d) {
         callbacks:{ label: ctx => ' ' + fmtGs(ctx.parsed.x) + ' · ' + pct(ctx.parsed.x, d.totales.inversion) }
       }},
       scales:{
-        x:{ ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v) }, grid:{ color:GRID }},
+        x:{ ticks:{ color:TICK, font:FONT, callback: v => fmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid:{ color:GRID }},
         y:{ ticks:{ color:TICK, font:{...FONT,size:11} }, grid:{ color:'transparent' }}
       }
     }
@@ -1052,7 +1046,7 @@ function renderTablaAgMes() {
   rows.forEach(r => { if (r.nMes>=1&&r.nMes<=12) pivot[r.nMes][r.agencia]=(pivot[r.nMes][r.agencia]||0)+r.invGs; });
   const totAg  = {}; agencias.forEach(ag=>{ totAg[ag]=Object.values(pivot).reduce((s,m)=>s+(m[ag]||0),0); });
   const totGen = agencias.reduce((s,ag)=>s+totAg[ag],0);
-  const fN     = v => v>0 ? Math.round(v).toLocaleString('es-PY') : '—';
+  const fN     = v => v>0 ? groupGs(v) : '—';
   const fP     = (v,t) => t>0 ? (v/t*100).toFixed(1)+'%' : '—';
   const agColor= {NASTA:'#6c3fc5',BRICK:'#e85d26',LUPE:'#0ea5b0',OMD:'#d4900a',ROGER:'#d42b4f'};
   const cell   = (v, totMes, totAgencia) => v > 0
@@ -1080,7 +1074,7 @@ function renderTablaMedAg() {
   rows.forEach(r => { if (r.medio&&pivot[r.medio]) pivot[r.medio][r.agencia]=(pivot[r.medio][r.agencia]||0)+r.invGs; });
   const totAg    = {}; agencias.forEach(ag=>{ totAg[ag]=medios.reduce((s,m)=>s+(pivot[m][ag]||0),0); });
   const totGen   = agencias.reduce((s,ag)=>s+totAg[ag],0);
-  const fN       = v => v>0 ? Math.round(v).toLocaleString('es-PY') : '—';
+  const fN       = v => v>0 ? groupGs(v) : '—';
   const fPct     = (v, tot) => tot>0 ? (v/tot*100).toFixed(1)+'%' : '—';
   const agColor  = {NASTA:'#6c3fc5',BRICK:'#e85d26',LUPE:'#0ea5b0',OMD:'#d4900a',ROGER:'#d42b4f'};
   const cell     = (v, tot) => v > 0
@@ -1130,7 +1124,7 @@ function renderCliMesH() {
         tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmtGsExacto(ctx.parsed.x) } }
       },
       scales: {
-        x: { stacked:true, ticks:{ color:TICK, font:FONT, callback:v=>fmtGsShort(v) }, grid:{ color:GRID } },
+        x: { stacked:true, ticks:{ color:TICK, font:FONT, callback:v=>fmtGsShort(v), maxTicksLimit:4, maxRotation:0 }, grid:{ color:GRID } },
         y: { stacked:true, ticks:{ color:TICK, font:{...FONT,size:12} }, grid:{ color:'transparent' } }
       }
     }
@@ -1291,7 +1285,7 @@ function renderInsights(d) {
     const t   = d.totales;
     if (!t) return;
     const inv   = t.inversion || 1;
-    const fGsI  = v => 'Gs. ' + Math.round(v).toLocaleString('es-PY');
+    const fGsI  = v => groupGs(v);
     const pctI  = (v, total) => total > 0 ? (v / total * 100).toFixed(1) + '%' : '—';
 
     // ── Inversión por agencia ──────────────────────────────────────────────────
