@@ -350,67 +350,6 @@ input[type=file]{display:none}
   </div>
 
   <div id="dashboard" style="display:none">
-    <div class="page-header">
-      <div>
-        <div class="period-label-sub" id="periodLabel" style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px">—</div>
-      </div>
-      <div class="period-tabs">
-        <button class="ptab active" onclick="setPeriod('mensual',this)">Mensual</button>
-        <button class="ptab" onclick="setPeriod('trimestral',this)">Trimestral</button>
-        <button class="ptab" onclick="setPeriod('semestral',this)">Semestral</button>
-      </div>
-    </div>
-
-    <!-- Período breakdown -->
-    <div class="period-grid" id="periodBreakdown"></div>
-
-    <!-- Detalle de inversión -->
-    <div class="chart-card wide" style="margin-bottom:16px;padding:20px 16px">
-      <div class="chart-title">Detalle de inversión</div>
-      <div class="chart-subtitle">Por agencia · cliente · medio · tipo · grupo · mes</div>
-      <div id="detalleNoData" class="detalle-empty" style="display:none">Recargá el Excel para ver el detalle de transacciones</div>
-      <div id="detalleData" style="display:none">
-        <div class="detalle-search-row">
-          <input class="detalle-search" type="text" id="detalleSearch" placeholder="Buscar por cliente, agencia, medio, tipo, grupo..." oninput="filtrarDetalle()">
-          <select class="detalle-select" id="filterAgencia" onchange="filtrarDetalle()"><option value="">Todas las agencias</option></select>
-          <select class="detalle-select" id="filterCliente" onchange="filtrarDetalle()"><option value="">Todos los clientes</option></select>
-          <select class="detalle-select" id="filterMedio"   onchange="filtrarDetalle()"><option value="">Todos los medios</option></select>
-          <select class="detalle-select" id="filterGrupo"   onchange="filtrarDetalle()"><option value="">Todos los grupos</option></select>
-          <select class="detalle-select" id="filterMes"     onchange="filtrarDetalle()"><option value="">Todos los meses</option></select>
-
-          <select class="detalle-select" id="filterMoneda"  onchange="filtrarDetalle()"><option value="">Todas las monedas</option></select>
-          <span class="detalle-count" id="detalleCount"></span>
-        </div>
-        <div style="overflow-x:auto">
-          <table id="tDetalle">
-            <thead><tr>
-              <th style="text-align:left">Agencia</th>
-              <th style="text-align:left">Cliente</th>
-              <th style="text-align:left">Medio</th>
-              <th style="text-align:left">Tipo</th>
-              <th style="text-align:left">Grupo / Proveedor</th>
-              <th style="text-align:left">Canal</th>
-              <th>Mes</th>
-              <th>Año</th>
-              <th>Moneda</th>
-              <th>Importe</th>
-              <th>Comisión</th>
-              <th>Importe Gs.</th>
-              <th id="thUsd" style="display:none">Importe USD</th>
-              <th>Com. Gs.</th>
-              <th>% Com.</th>
-            </tr></thead>
-            <tbody id="tbDetalle"></tbody>
-          </table>
-        </div>
-        <div class="pag-row">
-          <button class="pag-btn" id="pagPrev" onclick="cambiarPagina(-1)">← Anterior</button>
-          <span class="pag-info" id="pagInfo"></span>
-          <button class="pag-btn" id="pagNext" onclick="cambiarPagina(1)">Siguiente →</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Agencias + Medios -->
     <div class="charts-grid triple" style="margin-bottom:16px">
       <div class="chart-card">
@@ -513,6 +452,67 @@ input[type=file]{display:none}
         </table>
       </div>
       <div class="chart-insight" id="insightCanales"></div>
+    </div>
+
+    <div class="page-header">
+      <div>
+        <div class="period-label-sub" id="periodLabel" style="font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px">—</div>
+      </div>
+      <div class="period-tabs">
+        <button class="ptab active" onclick="setPeriod('mensual',this)">Mensual</button>
+        <button class="ptab" onclick="setPeriod('trimestral',this)">Trimestral</button>
+        <button class="ptab" onclick="setPeriod('semestral',this)">Semestral</button>
+      </div>
+    </div>
+
+    <!-- Período breakdown -->
+    <div class="period-grid" id="periodBreakdown"></div>
+
+    <!-- Detalle de inversión -->
+    <div class="chart-card wide" style="margin-bottom:16px;padding:20px 16px">
+      <div class="chart-title">Detalle de inversión</div>
+      <div class="chart-subtitle">Por agencia · cliente · medio · tipo · grupo · mes</div>
+      <div id="detalleNoData" class="detalle-empty" style="display:none">Recargá el Excel para ver el detalle de transacciones</div>
+      <div id="detalleData" style="display:none">
+        <div class="detalle-search-row">
+          <input class="detalle-search" type="text" id="detalleSearch" placeholder="Buscar por cliente, agencia, medio, tipo, grupo..." oninput="filtrarDetalle()">
+          <select class="detalle-select" id="filterAgencia" onchange="filtrarDetalle()"><option value="">Todas las agencias</option></select>
+          <select class="detalle-select" id="filterCliente" onchange="filtrarDetalle()"><option value="">Todos los clientes</option></select>
+          <select class="detalle-select" id="filterMedio"   onchange="filtrarDetalle()"><option value="">Todos los medios</option></select>
+          <select class="detalle-select" id="filterGrupo"   onchange="filtrarDetalle()"><option value="">Todos los grupos</option></select>
+          <select class="detalle-select" id="filterMes"     onchange="filtrarDetalle()"><option value="">Todos los meses</option></select>
+
+          <select class="detalle-select" id="filterMoneda"  onchange="filtrarDetalle()"><option value="">Todas las monedas</option></select>
+          <span class="detalle-count" id="detalleCount"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="tDetalle">
+            <thead><tr>
+              <th style="text-align:left">Agencia</th>
+              <th style="text-align:left">Cliente</th>
+              <th style="text-align:left">Medio</th>
+              <th style="text-align:left">Tipo</th>
+              <th style="text-align:left">Grupo / Proveedor</th>
+              <th style="text-align:left">Canal</th>
+              <th>Mes</th>
+              <th>Año</th>
+              <th>Moneda</th>
+              <th>Importe</th>
+              <th>Comisión</th>
+              <th>Importe Gs.</th>
+              <th id="thUsd" style="display:none">Importe USD</th>
+              <th>Com. Gs.</th>
+              <th>% Com.</th>
+            </tr></thead>
+            <tbody id="tbDetalle"></tbody>
+          </table>
+        </div>
+        <div class="pag-row">
+          <button class="pag-btn" id="pagPrev" onclick="cambiarPagina(-1)">← Anterior</button>
+          <span class="pag-info" id="pagInfo"></span>
+          <button class="pag-btn" id="pagNext" onclick="cambiarPagina(1)">Siguiente →</button>
+        </div>
+      </div>
     </div>
 
   </div>
