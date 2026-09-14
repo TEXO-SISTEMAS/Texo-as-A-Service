@@ -268,4 +268,53 @@ async function saveGlobalnum(data) {
   });
 }
 
-module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, updateChat, listChats, getChat, deleteChat, getMarketing, saveMarketing, getMarketingIntel, saveMarketingIntel, getUsuarios, saveUsuarios, getLatestGlobalnum, saveGlobalnum };
+// ── ARCHIVO GENÉRICO POR NOMBRE (usage logs, etc.) ───────────────────────────
+async function getFileByName(filename) {
+  const drive = getDrive();
+  const res = await drive.files.list({
+    q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name = '${filename}' and trashed=false`,
+    fields: 'files(id, name, createdTime)',
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true
+  });
+  const files = res.data.files || [];
+  if (!files.length) return null;
+  return await getUpload(files[0].id);
+}
+
+async function saveFileByName(filename, data) {
+  const drive = getDrive();
+  try {
+    const res = await drive.files.list({
+      q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name = '${filename}' and trashed=false`,
+      fields: 'files(id)',
+      includeItemsFromAllDrives: true,
+      supportsAllDrives: true
+    });
+    for (const f of (res.data.files || [])) {
+      try { await drive.files.delete({ fileId: f.id, supportsAllDrives: true }); } catch(e) {}
+    }
+  } catch(e) {}
+  const stream = Readable.from([JSON.stringify(data)]);
+  const result = await drive.files.create({
+    requestBody: { name: filename, mimeType: 'application/json', parents: [FOLDER_ID] },
+    media: { mimeType: 'application/json', body: stream },
+    fields: 'id, name, createdTime',
+    supportsAllDrives: true
+  });
+  return result.data;
+}
+
+async function listFilesByPrefix(prefix) {
+  const drive = getDrive();
+  const res = await drive.files.list({
+    q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name contains '${prefix}' and trashed=false`,
+    fields: 'files(id, name, createdTime)',
+    orderBy: 'name desc',
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true
+  });
+  return res.data.files || [];
+}
+
+module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, updateChat, listChats, getChat, deleteChat, getMarketing, saveMarketing, getMarketingIntel, saveMarketingIntel, getUsuarios, saveUsuarios, getLatestGlobalnum, saveGlobalnum, getFileByName, saveFileByName, listFilesByPrefix };

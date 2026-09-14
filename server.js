@@ -382,6 +382,59 @@ app.delete('/api/admin/usuarios/:email', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── USO / COSTO DE IA ─────────────────────────────────────────────────────────
+app.get('/api/admin/usage', requireAdmin, async (req, res) => {
+  try {
+    const days = Math.min(90, Math.max(1, parseInt(req.query.days) || 30));
+    const files = await drive.listFilesByPrefix('usage-');
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+    const relevant = files.filter(f => {
+      const m = f.name.match(/usage-(\d{4}-\d{2}-\d{2})\.json/);
+      return m && new Date(m[1]) >= cutoff;
+    });
+
+    const porDia = {}, porEndpoint = {}, porUsuario = {};
+    let totalReq = 0, totalIn = 0, totalOut = 0, totalCost = 0;
+
+    for (const f of relevant) {
+      const data = await drive.getUpload(f.id).catch(() => null);
+      for (const r of (data?.records || [])) {
+        const dia = r.ts?.slice(0, 10) || f.name.slice(6, 16);
+        porDia[dia] = porDia[dia] || { requests: 0, cost_usd: 0 };
+        porDia[dia].requests++; porDia[dia].cost_usd += r.cost_usd || 0;
+
+        porEndpoint[r.endpoint] = porEndpoint[r.endpoint] || { requests: 0, cost_usd: 0 };
+        porEndpoint[r.endpoint].requests++; porEndpoint[r.endpoint].cost_usd += r.cost_usd || 0;
+
+        const u = r.email || 'anónimo';
+        porUsuario[u] = porUsuario[u] || { requests: 0, cost_usd: 0 };
+        porUsuario[u].requests++; porUsuario[u].cost_usd += r.cost_usd || 0;
+
+        totalReq++; totalIn += r.input_tokens || 0; totalOut += r.output_tokens || 0; totalCost += r.cost_usd || 0;
+      }
+    }
+
+    const round = v => Math.round(v * 1e4) / 1e4;
+    for (const k in porDia) porDia[k].cost_usd = round(porDia[k].cost_usd);
+    for (const k in porEndpoint) porEndpoint[k].cost_usd = round(porEndpoint[k].cost_usd);
+    for (const k in porUsuario) porUsuario[k].cost_usd = round(porUsuario[k].cost_usd);
+
+    res.json({
+      dias: days,
+      total_requests: totalReq,
+      total_input_tokens: totalIn,
+      total_output_tokens: totalOut,
+      total_cost_usd: round(totalCost),
+      por_dia: porDia,
+      por_endpoint: porEndpoint,
+      por_usuario: porUsuario,
+    });
+  } catch(e) {
+    console.error('ERROR /api/admin/usage:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── UPLOAD ────────────────────────────────────────────────────────────────────
 app.post('/api/upload', upload.single('archivo'), async (req, res) => {
   try {
@@ -635,6 +688,7 @@ REGLAS:
       messages: messages.map(m => ({ role: m.role, content: m.content }))
     });
 
+    logUsage({ endpoint: 'ask-globalnum', user: req.user, model: MODEL_CHAT, usage: response.usage });
     res.json({ reply: response.content[0].text });
   } catch (err) {
     console.error('ERROR /api/ask-globalnum:', err);
@@ -727,6 +781,47 @@ app.delete('/api/chat/history/:id', async (req, res) => {
 // NADA dinámico (fecha, usuario, timestamp) puede entrar en [1] o [2].
 
 const MODEL_CHAT = 'claude-sonnet-4-5';
+
+// ── TRACKING DE USO / COSTO DE IA ─────────────────────────────────────────────
+// Tarifas oficiales de Anthropic, USD por millón de tokens (entrada/salida).
+const PRICING_USD_POR_MTOK = {
+  'claude-sonnet-4-5': { in: 3,  out: 15 },
+  'claude-sonnet-5':   { in: 2,  out: 10 },
+  'claude-haiku-4-5':  { in: 1,  out: 5  },
+};
+
+function costoUsd(model, usage) {
+  const p = PRICING_USD_POR_MTOK[model] || PRICING_USD_POR_MTOK['claude-sonnet-4-5'];
+  const inTok = usage?.input_tokens || 0;
+  const outTok = usage?.output_tokens || 0;
+  return (inTok * p.in + outTok * p.out) / 1e6;
+}
+
+// Un archivo por día en Drive (usage-YYYY-MM-DD.json). Best-effort: nunca
+// rompe la respuesta al usuario si Drive falla.
+async function logUsage({ endpoint, user, model, usage }) {
+  try {
+    const cost = costoUsd(model, usage);
+    const record = {
+      ts: new Date().toISOString(),
+      endpoint,
+      email: user?.email || null,
+      agencia: user?.agencia || null,
+      model,
+      input_tokens: usage?.input_tokens || 0,
+      output_tokens: usage?.output_tokens || 0,
+      cost_usd: Math.round(cost * 1e6) / 1e6,
+    };
+    console.log(`[usage] ${endpoint} ${model} in=${record.input_tokens} out=${record.output_tokens} $${record.cost_usd.toFixed(4)} (${record.email || 'anon'})`);
+    const filename = `usage-${record.ts.slice(0, 10)}.json`;
+    const existing = await drive.getFileByName(filename).catch(() => null);
+    const records = (existing?.records || []);
+    records.push(record);
+    await drive.saveFileByName(filename, { records });
+  } catch (e) {
+    console.error('ERROR logUsage:', e.message);
+  }
+}
 
 const JARVIS_PERSONA = `Sos Jarvis, el mayordomo analista de Texo as a Service, un holding paraguayo de agencias de publicidad. Atendés a la dirección del grupo.
 
@@ -857,6 +952,7 @@ REGLAS:
         system: mktSystemPrompt,
         messages: messages.map(m => ({ role: m.role, content: m.content }))
       });
+      logUsage({ endpoint: 'chat-marketing', user: req.user, model: MODEL_CHAT, usage: response.usage });
       return res.json({ reply: response.content[0].text });
     }
 
@@ -886,6 +982,7 @@ REGLAS:
         system: adlensPrompt,
         messages: messages.map(m => ({ role: m.role, content: m.content }))
       });
+      logUsage({ endpoint: 'chat-adlens', user: req.user, model: MODEL_CHAT, usage: response.usage });
       return res.json({ reply: response.content[0].text });
     }
 
@@ -963,6 +1060,7 @@ ${ingresosResumen}`;
 
     const reply = (response.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
     if (!reply) return res.status(502).json({ error: 'El modelo no devolvió texto', stop_reason: response.stop_reason });
+    logUsage({ endpoint: 'chat-sf', user: req.user, model: MODEL_CHAT, usage: response.usage });
     res.json({ reply });
   } catch (err) {
     console.error('ERROR /api/chat:', err);
@@ -1258,6 +1356,7 @@ app.post('/api/marketing/refresh', async (req, res) => {
     }
 
     await drive.saveMarketingIntel(tipo, intel);
+    logUsage({ endpoint: 'marketing-refresh', user: req.user, model: 'claude-haiku-4-5', usage: response.usage });
     res.json({ ok: true, tipo, ...intel });
   } catch (err) {
     console.error('ERROR /api/marketing/refresh:', err);
