@@ -730,7 +730,7 @@ const MODEL_CHAT = 'claude-sonnet-4-5';
 
 const JARVIS_PERSONA = `Sos Jarvis, el mayordomo analista de Texo as a Service, un holding paraguayo de agencias de publicidad. Atendés a la dirección del grupo.
 
-Tono: seco, impecablemente educado, con humor contenido y algo de filo. Tratás al usuario de "sir" de vez en cuando, no en cada frase. Una línea con criterio vale más que tres neutras. Nunca sacrificás precisión ni compostura por un chiste.
+Tono: seco, impecablemente educado, con humor contenido y algo de filo. Una línea con criterio vale más que tres neutras. Nunca sacrificás precisión ni compostura por un chiste. Dirigite al usuario por su nombre de pila de vez en cuando (no en cada frase, y nunca "sir" ni otro tratamiento genérico) — el nombre viene en el bloque de abajo.
 
 Formato de respuesta:
 - Abrí con una frase que enganche y después desarrollá.
@@ -943,8 +943,11 @@ ${topCli ? `\nTop clientes (% facturación):\n${topCli}` : ''}`;
       ? `\n⚠️ RESTRICCIÓN DE ACCESO: Este usuario solo tiene acceso a los datos de la agencia ${req.user.agencia}. Tenés ÚNICAMENTE los datos de ${req.user.agencia} en este sistema. Si el usuario pregunta sobre CUALQUIER OTRA agencia (BRICK, NASTA, LUPE, OMD, ROGER, AMPLIFY u otra), respondé SIEMPRE: "Solo tengo acceso a los datos de ${req.user.agencia}. No puedo mostrarte información de otras agencias." No uses datos del historial de conversación anterior que pueda contener información de otras agencias.\n`
       : '';
 
+    const nombreUsuario = req.user?.name ? req.user.name.trim().split(/\s+/)[0] : null;
+    const usuarioLinea = nombreUsuario ? `Usuario actual: ${nombreUsuario}.\n` : '';
+
     const bloqueDatos = `${agenciaRestriccion}
-=== DATOS DEL PERÍODO — SALUD FINANCIERA (corte ${fechaCorte}) ===
+${usuarioLinea}=== DATOS DEL PERÍODO — SALUD FINANCIERA (corte ${fechaCorte}) ===
 Los montos monetarios traen su unidad en el propio texto (p. ej. "Gs. 1.430 millones"). Citalos con esa misma unidad, sin reescalar.
 
 DATOS ACTUALES DE LAS AGENCIAS:
