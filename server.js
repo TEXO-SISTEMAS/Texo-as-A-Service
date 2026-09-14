@@ -435,6 +435,33 @@ app.get('/api/admin/usage', requireAdmin, async (req, res) => {
   }
 });
 
+// ── BORRAR TODOS LOS CHATS (todas las sesiones, todos los módulos) ───────────
+// GET = solo cuenta cuántos hay, para mostrar antes de confirmar.
+// DELETE = borra de verdad. Ambos solo accesibles por el admin.
+app.get('/api/admin/chats/all', requireAdmin, async (req, res) => {
+  try {
+    const files = await drive.listAllChatFiles();
+    res.json({ count: files.length });
+  } catch(e) {
+    console.error('ERROR GET /api/admin/chats/all:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/admin/chats/all', requireAdmin, async (req, res) => {
+  try {
+    const files = await drive.listAllChatFiles();
+    let ok = 0, fail = 0;
+    for (const f of files) {
+      try { await drive.deleteChat(f.id); ok++; } catch(e) { fail++; console.error('ERROR borrando', f.name, e.message); }
+    }
+    res.json({ ok: true, borrados: ok, fallidos: fail, total: files.length });
+  } catch(e) {
+    console.error('ERROR DELETE /api/admin/chats/all:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── UPLOAD ────────────────────────────────────────────────────────────────────
 app.post('/api/upload', upload.single('archivo'), async (req, res) => {
   try {

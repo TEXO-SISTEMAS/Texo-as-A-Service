@@ -97,6 +97,32 @@ async function listChats() {
   return res.data.files || [];
 }
 
+// Todos los archivos de chat de los 4 módulos, de todos los usuarios/agencias.
+// listChats() (name contains 'chat-') agarra chat-sf-*, globalnum-chat-*,
+// adlens-chat-*, mkt-chat-* — pero al Global Num viejo (saveCurrentChat) lo
+// guarda como "globalnum-<timestamp>.json" sin "chat-", así que se suma
+// aparte. Nunca toca globalnum-latest.json (son los datos, no un chat).
+async function listAllChatFiles() {
+  const drive = getDrive();
+  const [porChat, globalnumViejo] = await Promise.all([
+    drive.files.list({
+      q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name contains 'chat-' and trashed=false`,
+      fields: 'files(id, name, createdTime)',
+      includeItemsFromAllDrives: true,
+      supportsAllDrives: true
+    }),
+    drive.files.list({
+      q: `'${FOLDER_ID}' in parents and mimeType='application/json' and name contains 'globalnum-' and not name contains 'latest' and not name contains 'chat-' and trashed=false`,
+      fields: 'files(id, name, createdTime)',
+      includeItemsFromAllDrives: true,
+      supportsAllDrives: true
+    })
+  ]);
+  const byId = new Map();
+  for (const f of [...(porChat.data.files || []), ...(globalnumViejo.data.files || [])]) byId.set(f.id, f);
+  return [...byId.values()];
+}
+
 async function getChat(fileId) {
   const drive = getDrive();
   const res = await drive.files.get(
@@ -317,4 +343,4 @@ async function listFilesByPrefix(prefix) {
   return res.data.files || [];
 }
 
-module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, updateChat, listChats, getChat, deleteChat, getMarketing, saveMarketing, getMarketingIntel, saveMarketingIntel, getUsuarios, saveUsuarios, getLatestGlobalnum, saveGlobalnum, getFileByName, saveFileByName, listFilesByPrefix };
+module.exports = { listUploads, saveUpload, getUpload, deleteUpload, getLatest, saveChat, updateChat, listChats, listAllChatFiles, getChat, deleteChat, getMarketing, saveMarketing, getMarketingIntel, saveMarketingIntel, getUsuarios, saveUsuarios, getLatestGlobalnum, saveGlobalnum, getFileByName, saveFileByName, listFilesByPrefix };

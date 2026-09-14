@@ -102,6 +102,17 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
     </div>
     <div id="usageBreakdown"></div>
   </div>
+
+  <div class="card" style="margin-top:24px">
+    <div class="card-title">Historial de chats</div>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:18px;line-height:1.6">
+      Borra todas las conversaciones guardadas de los 4 módulos (Salud Financiera, AdLens, Marketing, Global Num), de <strong style="color:rgba(240,240,64,.7)">todos los usuarios</strong>. No se puede deshacer.
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span id="chatsCount" style="font-size:13px;color:var(--muted)">Contando conversaciones guardadas...</span>
+      <button class="btn btn-danger" style="padding:8px 16px;font-size:13px" onclick="borrarTodosLosChats()">Borrar todos los chats</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -118,6 +129,38 @@ async function init() {
   }
   cargarUsuarios();
   cargarUso(30);
+  cargarConteoChats();
+}
+
+async function cargarConteoChats() {
+  const el = document.getElementById('chatsCount');
+  try {
+    const d = await fetch('/api/admin/chats/all').then(r => r.json());
+    el.textContent = d.count === 0
+      ? 'No hay conversaciones guardadas.'
+      : `${d.count} conversación${d.count === 1 ? '' : 'es'} guardada${d.count === 1 ? '' : 's'} en total.`;
+  } catch(e) {
+    el.textContent = 'No se pudo contar el historial.';
+  }
+}
+
+async function borrarTodosLosChats() {
+  const el = document.getElementById('chatsCount');
+  const d = await fetch('/api/admin/chats/all').then(r => r.json()).catch(() => ({ count: '?' }));
+  if (!d.count) { showToast('No hay conversaciones para borrar', 'error'); return; }
+  if (!confirm(`Vas a borrar ${d.count} conversaciones de TODOS los usuarios y módulos, de forma permanente. ¿Confirmás?`)) return;
+  if (!confirm('Última confirmación: esto no se puede deshacer. ¿Borrar todo el historial de chats?')) return;
+
+  setBusy(true);
+  try {
+    const r = await fetch('/api/admin/chats/all', { method: 'DELETE' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error);
+    showToast(`✓ ${data.borrados} conversaciones borradas${data.fallidos ? ` (${data.fallidos} fallaron)` : ''}`, 'success');
+    cargarConteoChats();
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally { setBusy(false); }
 }
 
 function fmtUsd(v) {
