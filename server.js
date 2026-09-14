@@ -970,6 +970,53 @@ ${ingresosResumen}`;
   }
 });
 
+// ── VOZ (ElevenLabs) ──────────────────────────────────────────────────────────
+// El navegador no puede usar voces de ElevenLabs directamente: el texto pasa por
+// acá, que llama a la API con la key del servidor y devuelve el audio (mp3).
+// Si no hay ELEVENLABS_API_KEY configurada, responde 501 y el frontend cae
+// automáticamente a la voz nativa del navegador (gratis, sin esto).
+const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '3mmJ2Z5SLZ9OkeZZcv5p'; // Oscar (ES latam)
+
+app.post('/api/tts', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || typeof text !== 'string') return res.status(400).json({ error: 'text requerido' });
+
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    if (!apiKey) return res.status(501).json({ error: 'ElevenLabs no configurado' });
+
+    const clean = text.trim().slice(0, 4000); // tope de seguridad ante respuestas inusualmente largas
+
+    const elRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'audio/mpeg'
+      },
+      body: JSON.stringify({
+        text: clean,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+      })
+    });
+
+    if (!elRes.ok) {
+      const detail = await elRes.text().catch(() => '');
+      console.error('ERROR ElevenLabs:', elRes.status, detail.slice(0, 300));
+      return res.status(502).json({ error: 'Error generando audio' });
+    }
+
+    const buf = Buffer.from(await elRes.arrayBuffer());
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Cache-Control', 'no-store');
+    res.send(buf);
+  } catch (err) {
+    console.error('ERROR /api/tts:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── MARKETING — DATOS ESTÁTICOS DEL HOLDING ──────────────────────────────────
 const HOLDING_DATA = [
   { nombre:'NASTA',   red:'WPP',              color:'#6c3fc5', anos:56,

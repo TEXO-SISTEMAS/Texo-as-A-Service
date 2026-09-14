@@ -3335,16 +3335,43 @@ function chunkForSpeech(text, maxLen = 180) {
   return chunks;
 }
 
-function speak(text) {
-  if (!_synth || !_voiceOn || !text) return;
-  _synth.cancel();
-  const clean = stripForSpeech(text);
-  if (!clean) return;
+// Detiene cualquier audio en curso, sea de ElevenLabs o del navegador.
+let _ttsAudio = null;
+function stopSpeaking() {
+  if (_ttsAudio) { try { _ttsAudio.pause(); } catch(e) {} _ttsAudio = null; }
+  if (_synth) _synth.cancel();
+}
+
+// Voz del navegador (gratis) — respaldo si ElevenLabs no está configurado o falla.
+function speakBrowser(clean) {
+  if (!_synth || !clean) return;
   for (const chunk of chunkForSpeech(clean)) {
     const u = new SpeechSynthesisUtterance(chunk);
     if (_voice) { u.voice = _voice; u.lang = _voice.lang; } else { u.lang = 'es-MX'; }
     u.rate = 1.03;
     _synth.speak(u);
+  }
+}
+
+async function speak(text) {
+  if (!_voiceOn || !text) return;
+  const clean = stripForSpeech(text);
+  if (!clean) return;
+  stopSpeaking();
+  try {
+    const resp = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: clean })
+    });
+    if (!resp.ok) throw new Error('tts-unavailable');
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    _ttsAudio = new Audio(url);
+    _ttsAudio.onended = () => URL.revokeObjectURL(url);
+    await _ttsAudio.play();
+  } catch(e) {
+    speakBrowser(clean); // ElevenLabs no configurado o falló: sigue sonando igual
   }
 }
 
@@ -3360,7 +3387,7 @@ function toggleVoice() {
     btn.innerHTML = _voiceOn ? VOICE_ICON_ON : VOICE_ICON_OFF;
     btn.title = _voiceOn ? 'Voz activada — tocá para silenciar' : 'Leer las respuestas en voz alta';
   }
-  if (!_voiceOn && _synth) _synth.cancel();
+  if (!_voiceOn) stopSpeaking();
 }
 
 try {
@@ -3399,7 +3426,7 @@ function toggleMic() {
   if (!_rec) return;
   unlockAudio();
   if (_listening) { _rec.stop(); return; }
-  if (_synth) _synth.cancel();
+  stopSpeaking();
   try { _rec.start(); _listening = true; updateMicUI(); } catch(e) { _listening = false; }
 }
 
