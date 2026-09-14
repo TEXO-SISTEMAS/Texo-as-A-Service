@@ -1642,6 +1642,7 @@ function renderDashboard(data){
     <div class="snav-item" data-sec="sec-4" onclick="openSection('sec-4')">04 · Innovación</div>
     <div class="snav-item" data-sec="sec-5" onclick="openSection('sec-5')">05 · Expertise</div>
     <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
+    <div class="snav-item" data-sec="ingresosSection" onclick="openSection('ingresosSection')">07 · Ingresos 2026</div>
   </div>
 
   <!-- INTRO DIMENSIONES -->
@@ -3099,7 +3100,7 @@ function openSection(id) {
 function initScrollSpy() {
   const mainEl = document.getElementById('main');
   if (!mainEl) return;
-  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6'];
+  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','ingresosSection'];
   mainEl.addEventListener('scroll', () => {
     let current = 'sec-1';
     for (const id of secIds) {
