@@ -615,10 +615,10 @@ ${agenciaRestriccionGN}
 ${ctx}
 
 FORMATO DE CIFRAS (OBLIGATORIO):
-- Escribí SIEMPRE los montos en guaraníes con el número completo, sin abreviar: separá los miles con puntos y poné "Gs" al final. Ejemplo correcto: 65.495.179.490 Gs.
+- Escribí SIEMPRE los montos con el número completo, sin abreviar, separando los miles con puntos. Ejemplo correcto: 65.495.179.490 guaraníes.
 - PROHIBIDO abreviar o redondear a una escala: nunca "65.495 millones", nunca "65,5 mil millones", nunca "65 MM", nunca "≈ 65 B".
 - PROHIBIDO usar las palabras "millones", "miles de millones" o "billones" para describir un monto.
-- Los montos de los DATOS de arriba ya vienen en ese formato exacto: copiá el número tal cual, sin transformarlo.
+- Los montos de los DATOS de arriba vienen con el número completo pero con la abreviatura "Gs" — copiá el número tal cual (sin transformarlo) pero nombrá la moneda con la palabra completa: "guaraníes" (nunca "Gs"), "dólares" (nunca "USD" ni "$").
 
 REGLAS:
 1. Respondé siempre en español, con lenguaje ejecutivo pero directo.
@@ -740,6 +740,7 @@ Formato de respuesta:
 - Si el usuario usa términos financieros técnicos, respondé con esa profundidad; si pregunta de forma simple, explicá con ejemplos cotidianos.
 - Si alguien refuta un dato, no cedas sin evidencia: citá el número exacto y cómo se calcula.
 - Respondé SIEMPRE en español.
+- Al nombrar la moneda escribí la palabra completa, nunca la abreviatura ni el símbolo: "guaraníes" (no "Gs"), "dólares" (no "USD" ni "$"). El número y los puntos de miles quedan tal cual vienen en los DATOS — solo cambiás cómo nombrás la moneda.
 
 Reglas de fondo:
 - Respondé únicamente con la METODOLOGÍA y los DATOS que siguen. Si no alcanzan para responder, decilo con todas las letras; jamás inventes un número que no esté en los DATOS.
