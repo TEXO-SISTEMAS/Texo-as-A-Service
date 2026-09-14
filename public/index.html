@@ -2166,7 +2166,11 @@ function renderDashboard(data){
 
   </div>
 
-  <!-- CTA Ver Resumen -->
+  <!-- CTA "Ver Resumen Ejecutivo" desactivada (sep 2026, pedido de Danilo):
+       el score y el estado ya están arriba en la barra compacta, y el
+       recorrido de las 6 secciones ya cubre el detalle. El bloque de abajo
+       (resumenGroup) queda intacto en el código sin usar — para reactivar,
+       descomentar el botón de acá abajo.
   <div class="resumen-cta" id="ctaResumen" onclick="toggleResumen()">
     <div class="resumen-cta-body">
       <div class="resumen-cta-eyebrow">Análisis completo</div>
@@ -2175,8 +2179,9 @@ function renderDashboard(data){
     </div>
     <div class="resumen-cta-arrow">↓</div>
   </div>
+  -->
 
-  <!-- RESUMEN + SOPORTE (oculto por defecto) -->
+  <!-- RESUMEN + SOPORTE (oculto por defecto, y ahora inalcanzable — ver comentario arriba) -->
   <div id="resumenGroup" style="display:none">
 
     <div class="table-wrap"><table>
