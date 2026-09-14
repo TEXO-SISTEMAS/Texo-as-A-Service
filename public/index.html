@@ -1248,6 +1248,13 @@ const fmt = v => {
   return n.toFixed(0);
 };
 const fmtPct = v => v!=null?(parseFloat(v)*100).toFixed(1)+'%':'—';
+// Campos crudos vienen en miles de Gs.; para "millones de Gs." se divide por
+// mil (no por un millón). Usar en TOOLTIPS (el valor que se lee); los ejes
+// quedan con fmt()/abreviado para no saturar la escala con texto largo.
+const fmtMM = v => {
+  const n = Math.round((parseFloat(v)||0) / 1e3);
+  return n.toLocaleString('es-PY') + ' millones de Gs.';
+};
 
 function showToast(msg,type='success'){
   const t=document.getElementById('toast');
@@ -1331,7 +1338,7 @@ function baseOpts(pct=false){
   return {
     responsive:true, maintainAspectRatio:false,
     plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0f1117', titleFont:{...FONT,weight:'700'}, bodyFont:FONT, padding:10, cornerRadius:6,
-      callbacks:{ label: c => ' '+fmt(c.raw)+(pct?'%':'') }
+      callbacks:{ label: c => pct ? ' '+fmt(c.raw)+'%' : ' '+fmtMM(c.raw) }
     }},
     scales:{
       x:{ grid:{color:GRID_COLOR}, border:{display:false}, ticks:{color:TICK_COLOR,font:FONT} },
@@ -2514,7 +2521,7 @@ function renderDashboard(data){
       {label:'Sin 3709',data:ag.map(a=>parseFloat(a.ebitda_sin3709||0)),backgroundColor:'#6c3fc5',borderRadius:4}
     ]},
     options:{...o,plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:16,boxWidth:12,boxHeight:12}},
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.raw)}}}}
   });
 
   const margenes=ag.map(a=>{const f=parseFloat(a.facturacion_total||0),e=parseFloat(a.ebitda||0);return f>0?e/f*100:0;});
@@ -2532,7 +2539,7 @@ function renderDashboard(data){
       {label:'EBITDA',data:ag.map(a=>parseFloat(a.ebitda||0)),backgroundColor:ag.map(a=>parseFloat(a.ebitda||0)>=0?'#16a34a':'#d42b4f'),borderRadius:4,borderSkipped:false}
     ]},
     options:{...o,plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:12,boxWidth:10,boxHeight:10}},
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.raw)}}}}
   });
 
   const totalCC2=ag.reduce((s,a)=>s+parseFloat(a.facturacion_cc||0),0);
@@ -2542,7 +2549,7 @@ function renderDashboard(data){
       datasets:[{data:[totalCC2,totalDC2],backgroundColor:['#e85d26','#6c3fc5'],borderWidth:0,hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
       plugins:{legend:{display:true,position:'bottom',labels:{color:'#6b7280',font:FONT,padding:14,boxWidth:12}},
-        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.label+': '+fmt(c.raw)}}}}
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.label+': '+fmtMM(c.raw)}}}}
   });
 
   charts.cc = new Chart(document.getElementById('cCC'),{type:'bar',
@@ -2556,7 +2563,7 @@ function renderDashboard(data){
     options:{...o,scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
       y:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}}},
       plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
-        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.raw)}}}}
   });
 
   charts.dc = new Chart(document.getElementById('cDC'),{type:'bar',
@@ -2568,7 +2575,7 @@ function renderDashboard(data){
     options:{...o,scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
       y:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}}},
       plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
-        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.raw)}}}}
   });
 
   charts.egr = new Chart(document.getElementById('cEgr'),{type:'bar',
@@ -2583,7 +2590,7 @@ function renderDashboard(data){
         y:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:TICK_COLOR,font:{...FONT,weight:'600'}}}
       },
       plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:14,boxWidth:12,boxHeight:12}},
-        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.raw)}}}}
   });
 
   const pcVals=ag.map(a=>parseFloat(a.percapita_ebitda||0)/1e3);
@@ -2636,7 +2643,7 @@ function renderDashboard(data){
       {label:'EBITDA CC',data:ag.map(a=>parseFloat(a.ebitda_cc||0)),backgroundColor:'#e85d26',borderRadius:4},
     ]},
     options:{...o,plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:FONT,padding:16,boxWidth:12,boxHeight:12}},
-      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+      tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.raw)}}}}
   });
 
   const rendVals=ag.map(a=>{const e=parseFloat(a.ebitda||0),eg=parseFloat(a.total_egresos||0);return eg>0?e/eg*100:0;});
@@ -2656,7 +2663,7 @@ function renderDashboard(data){
     options:{...o,scales:{x:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT}},
       y:{stacked:true,grid:{color:GRID_COLOR},border:{display:false},ticks:{color:TICK_COLOR,font:FONT,callback:v=>fmt(v)}}},
       plugins:{legend:{display:true,position:'top',align:'end',labels:{color:'#6b7280',font:{...FONT,size:11},padding:10,boxWidth:10,boxHeight:10}},
-        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}}}}
+        tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.raw)}}}}
   });
 
   // Scroll to top and init scroll spy
@@ -3478,12 +3485,7 @@ function agHighlight(ag, agency) {
   return ag.map(a => agency && a.nombre.toUpperCase()!==agency.toUpperCase() ? 'rgba(0,0,0,.1)' : AGENCY_COLORS[AGENCY_NAMES.indexOf(a.nombre)] || '#6b7280');
 }
 
-// Los campos vienen en miles de Gs.; para "millones de Gs." se divide por mil,
-// NO por un millón (ese fue el bug: mostraba valores 1000 veces más chicos).
-function fmtMM(raw) {
-  const n = Math.round((parseFloat(raw)||0) / 1e3);
-  return n.toLocaleString('es-PY') + ' millones de Gs.';
-}
+// fmtMM() ya está definida más arriba (junto a fmt/fmtPct) — se reusa acá.
 
 const CHAT_CHARTS = {
   ebitda: (ag, agency) => ({type:'bar',
