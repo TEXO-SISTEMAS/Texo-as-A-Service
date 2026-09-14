@@ -222,6 +222,37 @@ body{display:flex;flex-direction:column;min-height:100vh}
   .upload-fields{grid-template-columns:1fr}
   .bar-label{min-width:80px;max-width:100px}
 }
+
+/* ══ TOPBAR RESPONSIVE — logo/nav/botones no se amontonan ni se cortan en
+   anchos intermedios (laptop con la ventana achicada, tablet, celular) ══ */
+.btn{white-space:nowrap}
+.topbar{flex-wrap:wrap;row-gap:8px}
+.topbar-left{flex-wrap:wrap;row-gap:6px}
+.topbar-right{flex-shrink:0}
+
+@media(max-width:1400px){
+  .topbar{padding:10px 20px;height:auto;min-height:56px;gap:10px}
+  .topbar-left{gap:12px}
+  .logo{font-size:17px;white-space:nowrap;flex-shrink:0}
+  .topbar-left>a.btn{padding:6px 10px;font-size:12px;white-space:nowrap;flex-shrink:0}
+  .topbar nav{gap:3px!important}
+  .topbar nav a,.topbar nav span{font-size:12px!important;padding:5px 9px!important;white-space:nowrap}
+  .topbar-right{gap:6px}
+  .topbar-right .btn{padding:6px 12px!important;font-size:12px!important;gap:5px}
+}
+@media(max-width:1020px){
+  .topbar nav{flex-basis:100%;order:3;margin-top:2px}
+}
+@media(max-width:600px){
+  .topbar{padding:8px 14px;gap:6px}
+  .logo{font-size:14px}
+  .topbar-left>a.btn{padding:4px 8px;font-size:11px}
+  .topbar-right{flex-basis:100%;justify-content:flex-start;flex-wrap:wrap;row-gap:6px}
+  .topbar nav{overflow-x:auto;flex-wrap:nowrap;-ms-overflow-style:none;scrollbar-width:none}
+  .topbar nav::-webkit-scrollbar{display:none}
+  .topbar-right .btn{padding:5px 10px!important;font-size:11px!important}
+}
+
 /* ── CHAT ADLENS ── */
 .adlens-chat-sidebar{position:fixed;top:0;right:0;height:100vh;width:0;background:#fff;z-index:200;display:flex;flex-direction:column;overflow:hidden;transition:width .25s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(0,0,0,.1);border-left:1px solid #e5e7eb}
 .adlens-chat-inner{display:flex;flex-direction:column;height:100%;min-width:360px;overflow:hidden;position:relative}

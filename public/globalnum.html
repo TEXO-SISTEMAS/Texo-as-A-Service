@@ -224,6 +224,36 @@ input[type=file]{display:none}
   .charts-grid,.charts-grid.triple{grid-template-columns:1fr}
   .period-grid{grid-template-columns:1fr}
 }
+
+/* ══ TOPBAR RESPONSIVE — logo/nav/botones no se amontonan ni se cortan en
+   anchos intermedios (laptop con la ventana achicada, tablet, celular) ══ */
+.btn{white-space:nowrap}
+.topbar{flex-wrap:wrap;row-gap:8px}
+.topbar-left{flex-wrap:wrap;row-gap:6px}
+.topbar-right{flex-shrink:0}
+
+@media(max-width:1400px){
+  .topbar{padding:10px 20px;height:auto;min-height:56px;gap:10px}
+  .topbar-left{gap:12px}
+  .logo{font-size:17px;white-space:nowrap;flex-shrink:0}
+  .topbar-left>a.btn{padding:6px 10px;font-size:12px;white-space:nowrap;flex-shrink:0}
+  .topbar nav{gap:3px!important}
+  .topbar nav a,.topbar nav span{font-size:12px!important;padding:5px 9px!important;white-space:nowrap}
+  .topbar-right{gap:6px}
+  .topbar-right .btn{padding:6px 12px!important;font-size:12px!important;gap:5px}
+}
+@media(max-width:1020px){
+  .topbar nav{flex-basis:100%;order:3;margin-top:2px}
+}
+@media(max-width:600px){
+  .topbar{padding:8px 14px;gap:6px}
+  .logo{font-size:14px}
+  .topbar-left>a.btn{padding:4px 8px;font-size:11px}
+  .topbar-right{flex-basis:100%;justify-content:flex-start;flex-wrap:wrap;row-gap:6px}
+  .topbar nav{overflow-x:auto;flex-wrap:nowrap;-ms-overflow-style:none;scrollbar-width:none}
+  .topbar nav::-webkit-scrollbar{display:none}
+  .topbar-right .btn{padding:5px 10px!important;font-size:11px!important}
+}
 </style>
 </head>
 <body>
