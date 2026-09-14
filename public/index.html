@@ -1588,7 +1588,7 @@ function renderDashboard(data){
   const rendPromedio = eficData.reduce((s,a)=>s+a.rend,0)/eficData.length;
   const eficDiag = {
     rendimiento:{icon:'⚙️',q:'¿Quién tiene mejor rendimiento?',ans:`${eficMejorRend.nombre} con ${eficMejorRend.rend.toFixed(1)}% de rendimiento de inversión`,sub:`Por cada 100 Gs. invertidos genera ${eficMejorRend.rend.toFixed(0)} Gs. de EBITDA`,badge:eficMejorRend.rend>=25?'badge-green':eficMejorRend.rend>=10?'badge-yellow':'badge-red',label:eficMejorRend.rend>=25?'Muy eficiente':'Eficiente'},
-    perCap:{icon:'👤',q:'¿Quién genera más EBITDA por persona?',ans:`${mejorPC.nombre} — ${pcMejor}M Gs. por empleado`,sub:`${pcPromedio>0?Math.round(pcMejor/pcPromedio):1}x el promedio del grupo (${pcPromedio}M Gs.)`,badge:'badge-green',label:'Mayor productividad'},
+    perCap:{icon:'👤',q:'¿Quién genera más EBITDA por persona?',ans:`${mejorPC.nombre} — ${pcMejor.toLocaleString('es-PY')} millones de Gs. por empleado`,sub:`${pcPromedio>0?Math.round(pcMejor/pcPromedio):1}x el promedio del grupo (${pcPromedio.toLocaleString('es-PY')} millones de Gs.)`,badge:'badge-green',label:'Mayor productividad'},
     sobreDot:{icon:'📊',q:'¿Hay agencias con bajo rendimiento?',ans:eficPeorRend.rend<10?`${eficPeorRend.nombre} tiene el rendimiento más bajo: ${eficPeorRend.rend.toFixed(1)}%`:'El grupo mantiene niveles de eficiencia razonables',sub:`Promedio del grupo: ${rendPromedio.toFixed(1)}%. Umbral saludable: +15%`,badge:eficPeorRend.rend<10?'badge-red':'badge-green',label:eficPeorRend.rend<10?'Revisar estructura':'Sin alertas'},
     accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:eficPeorRend.rend<10?`Revisar estructura de costos en ${eficPeorRend.nombre}`:`Replicar modelo de ${eficMejorRend.nombre} en el resto del grupo`,sub:'Optimizar RRHH o aumentar revenue son las dos palancas de eficiencia',badge:eficPeorRend.rend<10?'badge-yellow':'badge-green',label:eficPeorRend.rend<10?'Optimización pendiente':'Escalar el modelo'}
   };
@@ -1970,8 +1970,8 @@ function renderDashboard(data){
           <div class="chart-wrap"><canvas id="cPC"></canvas></div>
           <div class="chart-insight">
             <div class="ci-formula">Per Cápita = EBITDA ÷ Cantidad de personas</div>
-            <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${mejorPC.nombre}</strong> — ${pcMejor}M Gs./persona</span></div>
-            <div class="ci-row"><span class="ci-label">Promedio</span><span class="ci-val">${pcPromedio}M Gs. por persona</span></div>
+            <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${mejorPC.nombre}</strong> — ${pcMejor.toLocaleString('es-PY')} millones de Gs. por persona</span></div>
+            <div class="ci-row"><span class="ci-label">Promedio</span><span class="ci-val">${pcPromedio.toLocaleString('es-PY')} millones de Gs. por persona</span></div>
           </div>
         </div>
         <div class="chart-card">
@@ -2592,7 +2592,7 @@ function renderDashboard(data){
       backgroundColor:pcVals.map(v=>v>=0?'#16a34a':'#d42b4f'),
       borderRadius:5,borderSkipped:false}]},
     options:{...o, scales:{...o.scales, y:{...o.scales.y, ticks:{...o.scales.y.ticks, callback:v=>Math.round(v)+'M'}}},
-      plugins:{...o.plugins, tooltip:{...o.plugins.tooltip, callbacks:{label:c=>Math.round(c.raw)+'M Gs.'}}}}
+      plugins:{...o.plugins, tooltip:{...o.plugins.tooltip, callbacks:{label:c=>Math.round(c.raw).toLocaleString('es-PY')+' millones de Gs.'}}}}
   });
 
   charts.pers = new Chart(document.getElementById('cPers'),{type:'bar',
@@ -3478,12 +3478,19 @@ function agHighlight(ag, agency) {
   return ag.map(a => agency && a.nombre.toUpperCase()!==agency.toUpperCase() ? 'rgba(0,0,0,.1)' : AGENCY_COLORS[AGENCY_NAMES.indexOf(a.nombre)] || '#6b7280');
 }
 
+// Los campos vienen en miles de Gs.; para "millones de Gs." se divide por mil,
+// NO por un millón (ese fue el bug: mostraba valores 1000 veces más chicos).
+function fmtMM(raw) {
+  const n = Math.round((parseFloat(raw)||0) / 1e3);
+  return n.toLocaleString('es-PY') + ' millones de Gs.';
+}
+
 const CHAT_CHARTS = {
   ebitda: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.ebitda/1e6),
       backgroundColor:agency ? agHighlight(ag,agency) : ag.map(a=>a.ebitda>=0?'#16a34a':'#d42b4f'),
       borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>fmtMM(ag[c.dataIndex].ebitda)}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
   margen: (ag, agency) => ({type:'bar',
@@ -3497,7 +3504,7 @@ const CHAT_CHARTS = {
     data:{labels:ag.map(a=>a.nombre),datasets:[
       {label:'Con 3709',data:ag.map(a=>a.ebitda/1e6),backgroundColor:agency?agHighlight(ag,agency):'#16a34a',borderRadius:4},
       {label:'Sin 3709',data:ag.map(a=>a.ebitda_sin3709/1e6),backgroundColor:agency?agHighlight(ag,agency).map(c=>c==='rgba(0,0,0,.1)'?c:'#d4900a'):'#d4900a',borderRadius:4}]},
-    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.datasetIndex===0?ag[c.dataIndex].ebitda:ag[c.dataIndex].ebitda_sin3709)}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
   rendimiento: (ag, agency) => ({type:'bar',
@@ -3511,7 +3518,7 @@ const CHAT_CHARTS = {
   percapita: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.percapita_ebitda/1e3),
       backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>Math.round(c.raw)+'M Gs.'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>fmtMM(ag[c.dataIndex].percapita_ebitda)}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
   concentracion: (ag) => {
@@ -3527,14 +3534,17 @@ const CHAT_CHARTS = {
       {label:'Otras Innov.',data:ag.map(a=>a.cc_otras_innovaciones/1e6),backgroundColor:'#16a34a',borderRadius:3},
       {label:'PR/Influencer',data:ag.map(a=>a.cc_pr_influencer/1e6),backgroundColor:'#6c3fc5',borderRadius:3},
       {label:'Social Media',data:ag.map(a=>a.cc_social_media/1e6),backgroundColor:'#0ea5b0',borderRadius:3}]},
-    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>{
+      const key=['cc_otras_innovaciones','cc_pr_influencer','cc_social_media'][c.datasetIndex];
+      return c.dataset.label+': '+fmtMM(ag[c.dataIndex][key]);
+    }}}},
       scales:{x:{stacked:true,grid:{color:CHAT_GRID},border:{display:false},ticks:CHAT_TICK},
               y:{stacked:true,grid:{color:CHAT_GRID},border:{display:false},ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
   facturacion: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.facturacion_total/1e6),
       backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.raw.toFixed(2)+'M Gs.'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>fmtMM(ag[c.dataIndex].facturacion_total)}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
   // ── Gráficos por agencia específica ──────────────────────────────────────
@@ -3548,7 +3558,10 @@ const CHAT_CHARTS = {
     return {type:'doughnut',data:{labels:CC_LABELS,datasets:[{data:vals,backgroundColor:CC_COLORS,borderWidth:2,borderColor:'#fff'}]},
       options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
         plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10,padding:6}},
-          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(2)}M (${a.facturacion_cc>0?(c.raw*1e6/a.facturacion_cc*100).toFixed(1):'0'}%)`}}}}};},
+          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>{
+            const raw=parseFloat(a[CC_KEYS[c.dataIndex]]||0);
+            return `${c.label}: ${fmtMM(raw)} (${a.facturacion_cc>0?(raw/a.facturacion_cc*100).toFixed(1):'0'}%)`;
+          }}}}}};},
 
   egresos: (ag, agency) => {
     const a = agency ? ag.find(x=>x.nombre.toUpperCase()===agency.toUpperCase()) : ag[0];
@@ -3559,7 +3572,10 @@ const CHAT_CHARTS = {
           backgroundColor:['#e85d26','#6c3fc5','#0ea5b0'],borderWidth:2,borderColor:'#fff'}]},
       options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
         plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
-          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(2)}M Gs.`}}}}};},
+          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>{
+            const key=['gastos_rrhh','gastos_comerciales','gastos_admin'][c.dataIndex];
+            return `${c.label}: ${fmtMM(a[key])}`;
+          }}}}}};},
 
   dc_breakdown: (ag, agency) => {
     const a = agency ? ag.find(x=>x.nombre.toUpperCase()===agency.toUpperCase()) : ag[0];
@@ -3570,13 +3586,16 @@ const CHAT_CHARTS = {
           backgroundColor:['#6c3fc5','#0ea5b0','#d4900a'],borderWidth:2,borderColor:'#fff'}]},
       options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
         plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10,family:'Inter'},boxWidth:10,boxHeight:10}},
-          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>`${c.label}: ${c.raw.toFixed(2)}M Gs.`}}}}};},
+          tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>{
+            const key=['dc_off','dc_on','dc_performance'][c.dataIndex];
+            return `${c.label}: ${fmtMM(a[key])}`;
+          }}}}}};},
 
   revenue_ebitda: (ag) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[
       {label:'Revenue',data:ag.map(a=>a.revenue_total/1e6),backgroundColor:'#1a1a2e',borderRadius:4},
       {label:'EBITDA',data:ag.map(a=>a.ebitda/1e6),backgroundColor:'#16a34a',borderRadius:4}]},
-    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+c.raw.toFixed(2)+'M'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.datasetIndex===0?ag[c.dataIndex].revenue_total:ag[c.dataIndex].ebitda)}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 };
 
