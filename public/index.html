@@ -1588,7 +1588,7 @@ function renderDashboard(data){
   const rendPromedio = eficData.reduce((s,a)=>s+a.rend,0)/eficData.length;
   const eficDiag = {
     rendimiento:{icon:'⚙️',q:'¿Quién tiene mejor rendimiento?',ans:`${eficMejorRend.nombre} con ${eficMejorRend.rend.toFixed(1)}% de rendimiento de inversión`,sub:`Por cada 100 Gs. invertidos genera ${eficMejorRend.rend.toFixed(0)} Gs. de EBITDA`,badge:eficMejorRend.rend>=25?'badge-green':eficMejorRend.rend>=10?'badge-yellow':'badge-red',label:eficMejorRend.rend>=25?'Muy eficiente':'Eficiente'},
-    perCap:{icon:'👤',q:'¿Quién genera más EBITDA por persona?',ans:`${mejorPC.nombre} — ${fmt(parseFloat(mejorPC.percapita_ebitda||0))} Miles Gs. por empleado`,sub:`${pcPromedio>0?Math.round(parseFloat(mejorPC.percapita_ebitda||0)/pcPromedio):1}x el promedio del grupo (${fmt(pcPromedio)} Miles Gs.)`,badge:'badge-green',label:'Mayor productividad'},
+    perCap:{icon:'👤',q:'¿Quién genera más EBITDA por persona?',ans:`${mejorPC.nombre} — ${pcMejor}M Gs. por empleado`,sub:`${pcPromedio>0?Math.round(pcMejor/pcPromedio):1}x el promedio del grupo (${pcPromedio}M Gs.)`,badge:'badge-green',label:'Mayor productividad'},
     sobreDot:{icon:'📊',q:'¿Hay agencias con bajo rendimiento?',ans:eficPeorRend.rend<10?`${eficPeorRend.nombre} tiene el rendimiento más bajo: ${eficPeorRend.rend.toFixed(1)}%`:'El grupo mantiene niveles de eficiencia razonables',sub:`Promedio del grupo: ${rendPromedio.toFixed(1)}%. Umbral saludable: +15%`,badge:eficPeorRend.rend<10?'badge-red':'badge-green',label:eficPeorRend.rend<10?'Revisar estructura':'Sin alertas'},
     accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:eficPeorRend.rend<10?`Revisar estructura de costos en ${eficPeorRend.nombre}`:`Replicar modelo de ${eficMejorRend.nombre} en el resto del grupo`,sub:'Optimizar RRHH o aumentar revenue son las dos palancas de eficiencia',badge:eficPeorRend.rend<10?'badge-yellow':'badge-green',label:eficPeorRend.rend<10?'Optimización pendiente':'Escalar el modelo'}
   };
@@ -1970,8 +1970,8 @@ function renderDashboard(data){
           <div class="chart-wrap"><canvas id="cPC"></canvas></div>
           <div class="chart-insight">
             <div class="ci-formula">Per Cápita = EBITDA ÷ Cantidad de personas</div>
-            <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${mejorPC.nombre}</strong> — ${fmt(parseFloat(mejorPC.percapita_ebitda||0))} Miles Gs./persona</span></div>
-            <div class="ci-row"><span class="ci-label">Promedio</span><span class="ci-val">${fmt(pcPromedio)} Miles Gs. por persona</span></div>
+            <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${mejorPC.nombre}</strong> — ${pcMejor}M Gs./persona</span></div>
+            <div class="ci-row"><span class="ci-label">Promedio</span><span class="ci-val">${pcPromedio}M Gs. por persona</span></div>
           </div>
         </div>
         <div class="chart-card">
@@ -2592,7 +2592,7 @@ function renderDashboard(data){
       backgroundColor:pcVals.map(v=>v>=0?'#16a34a':'#d42b4f'),
       borderRadius:5,borderSkipped:false}]},
     options:{...o, scales:{...o.scales, y:{...o.scales.y, ticks:{...o.scales.y.ticks, callback:v=>Math.round(v)+'M'}}},
-      plugins:{...o.plugins, tooltip:{...o.plugins.tooltip, callbacks:{label:c=>Math.round(c.raw)+'M Miles de Gs.'}}}}
+      plugins:{...o.plugins, tooltip:{...o.plugins.tooltip, callbacks:{label:c=>Math.round(c.raw)+'M Gs.'}}}}
   });
 
   charts.pers = new Chart(document.getElementById('cPers'),{type:'bar',
@@ -3511,7 +3511,7 @@ const CHAT_CHARTS = {
   percapita: (ag, agency) => ({type:'bar',
     data:{labels:ag.map(a=>a.nombre),datasets:[{data:ag.map(a=>a.percapita_ebitda/1e3),
       backgroundColor:agHighlight(ag,agency),borderRadius:5,borderSkipped:false}]},
-    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>Math.round(c.raw)+'M Miles de Gs.'}}},
+    options:{...CHAT_BASE_OPTS,plugins:{...CHAT_BASE_OPTS.plugins,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>Math.round(c.raw)+'M Gs.'}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
 
   concentracion: (ag) => {
