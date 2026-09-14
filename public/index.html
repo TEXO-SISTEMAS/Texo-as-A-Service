@@ -3304,22 +3304,48 @@ function stripForSpeech(text) {
     .trim();
 }
 
-// Primeras 1-2 oraciones, hasta ~320 caracteres.
-function briefForSpeech(text) {
-  const clean = stripForSpeech(text);
-  if (clean.length <= 320) return clean;
-  const cut = clean.slice(0, 320);
-  const lastStop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('? '), cut.lastIndexOf('! '));
-  return (lastStop > 80 ? cut.slice(0, lastStop + 1) : cut) + '…';
+// Oraciones reales: el punto solo cierra oración si le sigue un espacio o el
+// final del texto (así no corta decimales como "31.0%" ni miles como "8.042").
+function splitSentences(text) {
+  const parts = text.split(/([.!?]+)(?=\s|$)/);
+  const out = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    const s = (parts[i] || '') + (parts[i + 1] || '');
+    if (s.trim()) out.push(s.trim());
+  }
+  return out;
+}
+// Corta el texto en trozos de ~180 car. respetando oraciones — Chrome corta
+// las respuestas largas si se leen como un solo utterance; en varios trozos
+// encolados no se corta y se lee todo, sin perder ni una palabra.
+function chunkForSpeech(text, maxLen = 180) {
+  const chunks = [];
+  let cur = '';
+  for (let s of splitSentences(text)) {
+    if (s.length > maxLen) { // oración larguísima sin puntuación: cortar duro
+      if (cur) { chunks.push(cur); cur = ''; }
+      while (s.length > maxLen) { chunks.push(s.slice(0, maxLen)); s = s.slice(maxLen); }
+      cur = s;
+      continue;
+    }
+    if (cur && (cur.length + s.length + 1) > maxLen) { chunks.push(cur); cur = s; }
+    else cur = cur ? cur + ' ' + s : s;
+  }
+  if (cur) chunks.push(cur);
+  return chunks;
 }
 
 function speak(text) {
   if (!_synth || !_voiceOn || !text) return;
   _synth.cancel();
-  const u = new SpeechSynthesisUtterance(briefForSpeech(text));
-  if (_voice) { u.voice = _voice; u.lang = _voice.lang; } else { u.lang = 'es-MX'; }
-  u.rate = 1.03;
-  _synth.speak(u);
+  const clean = stripForSpeech(text);
+  if (!clean) return;
+  for (const chunk of chunkForSpeech(clean)) {
+    const u = new SpeechSynthesisUtterance(chunk);
+    if (_voice) { u.voice = _voice; u.lang = _voice.lang; } else { u.lang = 'es-MX'; }
+    u.rate = 1.03;
+    _synth.speak(u);
+  }
 }
 
 const VOICE_ICON_ON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 5V4L8 9H4z" fill="currentColor" stroke="none"/><path d="M16.2 8.8a5 5 0 0 1 0 6.4"/><path d="M18.8 6.2a9 9 0 0 1 0 11.6"/></svg>';
