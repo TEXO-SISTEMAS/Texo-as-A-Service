@@ -948,7 +948,7 @@ ${topCli ? `\nTop clientes (% facturación):\n${topCli}` : ''}`;
 
     const bloqueDatos = `${agenciaRestriccion}
 ${usuarioLinea}=== DATOS DEL PERÍODO — SALUD FINANCIERA (corte ${fechaCorte}) ===
-Los montos monetarios traen su unidad en el propio texto (p. ej. "Gs. 1.430 millones"). Citalos con esa misma unidad, sin reescalar.
+Los montos monetarios ya traen la cifra calculada como "Gs. X millones" (p. ej. "Gs. 1.430 millones"). Usá ese mismo número sin reescalarlo, PERO al nombrar la moneda en tu respuesta decí siempre "guaraníes", nunca la abreviatura "Gs" (ejemplo: "1.430 millones de guaraníes", no "Gs. 1.430 millones").
 
 DATOS ACTUALES DE LAS AGENCIAS:
 ${agenciasResumen}
