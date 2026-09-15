@@ -237,14 +237,19 @@ function getOAuth2Client() {
   );
 }
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const token = req.cookies?.session;
   if (!token) {
     if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'No autorizado' });
     return res.redirect('/login?next=' + encodeURIComponent(req.originalUrl));
   }
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET);
+    // La agencia se re-resuelve en cada request (no se confía en el valor grabado
+    // en el JWT al momento del login) para que los cambios hechos en /admin se
+    // reflejen sin que el usuario tenga que cerrar sesión y volver a entrar.
+    const agencia = await resolverAgencia(payload.email);
+    req.user = { ...payload, agencia };
     next();
   } catch(e) {
     res.clearCookie('session');
