@@ -1103,6 +1103,15 @@ body.fullscreen .main { padding-top:64px; }
   </div>
   <div class="topbar-right">
 
+    <select id="agenciaFiltroSelect" class="btn btn-outline" style="display:none;cursor:pointer;padding-right:8px" onchange="onFiltroAgenciaChange(this.value)">
+      <option value="">👁 Ver: Todas las agencias</option>
+      <option value="NASTA">Ver como NASTA</option>
+      <option value="BRICK">Ver como BRICK</option>
+      <option value="LUPE">Ver como LUPE</option>
+      <option value="OMD">Ver como OMD</option>
+      <option value="ROGER">Ver como ROGER</option>
+      <option value="AMPLIFY">Ver como AMPLIFY</option>
+    </select>
     <button class="btn btn-ai" id="btnChat" onclick="toggleChat()">✦ Asistente IA</button>
     <button class="btn btn-outline" onclick="triggerUpload()">↑ Cargar Excel</button>
     <button class="btn btn-primary" onclick="refreshData()" id="btnRefresh">⟳ Actualizar</button>
@@ -1302,12 +1311,53 @@ async function deleteUpload(id){
   showToast('Upload eliminado','success');
 }
 
+// ── FILTRO POR AGENCIA (solo usuarios de acceso completo) ────────────────────
+// Simula, en el navegador, lo que el servidor le filtra a un usuario restringido
+// a una sola agencia — para que un admin pueda "verse como" esa agencia.
+window._agenciaFiltro = null;
+
+function filtrarAgenciasClient(agencias, agencia){
+  if(!agencia || !Array.isArray(agencias)) return agencias;
+  return agencias.filter(a => (a.nombre||'').toUpperCase() === agencia.toUpperCase());
+}
+function aplicarFiltroSF(data, agencia){
+  if(!agencia || !data) return data;
+  return { ...data, agencias: filtrarAgenciasClient(data.agencias, agencia) };
+}
+function aplicarFiltroIngresos(data, agencia){
+  if(!agencia || !data) return data;
+  const result = { ...data };
+  const agFiltradas = filtrarAgenciasClient(data.agencias, agencia);
+  result.agencias = agFiltradas;
+  const totalFac = agFiltradas.reduce((s,a)=>s+(a.facturacion||0),0);
+  const totalRev = agFiltradas.reduce((s,a)=>s+(a.revenue||0),0);
+  const totalTx  = agFiltradas.reduce((s,a)=>s+(a.transacciones||0),0);
+  result.totales = { ...(data.totales||{}), facturacion:totalFac, revenue:totalRev, margen: totalFac>0?totalRev/totalFac:0, transacciones:totalTx };
+  if(data.ebitda) result.ebitda = data.ebitda.filter(e => (e.empresa||'').toUpperCase().includes(agencia.toUpperCase()));
+  return result;
+}
+
+function onFiltroAgenciaChange(val){
+  window._agenciaFiltro = val || null;
+  try { localStorage.setItem('_agenciaFiltroAdmin', window._agenciaFiltro || ''); } catch(e){}
+  if(window._dashDataRaw){
+    const filtered = aplicarFiltroSF(window._dashDataRaw, window._agenciaFiltro);
+    if(!filtered.agencias?.length) showNoData(); else renderDashboard(filtered);
+  }
+  if(window._ingresosDataRaw){
+    renderIngresos(aplicarFiltroIngresos(window._ingresosDataRaw, window._agenciaFiltro));
+  }
+}
+
 async function loadLatest(){
   try {
     const r=await fetch('/api/latest');
     const data=await r.json();
-    if(data.empty || data.error || !data.agencias?.length){ showNoData(); return; }
-    renderDashboard(data);
+    if(data.empty || data.error){ showNoData(); return; }
+    window._dashDataRaw = data;
+    const filtered = aplicarFiltroSF(data, window._agenciaFiltro);
+    if(!filtered.agencias?.length){ showNoData(); return; }
+    renderDashboard(filtered);
   } catch(e){ showNoData(); }
 }
 
@@ -1315,7 +1365,9 @@ async function loadDashboard(id){
   activeId=id;
   const r=await fetch('/api/uploads/'+id);
   const data=await r.json();
-  renderDashboard(data);
+  window._dashDataRaw = data;
+  const filtered = aplicarFiltroSF(data, window._agenciaFiltro);
+  if(!filtered.agencias?.length){ showNoData(); } else { renderDashboard(filtered); }
   await loadUploads();
 }
 
@@ -2730,6 +2782,18 @@ window.addEventListener('DOMContentLoaded',async()=>{
       document.querySelectorAll('[onclick*="triggerUpload"],[onclick*="Upload"],[onclick*="upload"],[id*="Upload"],[id*="upload"]').forEach(el=>{
         if(el.tagName==='BUTTON'||el.tagName==='INPUT') el.style.display='none';
       });
+    } else {
+      // Acceso completo: mostrar selector para "verse como" una agencia específica
+      const sel = document.getElementById('agenciaFiltroSelect');
+      if (sel) {
+        let saved = '';
+        try { saved = localStorage.getItem('_agenciaFiltroAdmin') || ''; } catch(e){}
+        if (saved && [...sel.options].some(o=>o.value===saved)) {
+          sel.value = saved;
+          window._agenciaFiltro = saved;
+        }
+        sel.style.display = 'inline-block';
+      }
     }
   } catch(e) {}
   await loadUploads(); await loadLatest(); await loadLatestIngresos();
@@ -2837,7 +2901,14 @@ async function loadLatestIngresos() {
       if (sub)    sub.textContent = 'Sin datos cargados · Subí el Excel para ver los datos';
       return;
     }
-    renderIngresos(data);
+    window._ingresosDataRaw = data;
+    const filtered = aplicarFiltroIngresos(data, window._agenciaFiltro);
+    if (window._agenciaFiltro && !filtered.agencias?.length) {
+      if (titulo) titulo.textContent = `Detalle de Ingresos · ${data.periodo || '2026'}`;
+      if (sub)    sub.textContent = `Sin transacciones de ${window._agenciaFiltro} en este período`;
+      return;
+    }
+    renderIngresos(filtered);
   } catch(e) {
     if (titulo) titulo.textContent = 'Detalle de Ingresos · 2026';
     if (sub)    sub.textContent = 'Sin datos cargados';
