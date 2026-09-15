@@ -5,7 +5,7 @@ Bitácora de decisiones grandes (más reciente primero) + lo que queda por hacer
 ## Pendientes activos
 
 - [ ] **AdLens y Marketing sin datos reales en el asistente de IA.** Cablear `bigquery.buildAdlensData()`+`filtrarAdlens()` y `HOLDING_DATA`/intel de Drive respectivamente. Ver [[Asistente IA]].
-- [ ] **Voz solo en Salud Financiera** (piloto). Replicar a AdLens, Marketing, Global Num si el piloto funciona bien.
+- [ ] **Voz solo en Salud Financiera** (piloto). Replicar a AdLens, Marketing, Inversión de Medios si el piloto funciona bien.
 - [ ] **Avatar del bot** solo en Salud Financiera (header del chat + favicon). Replicar a los otros 3 módulos si se quiere consistencia visual.
 - [ ] **Nombres de anunciantes de AdLens** vienen pegados sin espacios desde BigQuery (`BANCOFAMILIAR`). Falta mapa de corrección manual (`NOMBRE_MAP`).
 - [ ] **Prompt caching** en el asistente de SF — se intentó con `system` como array + `cache_control`, rompió la respuesta, se revirtió a string plano. Si se reintenta, probar con cuidado.
@@ -23,7 +23,9 @@ Se evaluaron dos caminos (ver [[Asistente IA]]). Se eligió: sin `lib/jarvis.js`
 
 **Sep 2026 — Bug de unidades: "1000 veces más chico" en varios lugares.** Encontrado en 3 rondas distintas: (1) el bloque DATOS que recibe el asistente de SF, (2) el gráfico "EBITDA Per Cápita" del dashboard principal, (3) los 8 gráficos que dispara el asistente con `[[CHART:key]]`, (4) 9 gráficos más del dashboard principal. Causa raíz repetida: dividir por un millón cuando el campo ya viene en miles (debía dividirse por mil), o mezclar un valor ya dividido con una unidad pensada para el valor crudo. Fix: helper `fmtMM()` centralizado, "millones de Gs." completo en vez de abreviar.
 
-**Sep 2026 — Global Num: cifras completas, sin abreviar.** A pedido explícito, todo el módulo (UI + asistente) muestra el número completo con puntos de miles y "Gs" al final — nada de "M"/"B"/"millones"/"mil millones". Ver [[Capa 04 - Global Num]].
+**Sep 2026 — Inversión de Medios (antes "Global Num"): cifras completas, sin abreviar.** A pedido explícito, todo el módulo (UI + asistente) muestra el número completo con puntos de miles y "Gs" al final — nada de "M"/"B"/"millones"/"mil millones". Ver [[Capa 04 - Inversión de Medios]].
+
+**Sep 2026 — Renombre "Global Num" → "Inversión de Medios".** Cambio de nombre visible en toda la UI (nav de las 4 capas, tarjeta de inicio, panel admin) y dentro del propio módulo, que además usaba internamente "Inversión Publicitaria" — quedó unificado. No se tocaron rutas, nombres de archivo ni endpoints internos (`/globalnum`, `globalnum.html`, `/api/*-globalnum`).
 
 **Sep 2026 — Topbar responsive roto en anchos intermedios.** El logo se partía en 2-3 líneas y los botones quedaban fuera de pantalla en laptops con la ventana achicada (y en mobile real). Corregido en los 4 módulos: topbar fluido que envuelve a 2ª/3ª fila en vez de partir texto.
 

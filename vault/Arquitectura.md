@@ -10,7 +10,7 @@ Ver también [[Inicio]].
   - `index.html` — Salud Financiera (~3900 líneas)
   - `adlens.html` — AdLens
   - `marketing.html` — Inteligencia de Marketing
-  - `globalnum.html` — Global Num / Inversión Publicitaria
+  - `globalnum.html` — Inversión de Medios (nombre interno del archivo/rutas sigue siendo "globalnum")
   - `home.html`, `login.html`, `admin.html` — páginas de soporte
 - **Storage:** Google Drive (vía service account), NO una base de datos tradicional. `drive.js` es el wrapper — todo son archivos JSON en una sola carpeta plana (`DRIVE_FOLDER_ID`), diferenciados por nombre de archivo.
 - **IA:** Anthropic Claude SDK (`@anthropic-ai/sdk`) integrado directo en `server.js`. Ver [[Asistente IA]].
@@ -47,4 +47,4 @@ Son de un proyecto anterior distinto ("AI Data Chat" — cruce de Excels ERP/DNI
 3. Chat → `POST /api/chat` → `server.js` arma el contexto y llama a la API de Anthropic → responde.
 4. Historial de chat → se guarda en Drive como JSON, un archivo por conversación.
 
-Cada módulo (AdLens, Marketing, Global Num) tiene su propia variante de este flujo — ver la nota de cada [[Capa 01 - Salud Financiera|capa]].
+Cada módulo (AdLens, Marketing, Inversión de Medios) tiene su propia variante de este flujo — ver la nota de cada [[Capa 01 - Salud Financiera|capa]].

@@ -13,7 +13,7 @@ Persona: **"Jarvis, el mayordomo analista"** — seco, educado, con humor conten
 | Chat | Endpoint | ¿Datos reales? | Modelo |
 |---|---|---|---|
 | Salud Financiera | `POST /api/chat` (rama default) | Sí | `claude-sonnet-4-5` |
-| Global Num | `POST /api/ask-globalnum` | Sí | `claude-sonnet-4-5` |
+| Inversión de Medios | `POST /api/ask-globalnum` | Sí | `claude-sonnet-4-5` |
 | Marketing | `POST /api/chat` `context:'marketing'` | **No** — solo prompt estático | `claude-sonnet-4-5` |
 | AdLens | `POST /api/chat` `context:'adlens'` | **No** — solo prompt estático | `claude-sonnet-4-5` |
 

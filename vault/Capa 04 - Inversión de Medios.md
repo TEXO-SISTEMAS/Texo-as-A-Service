@@ -1,4 +1,8 @@
-# Capa 04 — Global Num (Inversión Publicitaria)
+# Capa 04 — Inversión de Medios
+
+Antes llamada "Global Num" en la UI (renombrado sep 2026); el código interno
+(`globalnum.html`, `globalnum_parser.js`, rutas `/globalnum` y
+`/api/*-globalnum`) sigue usando el nombre viejo — no se tocó a propósito.
 
 Página: `public/globalnum.html`. Ver [[Arquitectura]], [[Asistente IA]].
 

@@ -9,7 +9,7 @@ Documentación interna del proyecto. Actualizar a mano cuando algo cambie de fon
   - [[Capa 01 - Salud Financiera]]
   - [[Capa 02 - Marketing]]
   - [[Capa 03 - AdLens]]
-  - [[Capa 04 - Global Num]]
+  - [[Capa 04 - Inversión de Medios]]
 - [[Asistente IA]] — cómo está armado el chat con IA en cada módulo
 - [[Acceso y usuarios]] — login, multi-tenancy por agencia
 - [[Glosario]] — 3709, CC/DC, EBITDA, y demás siglas del negocio
