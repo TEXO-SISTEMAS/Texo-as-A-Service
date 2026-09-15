@@ -1352,6 +1352,7 @@ function renderDashboard(data){
   if (_dashDataReadyResolve) { _dashDataReadyResolve(); _dashDataReadyResolve = null; }
   destroyCharts();
   const ag=data.agencias;
+  const unaAgencia = ag.length === 1;
   document.getElementById('noData').style.display='none';
   document.getElementById('dashboard').style.display='block';
 
@@ -1388,7 +1389,9 @@ function renderDashboard(data){
   const agEBITDANeg   = ag.filter(a=>parseFloat(a.ebitda)<0);
   const agDep3709     = ag.filter(a=>parseFloat(a.ebitda_sin3709)<0 && parseFloat(a.ebitda)>=0);
   const saludStatus   = agSanas===ag.length?'green':agSanas>=ag.length-1?'yellow':'red';
-  const saludLabel    = agSanas===ag.length?'✓ Grupo saludable':agSanas>=ag.length-1?'⚠ Mayoría sana, con alertas':'✗ Riesgo en el grupo';
+  const saludLabel    = unaAgencia
+    ? (agSanas===1?'✓ Agencia saludable':'✗ Agencia en riesgo')
+    : agSanas===ag.length?'✓ Grupo saludable':agSanas>=ag.length-1?'⚠ Mayoría sana, con alertas':'✗ Riesgo en el grupo';
   const saludPill     = agSanas===ag.length?'pill-green':agSanas>=ag.length-1?'pill-yellow':'pill-red';
 
   const mejorPC       = [...ag].sort((a,b)=>parseFloat(b.percapita_ebitda)-parseFloat(a.percapita_ebitda))[0];
@@ -1409,7 +1412,15 @@ function renderDashboard(data){
   const scoreGrupal = Math.round(_score * 10) / 10;
   const scoreColor = scoreGrupal >= 7 ? '#4ade80' : scoreGrupal >= 4 ? '#fbbf24' : '#f87171';
 
-  const veredicto = agEBITDANeg.length > 0
+  const veredicto = unaAgencia
+    ? (agEBITDANeg.length > 0
+        ? `${ag[0].nombre} presenta fragilidad operativa: opera en pérdida. Requiere intervención inmediata en estructura de ingresos y costos.`
+        : agDep3709.length > 0
+        ? `${ag[0].nombre} es rentable pero con riesgo fiscal estructural: depende del crédito 3709. Sin ese beneficio, el resultado sería negativo.`
+        : margen < 0.05
+        ? `${ag[0].nombre} genera ganancias pero el margen es ajustado (${fmtPct(margen)}). La rentabilidad existe pero hay poco colchón ante cambios de contexto.`
+        : `${ag[0].nombre} muestra salud financiera sólida. EBITDA positivo con margen de ${fmtPct(margen)} — estructura rentable y sin dependencias críticas.`)
+    : agEBITDANeg.length > 0
     ? `El grupo presenta fragilidad operativa: ${agEBITDANeg.length} agencia${agEBITDANeg.length > 1 ? 's operan' : ' opera'} en pérdida. Requiere intervención inmediata en estructura de ingresos y costos.`
     : agDep3709.length > 0
     ? `El grupo es rentable pero con riesgo fiscal estructural: ${agDep3709.map(a=>a.nombre).join(' y ')} depende${agDep3709.length > 1 ? 'n' : ''} del crédito 3709. Sin ese beneficio, el resultado sería negativo.`
@@ -1418,7 +1429,11 @@ function renderDashboard(data){
     : `El grupo muestra salud financiera sólida. Todas las agencias generan EBITDA positivo con margen consolidado de ${fmtPct(margen)} — estructura rentable y sin dependencias críticas.`;
 
   // 4 preguntas CEO
-  const qSalud = agSanas===ag.length
+  const qSalud = unaAgencia
+    ? (agSanas===1
+        ? {ans:`Sí, ${ag[0].nombre} genera ganancias`, sub:`Margen: ${fmtPct(margen)}`, badge:'badge-green', label:'Sana'}
+        : {ans:`${ag[0].nombre} opera en pérdida`, sub:'EBITDA negativo en el período', badge:'badge-red', label:'Con riesgo'})
+    : agSanas===ag.length
     ? {ans:'Sí, todas las agencias generan ganancias', sub:`Margen consolidado: ${fmtPct(margen)}`, badge:'badge-green', label:'Sanos'}
     : {ans:`${agEBITDANeg.map(a=>a.nombre).join(' y ')} opera${agEBITDANeg.length>1?'n':''} en pérdida`, sub:`${agSanas} de ${ag.length} agencias con EBITDA positivo`, badge:'badge-red', label:'Con riesgo'};
 
@@ -1426,18 +1441,22 @@ function renderDashboard(data){
     ? {ans:`${agDep3709.map(a=>a.nombre).join(' y ')} depende${agDep3709.length>1?'n':''} del crédito 3709`, sub:'Sin ese beneficio fiscal, el resultado sería negativo', badge:'badge-yellow', label:'Dependencia fiscal'}
     : concPctVal>=70
     ? {ans:`${agMayorConc.nombre} concentra el ${concPctVal}% de su CC en un solo servicio`, sub:'Alta dependencia de un tipo de ingreso', badge:'badge-yellow', label:'Concentración alta'}
-    : {ans:'Sin dependencias críticas detectadas', sub:'Diversificación saludable en el grupo', badge:'badge-green', label:'Bajo riesgo'};
+    : {ans:'Sin dependencias críticas detectadas', sub: unaAgencia?'Diversificación saludable':'Diversificación saludable en el grupo', badge:'badge-green', label:'Bajo riesgo'};
 
-  const qPotencial = {
-    ans:`${mejorPC.nombre} es la más productiva por persona`,
-    sub:`${pcMejor}M Gs. por empleado — ${pcMejor>pcPromedio?Math.round(pcMejor/Math.max(pcPromedio,1))+'x':'igual al'} el promedio`,
-    badge:'badge-green', label:'Mayor eficiencia'
-  };
+  const qPotencial = unaAgencia
+    ? {ans:`${ag[0].nombre} genera ${pcMejor}M Gs. de EBITDA por persona`, sub:'Productividad del equipo en el período', badge:'badge-green', label:'Productividad'}
+    : {
+        ans:`${mejorPC.nombre} es la más productiva por persona`,
+        sub:`${pcMejor}M Gs. por empleado — ${pcMejor>pcPromedio?Math.round(pcMejor/Math.max(pcPromedio,1))+'x':'igual al'} el promedio`,
+        badge:'badge-green', label:'Mayor eficiencia'
+      };
 
   const qIntervencion = agEBITDANeg.length>0
     ? {ans:`${agEBITDANeg.map(a=>a.nombre).join(' y ')} necesita${agEBITDANeg.length>1?'n':''} atención urgente`, sub:'EBITDA negativo — revisar estructura de ingresos y costos', badge:'badge-red', label:'Prioridad alta'}
     : agDep3709.length>0
     ? {ans:`Reducir dependencia del crédito 3709 en ${agDep3709.map(a=>a.nombre).join(' y ')}`, sub:'Estrategia de diversificación de ingresos necesaria', badge:'badge-yellow', label:'Prioridad media'}
+    : unaAgencia
+    ? {ans:'Sin intervención urgente requerida', sub:'La agencia mantiene una estructura financiera sólida', badge:'badge-green', label:'Estable'}
     : {ans:'Escalar el modelo de eficiencia de '+mejorPC.nombre, sub:'Replicar su productividad en agencias con mayor dotación', badge:'badge-green', label:'Oportunidad'};
 
   // Insights automáticos
@@ -1461,32 +1480,44 @@ function renderDashboard(data){
     texto:`${mejorInnov.nombre} lidera en servicios de innovación con ${fmt(parseFloat(mejorInnov.aporte_innovacion))} Miles de Gs.`,
     detalle:'Social Media, PR/Influencer e Innovación — los servicios de mayor crecimiento del mercado'});
   if(margen<0.05) insights.push({tipo:'yellow',tag:'Atención',icon:'🟡',
-    texto:`El margen consolidado del grupo es bajo: ${fmtPct(margen)}`,
+    texto: unaAgencia ? `El margen de ${ag[0].nombre} es bajo: ${fmtPct(margen)}` : `El margen consolidado del grupo es bajo: ${fmtPct(margen)}`,
     detalle:'Se factura mucho pero queda poco — revisar eficiencia operativa y estructura de costos'});
   if(rendInversion>0.2) insights.push({tipo:'blue',tag:'Fortaleza',icon:'⚡',
-    texto:`El grupo convierte el ${(rendInversion*100).toFixed(0)}% de sus egresos en EBITDA`,
+    texto: unaAgencia ? `${ag[0].nombre} convierte el ${(rendInversion*100).toFixed(0)}% de sus egresos en EBITDA` : `El grupo convierte el ${(rendInversion*100).toFixed(0)}% de sus egresos en EBITDA`,
     detalle:`Cada 100 Gs. invertidos generan ${(rendInversion*100).toFixed(0)} Gs. de ganancia operativa`});
 
   // Narrativas por sección
   const rentTop=[...ag].sort((a,b)=>parseFloat(b.ebitda)-parseFloat(a.ebitda));
-  const rentNarr = agEBITDANeg.length===0
-    ? (rentTop.length>1
-        ? `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> y <span class="narrative-green narrative-accent">${rentTop[1].nombre}</span> son las más rentables del grupo. Todas las agencias generan ganancia operativa positiva.`
-        : `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> genera ganancia operativa positiva.`)
+  const rentNarr = unaAgencia
+    ? (agEBITDANeg.length===0
+        ? `<span class="narrative-green narrative-accent">${ag[0].nombre}</span> genera ganancia operativa positiva.`
+        : `<span class="narrative-red narrative-accent">${ag[0].nombre}</span> opera en pérdida operativa — requiere atención.`)
+    : agEBITDANeg.length===0
+    ? `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> y <span class="narrative-green narrative-accent">${rentTop[1].nombre}</span> son las más rentables del grupo. Todas las agencias generan ganancia operativa positiva.`
     : `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> lidera la rentabilidad. <span class="narrative-red narrative-accent">${agEBITDANeg.map(a=>a.nombre).join(' y ')}</span> opera${agEBITDANeg.length>1?'n':''} en pérdida — requiere${agEBITDANeg.length>1?'n':''} atención.`;
 
-  const dep3709Narr = agDep3709.length===0
+  const dep3709Narr = unaAgencia
+    ? (agDep3709.length===0
+        ? `${ag[0].nombre} mantiene rentabilidad sin depender del crédito fiscal. Su resultado es estructuralmente sólido.`
+        : `<span class="narrative-red narrative-accent">${ag[0].nombre}</span> solo es rentable gracias al crédito 3709. Sin ese beneficio, su resultado sería negativo. Tiene <span class="narrative-yellow narrative-accent">dependencia fiscal que debe gestionarse</span>.`)
+    : agDep3709.length===0
     ? 'Todas las agencias mantienen rentabilidad sin depender del crédito fiscal. El resultado del grupo es estructuralmente sólido.'
     : `<span class="narrative-red narrative-accent">${agDep3709.map(a=>a.nombre).join(' y ')}</span> solo ${agDep3709.length>1?'son':'es'} rentable${agDep3709.length>1?'s':''} gracias al crédito 3709. Sin ese beneficio, su resultado sería negativo. El grupo tiene <span class="narrative-yellow narrative-accent">dependencia fiscal que debe gestionarse</span>.`;
 
-  const eficNarr = `<span class="narrative-green narrative-accent">${mejorPC.nombre}</span> es la agencia más productiva: genera <span class="narrative-accent">${pcMejor}M Gs. por persona</span>. ${pcMejor>pcPromedio*1.5?`Esto es ${Math.round(pcMejor/Math.max(pcPromedio,1))}x el promedio del grupo (${pcPromedio}M Gs.), lo que indica un modelo de eficiencia diferencial.`:'El grupo mantiene niveles de productividad similares.'}`;
+  const eficNarr = unaAgencia
+    ? `<span class="narrative-green narrative-accent">${ag[0].nombre}</span> genera <span class="narrative-accent">${pcMejor}M Gs. por persona</span> de EBITDA en el período.`
+    : `<span class="narrative-green narrative-accent">${mejorPC.nombre}</span> es la agencia más productiva: genera <span class="narrative-accent">${pcMejor}M Gs. por persona</span>. ${pcMejor>pcPromedio*1.5?`Esto es ${Math.round(pcMejor/Math.max(pcPromedio,1))}x el promedio del grupo (${pcPromedio}M Gs.), lo que indica un modelo de eficiencia diferencial.`:'El grupo mantiene niveles de productividad similares.'}`;
 
-  const innovNarr = `<span class="narrative-green narrative-accent">${mejorInnov.nombre}</span> lidera el aporte de innovación con ${fmt(parseFloat(mejorInnov.aporte_innovacion))} Miles de Gs. en Social Media, PR e Innovaciones. Estos servicios representan el <span class="narrative-accent">${fmtPct(totalFact>0?totalInnovacion/totalFact:0)}</span> de la facturación total — el motor de crecimiento del grupo.`;
+  const innovNarr = unaAgencia
+    ? `<span class="narrative-green narrative-accent">${ag[0].nombre}</span> aporta ${fmt(parseFloat(mejorInnov.aporte_innovacion))} Miles de Gs. en Social Media, PR e Innovaciones. Estos servicios representan el <span class="narrative-accent">${fmtPct(totalFact>0?totalInnovacion/totalFact:0)}</span> de su facturación total — su motor de crecimiento.`
+    : `<span class="narrative-green narrative-accent">${mejorInnov.nombre}</span> lidera el aporte de innovación con ${fmt(parseFloat(mejorInnov.aporte_innovacion))} Miles de Gs. en Social Media, PR e Innovaciones. Estos servicios representan el <span class="narrative-accent">${fmtPct(totalFact>0?totalInnovacion/totalFact:0)}</span> de la facturación total — el motor de crecimiento del grupo.`;
 
   const concNarr = concPctVal>=70
     ? `<span class="narrative-red narrative-accent">${agMayorConc.nombre}</span> tiene dependencia crítica: el <span class="narrative-accent">${concPctVal}%</span> de su CC viene de un solo servicio (${focoInfo[concIdx].name}). Ante cualquier cambio en ese rubro, la caída sería significativa.`
     : concPctVal>=50
     ? `<span class="narrative-yellow narrative-accent">${agMayorConc.nombre}</span> muestra concentración moderada (${concPctVal}% en ${focoInfo[concIdx].name}). Se recomienda diversificar para reducir el riesgo de dependencia.`
+    : unaAgencia
+    ? `${ag[0].nombre} mantiene una distribución de servicios saludable. No tiene dependencia crítica en un solo tipo de ingreso.`
     : 'El grupo mantiene una distribución de servicios saludable. Ninguna agencia tiene dependencia crítica en un solo tipo de ingreso.';
 
   // ── DIAGNÓSTICO ESPECÍFICO SEC-1: RENTABILIDAD ──────────────────────────────
@@ -1541,7 +1572,7 @@ function renderDashboard(data){
       icon: agEnPerdida.length===0?'💚':'🔴',
       q: '¿Hay agencias en pérdida?',
       ans: agEnPerdida.length===0
-        ? 'No. Todas las agencias generan EBITDA positivo'
+        ? (unaAgencia ? `No. ${ag[0].nombre} genera EBITDA positivo` : 'No. Todas las agencias generan EBITDA positivo')
         : `${agEnPerdida.map(a=>a.nombre).join(' y ')} opera${agEnPerdida.length>1?'n':''} en pérdida`,
       sub: `${agSanasRent.length} de ${ag.length} agencias con EBITDA positivo`,
       badge: agEnPerdida.length===0?'badge-green':'badge-red',
@@ -1554,7 +1585,7 @@ function renderDashboard(data){
         ? `Prioridad: revertir pérdida en ${agEnPerdida.map(a=>a.nombre).join(' y ')}`
         : parseFloat(mejorMargenPct)<5
           ? `Mejorar margen en ${agMejorMargen.nombre} — por debajo del umbral saludable (10%)`
-          : `Extender el modelo de ${agMejorMargen.nombre} al resto del grupo`,
+          : (unaAgencia ? `Mantener el modelo actual de ${agMejorMargen.nombre}` : `Extender el modelo de ${agMejorMargen.nombre} al resto del grupo`),
       sub: agDep3709.length>0?`Atención: ${agDep3709.map(a=>a.nombre).join(' y ')} dependen del 3709`:'Sin dependencias críticas',
       badge: agEnPerdida.length>0?'badge-red':parseFloat(mejorMargenPct)<5?'badge-yellow':'badge-green',
       label: agEnPerdida.length>0?'Acción urgente':parseFloat(mejorMargenPct)<5?'Acción preventiva':'Optimizar'
@@ -1574,8 +1605,8 @@ function renderDashboard(data){
   const totalEgr3  = totalRRHH3+totalCom3+totalAdm3;
   const pctRRHH3   = totalEgr3>0?(totalRRHH3/totalEgr3*100).toFixed(1):0;
   const compDiag = {
-    facturacion:{icon:'📊',q:'¿Quién factura más?',ans:`${compMayorFact.nombre} lidera con ${fmt(parseFloat(compMayorFact.facturacion_total||0))} Miles Gs.`,sub:`${totalFact>0?(parseFloat(compMayorFact.facturacion_total||0)/totalFact*100).toFixed(1):0}% de la facturación total del grupo`,badge:'badge-green',label:'Líder de facturación'},
-    mix:{icon:'⚖️',q:'¿Cómo se distribuye el mix CC/DC?',ans:`CC: ${pctCC3}% — DC: ${pctDC3}% de la facturación total`,sub:parseFloat(pctDC3)>parseFloat(pctCC3)?'El grupo tiene mayor peso en distribución de contenido':'El grupo tiene mayor peso en creación de contenido',badge:Math.abs(parseFloat(pctCC3)-parseFloat(pctDC3))<20?'badge-green':'badge-yellow',label:Math.abs(parseFloat(pctCC3)-parseFloat(pctDC3))<20?'Mix equilibrado':'Mix concentrado'},
+    facturacion:{icon:'📊',q: unaAgencia?'¿Cuánto factura?':'¿Quién factura más?',ans: unaAgencia?`${compMayorFact.nombre}: ${fmt(parseFloat(compMayorFact.facturacion_total||0))} Miles Gs.`:`${compMayorFact.nombre} lidera con ${fmt(parseFloat(compMayorFact.facturacion_total||0))} Miles Gs.`,sub: unaAgencia?'Facturación total del período':`${totalFact>0?(parseFloat(compMayorFact.facturacion_total||0)/totalFact*100).toFixed(1):0}% de la facturación total del grupo`,badge:'badge-green',label: unaAgencia?'Facturación del período':'Líder de facturación'},
+    mix:{icon:'⚖️',q:'¿Cómo se distribuye el mix CC/DC?',ans:`CC: ${pctCC3}% — DC: ${pctDC3}% de la facturación total`,sub: unaAgencia?(parseFloat(pctDC3)>parseFloat(pctCC3)?`${ag[0].nombre} tiene mayor peso en distribución de contenido`:`${ag[0].nombre} tiene mayor peso en creación de contenido`):(parseFloat(pctDC3)>parseFloat(pctCC3)?'El grupo tiene mayor peso en distribución de contenido':'El grupo tiene mayor peso en creación de contenido'),badge:Math.abs(parseFloat(pctCC3)-parseFloat(pctDC3))<20?'badge-green':'badge-yellow',label:Math.abs(parseFloat(pctCC3)-parseFloat(pctDC3))<20?'Mix equilibrado':'Mix concentrado'},
     costos:{icon:'💼',q:'¿Dónde está el mayor costo?',ans:`RRHH representa el ${pctRRHH3}% del total de egresos`,sub:`RRHH: ${fmt(totalRRHH3)} · Comercial: ${fmt(totalCom3)} · Admin: ${fmt(totalAdm3)}`,badge:parseFloat(pctRRHH3)>70?'badge-yellow':'badge-green',label:parseFloat(pctRRHH3)>70?'RRHH dominante':'Estructura balanceada'},
     revenue:{icon:'💡',q:'¿Cuál es la brecha revenue/facturación?',ans:`Revenue total: ${fmt(totalRev)} vs Facturación: ${fmt(totalFact)}`,sub:`Brecha: ${fmt(totalFact-totalRev)} Miles Gs. — costos directos de terceros (medios, producción)`,badge:'badge-green',label:'Datos estructurales'}
   };
@@ -1585,8 +1616,8 @@ function renderDashboard(data){
   const pctEbitdaDep = totalEBITDA>0?(totalMonto3709/totalEBITDA*100).toFixed(1):0;
   const dep3709Diag = {
     cuantas:{icon:agDep3709.length===0?'✅':'⚠️',q:'¿Cuántas agencias dependen del 3709?',ans:agDep3709.length===0?'Ninguna — todas son rentables sin el beneficio':`${agDep3709.length} de ${ag.length}: ${agDep3709.map(a=>a.nombre).join(' y ')}`,sub:`Impacto total: ${fmt(totalMonto3709)} Miles de Gs.`,badge:agDep3709.length===0?'badge-green':'badge-red',label:agDep3709.length===0?'Sin dependencia':'Dependencia crítica'},
-    impacto:{icon:'💰',q:'¿Qué % del EBITDA es crédito 3709?',ans:`El crédito representa el ${pctEbitdaDep}% del EBITDA consolidado`,sub:`Sin ese beneficio el EBITDA grupal bajaría a ${fmt(totalEBITDA-totalMonto3709)} Miles de Gs.`,badge:parseFloat(pctEbitdaDep)>30?'badge-red':parseFloat(pctEbitdaDep)>15?'badge-yellow':'badge-green',label:parseFloat(pctEbitdaDep)>30?'Exposición alta':parseFloat(pctEbitdaDep)>15?'Exposición moderada':'Exposición baja'},
-    riesgo:{icon:'🏛️',q:'¿Qué pasa si se elimina el 3709?',ans:agDep3709.length>0?`${agDep3709.map(a=>a.nombre).join(' y ')} pasarían a pérdida inmediatamente`:'El grupo mantendría rentabilidad positiva',sub:'Riesgo regulatorio: cambio en política fiscal afecta directamente el EBITDA',badge:agDep3709.length>0?'badge-red':'badge-green',label:agDep3709.length>0?'Riesgo alto':'Bajo riesgo'},
+    impacto:{icon:'💰',q:'¿Qué % del EBITDA es crédito 3709?',ans:`El crédito representa el ${pctEbitdaDep}% del EBITDA`,sub:`Sin ese beneficio el EBITDA bajaría a ${fmt(totalEBITDA-totalMonto3709)} Miles de Gs.`,badge:parseFloat(pctEbitdaDep)>30?'badge-red':parseFloat(pctEbitdaDep)>15?'badge-yellow':'badge-green',label:parseFloat(pctEbitdaDep)>30?'Exposición alta':parseFloat(pctEbitdaDep)>15?'Exposición moderada':'Exposición baja'},
+    riesgo:{icon:'🏛️',q:'¿Qué pasa si se elimina el 3709?',ans:agDep3709.length>0?`${agDep3709.map(a=>a.nombre).join(' y ')} pasarían a pérdida inmediatamente`:(unaAgencia?`${ag[0].nombre} mantendría rentabilidad positiva`:'El grupo mantendría rentabilidad positiva'),sub:'Riesgo regulatorio: cambio en política fiscal afecta directamente el EBITDA',badge:agDep3709.length>0?'badge-red':'badge-green',label:agDep3709.length>0?'Riesgo alto':'Bajo riesgo'},
     accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:agDep3709.length>0?`Diversificar ingresos en ${agDep3709.map(a=>a.nombre).join(' y ')} para ser rentables sin el beneficio`:'Monitorear cambios regulatorios y mantener estructura',sub:agDep3709.length>0?'Estrategia: aumentar facturación real hasta cubrir la brecha del crédito fiscal':'Sin acción urgente necesaria',badge:agDep3709.length>0?'badge-yellow':'badge-green',label:agDep3709.length>0?'Acción requerida':'Monitorear'}
   };
 
@@ -1597,9 +1628,9 @@ function renderDashboard(data){
   const rendPromedio = eficData.reduce((s,a)=>s+a.rend,0)/eficData.length;
   const eficDiag = {
     rendimiento:{icon:'⚙️',q:'¿Quién tiene mejor rendimiento?',ans:`${eficMejorRend.nombre} con ${eficMejorRend.rend.toFixed(1)}% de rendimiento de inversión`,sub:`Por cada 100 Gs. invertidos genera ${eficMejorRend.rend.toFixed(0)} Gs. de EBITDA`,badge:eficMejorRend.rend>=25?'badge-green':eficMejorRend.rend>=10?'badge-yellow':'badge-red',label:eficMejorRend.rend>=25?'Muy eficiente':'Eficiente'},
-    perCap:{icon:'👤',q:'¿Quién genera más EBITDA por persona?',ans:`${mejorPC.nombre} — ${pcMejor.toLocaleString('es-PY')} millones de Gs. por empleado`,sub:`${pcPromedio>0?Math.round(pcMejor/pcPromedio):1}x el promedio del grupo (${pcPromedio.toLocaleString('es-PY')} millones de Gs.)`,badge:'badge-green',label:'Mayor productividad'},
-    sobreDot:{icon:'📊',q:'¿Hay agencias con bajo rendimiento?',ans:eficPeorRend.rend<10?`${eficPeorRend.nombre} tiene el rendimiento más bajo: ${eficPeorRend.rend.toFixed(1)}%`:'El grupo mantiene niveles de eficiencia razonables',sub:`Promedio del grupo: ${rendPromedio.toFixed(1)}%. Umbral saludable: +15%`,badge:eficPeorRend.rend<10?'badge-red':'badge-green',label:eficPeorRend.rend<10?'Revisar estructura':'Sin alertas'},
-    accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:eficPeorRend.rend<10?`Revisar estructura de costos en ${eficPeorRend.nombre}`:`Replicar modelo de ${eficMejorRend.nombre} en el resto del grupo`,sub:'Optimizar RRHH o aumentar revenue son las dos palancas de eficiencia',badge:eficPeorRend.rend<10?'badge-yellow':'badge-green',label:eficPeorRend.rend<10?'Optimización pendiente':'Escalar el modelo'}
+    perCap:{icon:'👤',q: unaAgencia?'¿Cuánto EBITDA genera por persona?':'¿Quién genera más EBITDA por persona?',ans:`${mejorPC.nombre} — ${pcMejor.toLocaleString('es-PY')} millones de Gs. por empleado`,sub: unaAgencia?'Productividad del equipo en el período':`${pcPromedio>0?Math.round(pcMejor/pcPromedio):1}x el promedio del grupo (${pcPromedio.toLocaleString('es-PY')} millones de Gs.)`,badge:'badge-green',label:'Mayor productividad'},
+    sobreDot:{icon:'📊',q: unaAgencia?'¿El rendimiento es saludable?':'¿Hay agencias con bajo rendimiento?',ans:eficPeorRend.rend<10?`${eficPeorRend.nombre} tiene el rendimiento más bajo: ${eficPeorRend.rend.toFixed(1)}%`:(unaAgencia?`${ag[0].nombre} mantiene niveles de eficiencia razonables`:'El grupo mantiene niveles de eficiencia razonables'),sub: unaAgencia?`Rendimiento: ${rendPromedio.toFixed(1)}%. Umbral saludable: +15%`:`Promedio del grupo: ${rendPromedio.toFixed(1)}%. Umbral saludable: +15%`,badge:eficPeorRend.rend<10?'badge-red':'badge-green',label:eficPeorRend.rend<10?'Revisar estructura':'Sin alertas'},
+    accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:eficPeorRend.rend<10?`Revisar estructura de costos en ${eficPeorRend.nombre}`:(unaAgencia?`Mantener el modelo actual de ${eficMejorRend.nombre}`:`Replicar modelo de ${eficMejorRend.nombre} en el resto del grupo`),sub:'Optimizar RRHH o aumentar revenue son las dos palancas de eficiencia',badge:eficPeorRend.rend<10?'badge-yellow':'badge-green',label:eficPeorRend.rend<10?'Optimización pendiente':'Escalar el modelo'}
   };
 
   // ── DIAGNÓSTICO SEC-04: INNOVACIÓN ──────────────────────────────────────────
@@ -1607,10 +1638,10 @@ function renderDashboard(data){
   const innovLider = ag.reduce((b,a)=>parseFloat(a.aporte_innovacion||0)>parseFloat(b.aporte_innovacion||0)?a:b,ag[0]);
   const agBajoPromInnoв = ag.filter(a=>parseFloat(a.aporte_innovacion||0)<totalInnovacion/ag.length);
   const innovDiag = {
-    lider:{icon:'🏆',q:'¿Quién lidera en innovación?',ans:`${innovLider.nombre} con ${fmt(parseFloat(innovLider.aporte_innovacion||0))} Miles Gs.`,sub:`${totalFact>0?(parseFloat(innovLider.aporte_innovacion||0)/totalFact*100).toFixed(1):0}% de la facturación total del grupo`,badge:'badge-green',label:'Líder de innovación'},
-    grupo:{icon:'📈',q:'¿Cuánto innova el grupo?',ans:`${fmt(totalInnovacion)} Miles Gs. en servicios de alto crecimiento`,sub:`${innovPctGrupo.toFixed(1)}% de la facturación total — referencia saludable: +12%`,badge:innovPctGrupo>=12?'badge-green':innovPctGrupo>=6?'badge-yellow':'badge-red',label:innovPctGrupo>=12?'Grupo innovador':innovPctGrupo>=6?'En desarrollo':'Bajo nivel'},
-    oportunidad:{icon:'🚀',q:'¿Dónde hay más oportunidad?',ans:agBajoPromInnoв.length>0?`${agBajoPromInnoв.map(a=>a.nombre).join(', ')} están por debajo del promedio del grupo`:'Todas las agencias contribuyen activamente',sub:'Social Media y PR/Influencer son los servicios de mayor crecimiento del mercado',badge:agBajoPromInnoв.length>0?'badge-yellow':'badge-green',label:agBajoPromInnoв.length>0?'Oportunidad identificada':'Grupo alineado'},
-    accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:'Impulsar Social Media y PR en agencias rezagadas para aumentar el mix innovador del grupo',sub:`Objetivo: llevar el aporte grupal al +12% de la facturación total`,badge:'badge-yellow',label:'Estrategia recomendada'}
+    lider:{icon:'🏆',q: unaAgencia?'¿Cuánto aporta en innovación?':'¿Quién lidera en innovación?',ans:`${innovLider.nombre} con ${fmt(parseFloat(innovLider.aporte_innovacion||0))} Miles Gs.`,sub: unaAgencia?`${totalFact>0?(parseFloat(innovLider.aporte_innovacion||0)/totalFact*100).toFixed(1):0}% de su facturación total`:`${totalFact>0?(parseFloat(innovLider.aporte_innovacion||0)/totalFact*100).toFixed(1):0}% de la facturación total del grupo`,badge:'badge-green',label: unaAgencia?'Aporte de innovación':'Líder de innovación'},
+    grupo:{icon:'📈',q: unaAgencia?'¿Cuánto innova?':'¿Cuánto innova el grupo?',ans:`${fmt(totalInnovacion)} Miles Gs. en servicios de alto crecimiento`,sub:`${innovPctGrupo.toFixed(1)}% de la facturación total — referencia saludable: +12%`,badge:innovPctGrupo>=12?'badge-green':innovPctGrupo>=6?'badge-yellow':'badge-red',label:innovPctGrupo>=12?(unaAgencia?'Agencia innovadora':'Grupo innovador'):innovPctGrupo>=6?'En desarrollo':'Bajo nivel'},
+    oportunidad:{icon:'🚀',q:'¿Dónde hay más oportunidad?',ans:agBajoPromInnoв.length>0?`${agBajoPromInnoв.map(a=>a.nombre).join(', ')} está${agBajoPromInnoв.length>1?'n':''} por debajo del promedio${unaAgencia?'':' del grupo'}`:(unaAgencia?`${ag[0].nombre} contribuye activamente`:'Todas las agencias contribuyen activamente'),sub:'Social Media y PR/Influencer son los servicios de mayor crecimiento del mercado',badge:agBajoPromInnoв.length>0?'badge-yellow':'badge-green',label:agBajoPromInnoв.length>0?'Oportunidad identificada':(unaAgencia?'Alineada':'Grupo alineado')},
+    accion:{icon:'🎯',q:'¿Dónde intervenir?',ans: unaAgencia?`Impulsar Social Media y PR en ${ag[0].nombre} para aumentar su mix innovador`:'Impulsar Social Media y PR en agencias rezagadas para aumentar el mix innovador del grupo',sub:`Objetivo: llevar el aporte al +12% de la facturación total`,badge:'badge-yellow',label:'Estrategia recomendada'}
   };
 
   // ── DIAGNÓSTICO SEC-05: EXPERTISE FOCO ─────────────────────────────────────
@@ -1618,8 +1649,8 @@ function renderDashboard(data){
   const focosMap = focoInfo.reduce((m,f)=>{if(!m[f.name])m[f.name]=0;m[f.name]++;return m;},{});
   const focoDuplicados = Object.entries(focosMap).filter(([,v])=>v>1).map(([k])=>k);
   const focoDiag = {
-    diferenciacion:{icon:focoDuplicados.length===0?'✅':'⚠️',q:'¿Cada agencia tiene rol diferenciado?',ans:focoDuplicados.length===0?'Sí — cada agencia tiene un expertise único':`Superposición en: ${focoDuplicados.join(', ')}`,sub:`${ag.length} agencias con ${focosUnicos.length} expertises distintos en el grupo`,badge:focoDuplicados.length===0?'badge-green':'badge-yellow',label:focoDuplicados.length===0?'Roles diferenciados':'Revisar solapamiento'},
-    mayor:{icon:'🎯',q:'¿Cuál es el expertise más frecuente?',ans:`${Object.entries(focosMap).sort(([,a],[,b])=>b-a)[0][0]} — presente en ${Object.entries(focosMap).sort(([,a],[,b])=>b-a)[0][1]} agencias`,sub:'Indica dónde el grupo tiene mayor masa crítica de conocimiento',badge:'badge-green',label:'Fortaleza grupal'},
+    diferenciacion:{icon:focoDuplicados.length===0?'✅':'⚠️',q: unaAgencia?'¿Cuál es su expertise foco?':'¿Cada agencia tiene rol diferenciado?',ans: unaAgencia?`Su expertise foco es ${focoInfo[0].name}`:(focoDuplicados.length===0?'Sí — cada agencia tiene un expertise único':`Superposición en: ${focoDuplicados.join(', ')}`),sub: unaAgencia?`${(focoInfo[0].pct*100).toFixed(0)}% de su facturación CC viene de ahí`:`${ag.length} agencias con ${focosUnicos.length} expertises distintos en el grupo`,badge:focoDuplicados.length===0?'badge-green':'badge-yellow',label:focoDuplicados.length===0?'Roles diferenciados':'Revisar solapamiento'},
+    mayor:{icon:'🎯',q:'¿Cuál es el expertise más frecuente?',ans:`${Object.entries(focosMap).sort(([,a],[,b])=>b-a)[0][0]} — presente en ${Object.entries(focosMap).sort(([,a],[,b])=>b-a)[0][1]} agencia${Object.entries(focosMap).sort(([,a],[,b])=>b-a)[0][1]>1?'s':''}`,sub: unaAgencia?'Su especialidad dentro de Content Creation':'Indica dónde el grupo tiene mayor masa crítica de conocimiento',badge:'badge-green',label: unaAgencia?'Especialidad':'Fortaleza grupal'},
     riesgo:{icon:'📊',q:'¿Hay agencias muy concentradas?',ans:`${agMayorConc.nombre} concentra el ${concPctVal.toFixed(0)}% de su CC en ${focoInfo[concIdx].name}`,sub:concPctVal>=70?'Dependencia crítica ante cambios en ese servicio':concPctVal>=50?'Concentración moderada':'Distribución saludable',badge:concPctVal>=70?'badge-red':concPctVal>=50?'badge-yellow':'badge-green',label:concPctVal>=70?'Riesgo alto':'Monitorear'},
     accion:{icon:'🎯',q:'¿Dónde intervenir?',ans:focoDuplicados.length>0?`Diferenciar claramente ${focoDuplicados.join(', ')} entre las agencias que lo comparten`:concPctVal>=70?`Diversificar ${agMayorConc.nombre} más allá de ${focoInfo[concIdx].name}`:'Reforzar y comunicar los roles únicos de cada agencia',sub:'El posicionamiento claro maximiza el valor y evita canibalización interna',badge:focoDuplicados.length>0||concPctVal>=70?'badge-yellow':'badge-green',label:focoDuplicados.length>0||concPctVal>=70?'Acción sugerida':'Posición sólida'}
   };
@@ -2371,8 +2402,8 @@ function renderDashboard(data){
         <div class="chart-wrap"><canvas id="cFact"></canvas></div>
         <div class="chart-insight">
           <div class="ci-formula">Facturación = Honorarios + Medios comprados + Producción externa</div>
-          <div class="ci-row"><span class="ci-label">Líder</span><span class="ci-val"><strong>${compMayorFact.nombre}</strong> — ${fmt(parseFloat(compMayorFact.facturacion_total||0))} Miles Gs. (${totalFact>0?(parseFloat(compMayorFact.facturacion_total||0)/totalFact*100).toFixed(1):0}% del grupo)</span></div>
-          <div class="ci-row"><span class="ci-label">Total grupo</span><span class="ci-val">${fmt(totalFact)} Miles Gs.</span></div>
+          <div class="ci-row"><span class="ci-label">${unaAgencia?'Facturación':'Líder'}</span><span class="ci-val"><strong>${compMayorFact.nombre}</strong> — ${fmt(parseFloat(compMayorFact.facturacion_total||0))} Miles Gs.${unaAgencia?'':` (${totalFact>0?(parseFloat(compMayorFact.facturacion_total||0)/totalFact*100).toFixed(1):0}% del grupo)`}</span></div>
+          <div class="ci-row"><span class="ci-label">${unaAgencia?'Total':'Total grupo'}</span><span class="ci-val">${fmt(totalFact)} Miles Gs.</span></div>
         </div>
       </div>
       <div class="chart-card">
