@@ -1350,7 +1350,16 @@ function onFiltroAgenciaChange(val){
     if(!filtered.agencias?.length) showNoData(); else renderDashboard(filtered);
   }
   if(window._ingresosDataRaw){
-    renderIngresos(aplicarFiltroIngresos(window._ingresosDataRaw, window._agenciaFiltro));
+    const filteredIng = aplicarFiltroIngresos(window._ingresosDataRaw, window._agenciaFiltro);
+    if (window._agenciaFiltro && !filteredIng.agencias?.length) {
+      const titulo = document.getElementById('ingresosTitulo');
+      const sub    = document.getElementById('ingresosSub');
+      if (titulo) titulo.textContent = `Detalle de Ingresos · ${window._ingresosDataRaw.periodo || '2026'}`;
+      if (sub)    sub.textContent = `Sin transacciones de ${window._agenciaFiltro} en este período`;
+      showIngresosSinAgencia(window._agenciaFiltro);
+    } else {
+      renderIngresos(filteredIng);
+    }
   }
   renderComparacion();
 }
@@ -2898,6 +2907,15 @@ async function handleIngresosFileSelect(e) {
   }
 }
 
+// Se muestra cuando SÍ hay un Excel de Ingresos cargado, pero la agencia
+// filtrada no tiene transacciones en ese período — distinto de "nunca se
+// subió nada", que es el placeholder estático que trae la página.
+function showIngresosSinAgencia(agencia){
+  destroyChartsIng();
+  const content = document.getElementById('ingresosContent');
+  if (content) content.innerHTML = `<div class="ingresos-empty"><div style="font-size:28px">🔍</div><p>El Excel de Ingresos está cargado, pero <strong>${agencia}</strong> no tiene transacciones registradas en este período.</p></div>`;
+}
+
 async function loadLatestIngresos() {
   const titulo = document.getElementById('ingresosTitulo');
   const sub    = document.getElementById('ingresosSub');
@@ -2914,6 +2932,7 @@ async function loadLatestIngresos() {
     if (window._agenciaFiltro && !filtered.agencias?.length) {
       if (titulo) titulo.textContent = `Detalle de Ingresos · ${data.periodo || '2026'}`;
       if (sub)    sub.textContent = `Sin transacciones de ${window._agenciaFiltro} en este período`;
+      showIngresosSinAgencia(window._agenciaFiltro);
       return;
     }
     renderIngresos(filtered);
