@@ -229,8 +229,10 @@ input[type=file]{display:none}
    anchos intermedios (laptop con la ventana achicada, tablet, celular) ══ */
 .btn{white-space:nowrap}
 .topbar{flex-wrap:wrap;row-gap:8px}
-.topbar-left{flex-wrap:wrap;row-gap:6px}
+.topbar-left{flex-wrap:wrap;row-gap:6px;min-width:0}
 .topbar-right{flex-shrink:0}
+.topbar nav{min-width:0;overflow-x:auto;flex-wrap:nowrap;-ms-overflow-style:none;scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
 
 @media(max-width:1400px){
   .topbar{padding:10px 20px;height:auto;min-height:56px;gap:10px}
@@ -250,8 +252,6 @@ input[type=file]{display:none}
   .logo{font-size:14px}
   .topbar-left>a.btn{padding:4px 8px;font-size:11px}
   .topbar-right{flex-basis:100%;justify-content:flex-start;flex-wrap:wrap;row-gap:6px}
-  .topbar nav{overflow-x:auto;flex-wrap:nowrap;-ms-overflow-style:none;scrollbar-width:none}
-  .topbar nav::-webkit-scrollbar{display:none}
   .topbar-right .btn{padding:5px 10px!important;font-size:11px!important}
 }
 </style>
@@ -263,9 +263,9 @@ input[type=file]{display:none}
     <a href="/home" class="btn btn-outline" style="font-size:13px;text-decoration:none">← Inicio</a>
     <div class="logo">Texo <span>as a Service</span></div>
     <nav>
-      <a href="/index">Salud Financiera</a>
-      <a href="/adlens">AdLens</a>
-      <a href="/marketing">Marketing</a>
+      <a href="/index">Facturación y Posicionamiento de Texo</a>
+      <a href="/adlens">Datos Macro del Mercado</a>
+      <a href="/marketing">Redes y Cultura Organizacional</a>
       <span class="active">Inversión de Medios</span>
     </nav>
   </div>

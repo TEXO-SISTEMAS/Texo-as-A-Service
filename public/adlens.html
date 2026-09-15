@@ -227,8 +227,10 @@ body{display:flex;flex-direction:column;min-height:100vh}
    anchos intermedios (laptop con la ventana achicada, tablet, celular) ══ */
 .btn{white-space:nowrap}
 .topbar{flex-wrap:wrap;row-gap:8px}
-.topbar-left{flex-wrap:wrap;row-gap:6px}
+.topbar-left{flex-wrap:wrap;row-gap:6px;min-width:0}
 .topbar-right{flex-shrink:0}
+.topbar nav{min-width:0;overflow-x:auto;flex-wrap:nowrap;-ms-overflow-style:none;scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
 
 @media(max-width:1400px){
   .topbar{padding:10px 20px;height:auto;min-height:56px;gap:10px}
@@ -248,8 +250,6 @@ body{display:flex;flex-direction:column;min-height:100vh}
   .logo{font-size:14px}
   .topbar-left>a.btn{padding:4px 8px;font-size:11px}
   .topbar-right{flex-basis:100%;justify-content:flex-start;flex-wrap:wrap;row-gap:6px}
-  .topbar nav{overflow-x:auto;flex-wrap:nowrap;-ms-overflow-style:none;scrollbar-width:none}
-  .topbar nav::-webkit-scrollbar{display:none}
   .topbar-right .btn{padding:5px 10px!important;font-size:11px!important}
 }
 
@@ -316,9 +316,9 @@ body{display:flex;flex-direction:column;min-height:100vh}
     <a href="/home" class="btn btn-outline" style="font-size:13px;text-decoration:none">← Inicio</a>
     <div class="logo">Texo as a Service</div>
     <nav style="display:flex;gap:6px;align-items:center">
-      <a href="/index" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Salud Financiera</a>
-      <span style="font-size:13px;font-weight:700;padding:5px 12px;border-radius:6px;background:var(--accent);color:#fff">AdLens</span>
-      <a href="/marketing" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Marketing</a>
+      <a href="/index" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Facturación y Posicionamiento de Texo</a>
+      <span style="font-size:13px;font-weight:700;padding:5px 12px;border-radius:6px;background:var(--accent);color:#fff">Datos Macro del Mercado</span>
+      <a href="/marketing" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Redes y Cultura Organizacional</a>
     </nav>
   </div>
   <div class="topbar-right">

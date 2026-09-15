@@ -981,8 +981,15 @@ body.fullscreen .main { padding-top:64px; }
    ══════════════════════════════════════════════════════════════════════════════ */
 .btn{white-space:nowrap}
 .topbar{flex-wrap:wrap;row-gap:8px}
-.topbar-left{flex-wrap:wrap;row-gap:6px}
+.topbar-left{flex-wrap:wrap;row-gap:6px;min-width:0}
 .topbar-right{flex-shrink:0}
+/* Nav siempre puede scrollear horizontalmente en vez de desbordar la página —
+   necesario con nombres largos ("Facturación y Posicionamiento de Texo",
+   "Redes y Cultura Organizacional"): sin esto, un flex item no se encoge
+   nunca por debajo de su contenido, y con html/body en overflow:hidden ese
+   desborde queda invisible e inalcanzable en vez de solo verse feo. */
+.topbar nav{min-width:0;overflow-x:auto;flex-wrap:nowrap;-ms-overflow-style:none;scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
 
 @media(max-width:1400px){
   .topbar{padding:10px 20px;height:auto;min-height:56px;gap:10px}
@@ -1003,8 +1010,6 @@ body.fullscreen .main { padding-top:64px; }
   .logo{font-size:14px}
   .topbar-left>a.btn{padding:4px 8px;font-size:11px}
   .topbar-right{flex-basis:100%;justify-content:flex-start;flex-wrap:wrap;row-gap:6px}
-  .topbar nav{overflow-x:auto;flex-wrap:nowrap;-ms-overflow-style:none;scrollbar-width:none}
-  .topbar nav::-webkit-scrollbar{display:none}
   .topbar-right .btn{padding:5px 10px;font-size:11px}
 }
 
@@ -1099,9 +1104,9 @@ body.fullscreen .main { padding-top:64px; }
     <a href="/home" class="btn btn-outline" style="font-size:13px;text-decoration:none">← Inicio</a>
     <div class="logo">Texo as a Service</div>
     <nav style="display:flex;gap:6px;align-items:center">
-      <span style="font-size:13px;font-weight:700;padding:5px 12px;border-radius:6px;background:var(--accent);color:#fff">Salud Financiera</span>
-      <a href="/adlens" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">AdLens</a>
-      <a href="/marketing" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Marketing</a>
+      <span style="font-size:13px;font-weight:700;padding:5px 12px;border-radius:6px;background:var(--accent);color:#fff">Facturación y Posicionamiento de Texo</span>
+      <a href="/adlens" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Datos Macro del Mercado</a>
+      <a href="/marketing" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Redes y Cultura Organizacional</a>
     </nav>
   </div>
   <div class="topbar-right">
@@ -1145,7 +1150,10 @@ body.fullscreen .main { padding-top:64px; }
       <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
       <div class="snav-item" data-sec="ingresosSection" onclick="openSection('ingresosSection')">07 · Ingresos 2026</div>
       <div class="snav-item" data-sec="invMediosSection" onclick="openSection('invMediosSection')">08 · Inversión de Medios</div>
-      <div class="snav-item" data-sec="comparacionSection" onclick="openSection('comparacionSection')">09 · Comparación 25 vs 26</div>
+      <!-- "09 · Comparación 25 vs 26" oculta por pedido de Danilo (sep 2026) — el
+           contenido y la lógica (renderComparacion()) siguen intactos, solo no
+           se linkea desde el nav. Para reactivar, descomentar esta línea. -->
+      <!-- <div class="snav-item" data-sec="comparacionSection" onclick="openSection('comparacionSection')">09 · Comparación 25 vs 26</div> -->
     </div>
 
     <div id="dashboard" style="display:none"></div>
@@ -1192,10 +1200,15 @@ body.fullscreen .main { padding-top:64px; }
       </div>
     </div>
 
-    <!-- ── COMPARACIÓN SALUD FINANCIERA (2025) VS INGRESOS (2026) ── -->
+    <!-- ── COMPARACIÓN SALUD FINANCIERA (2025) VS INGRESOS (2026) ──
+         Sección oculta por pedido de Danilo (sep 2026), junto con su tab de
+         nav más arriba. renderComparacion() ya revisa que #comparacionContent
+         exista antes de tocarlo, así que dejarla comentada no rompe nada. -->
+    <!--
     <div class="ingresos-section" id="comparacionSection">
       <div id="comparacionContent"></div>
     </div>
+    -->
   </div>
 
   <!-- CHAT SIDEBAR -->
@@ -4382,7 +4395,7 @@ function openSection(id) {
 function initScrollSpy() {
   const mainEl = document.getElementById('main');
   if (!mainEl) return;
-  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','ingresosSection','invMediosSection','comparacionSection'];
+  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','ingresosSection','invMediosSection']; // 'comparacionSection' oculta temporalmente, ver comentario arriba
   mainEl.addEventListener('scroll', () => {
     let current = 'sec-1';
     for (const id of secIds) {
