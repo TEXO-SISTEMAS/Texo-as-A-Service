@@ -1470,7 +1470,9 @@ function renderDashboard(data){
   // Narrativas por sección
   const rentTop=[...ag].sort((a,b)=>parseFloat(b.ebitda)-parseFloat(a.ebitda));
   const rentNarr = agEBITDANeg.length===0
-    ? `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> y <span class="narrative-green narrative-accent">${rentTop[1].nombre}</span> son las más rentables del grupo. Todas las agencias generan ganancia operativa positiva.`
+    ? (rentTop.length>1
+        ? `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> y <span class="narrative-green narrative-accent">${rentTop[1].nombre}</span> son las más rentables del grupo. Todas las agencias generan ganancia operativa positiva.`
+        : `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> genera ganancia operativa positiva.`)
     : `<span class="narrative-green narrative-accent">${rentTop[0].nombre}</span> lidera la rentabilidad. <span class="narrative-red narrative-accent">${agEBITDANeg.map(a=>a.nombre).join(' y ')}</span> opera${agEBITDANeg.length>1?'n':''} en pérdida — requiere${agEBITDANeg.length>1?'n':''} atención.`;
 
   const dep3709Narr = agDep3709.length===0
