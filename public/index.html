@@ -1130,6 +1130,24 @@ body.fullscreen .main { padding-top:64px; }
       <p>Subí un archivo Excel para comenzar</p>
       <button class="btn btn-primary" style="margin-top:12px;background:var(--accent);color:#fff" onclick="triggerUpload()">↑ Cargar Excel</button>
     </div>
+
+    <!-- STICKY NAV — vive fuera de #dashboard a propósito: si estuviera adentro,
+         position:sticky deja de funcionar en cuanto el scroll pasa el final de
+         #dashboard (secciones 01-06) y entra a Ingresos/Inversión/Comparación,
+         que son hermanas de #dashboard, no sus hijas. Puesto acá afuera, se
+         mantiene pegado arriba durante todo el recorrido 01-09. -->
+    <div class="section-nav" id="sectionNav" style="display:none">
+      <div class="snav-item snav-active" data-sec="sec-1" onclick="openSection('sec-1')" tabindex="-1">01 · Rentabilidad</div>
+      <div class="snav-item" data-sec="sec-2" onclick="openSection('sec-2')">02 · Sin 3709</div>
+      <div class="snav-item" data-sec="sec-3" onclick="openSection('sec-3')">03 · Eficiencia</div>
+      <div class="snav-item" data-sec="sec-4" onclick="openSection('sec-4')">04 · Innovación</div>
+      <div class="snav-item" data-sec="sec-5" onclick="openSection('sec-5')">05 · Expertise</div>
+      <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
+      <div class="snav-item" data-sec="ingresosSection" onclick="openSection('ingresosSection')">07 · Ingresos 2026</div>
+      <div class="snav-item" data-sec="invMediosSection" onclick="openSection('invMediosSection')">08 · Inversión de Medios</div>
+      <div class="snav-item" data-sec="comparacionSection" onclick="openSection('comparacionSection')">09 · Comparación 25 vs 26</div>
+    </div>
+
     <div id="dashboard" style="display:none"></div>
 
     <!-- ── DETALLE DE INGRESOS 2026 ── -->
@@ -1421,6 +1439,8 @@ async function loadDashboard(id){
 function showNoData(){
   document.getElementById('noData').style.display='flex';
   document.getElementById('dashboard').style.display='none';
+  const nav = document.getElementById('sectionNav');
+  if (nav) nav.style.display='none';
 }
 
 const charts={};
@@ -1454,6 +1474,8 @@ function renderDashboard(data){
   const unaAgencia = ag.length === 1;
   document.getElementById('noData').style.display='none';
   document.getElementById('dashboard').style.display='block';
+  const navEl = document.getElementById('sectionNav');
+  if (navEl) navEl.style.display='flex';
 
   const names=ag.map(a=>a.nombre);
   const colors=ag.map(a=>agColor(a.nombre));
@@ -1766,19 +1788,6 @@ function renderDashboard(data){
   };
 
   document.getElementById('dashboard').innerHTML = `
-  <!-- STICKY NAV -->
-  <div class="section-nav" id="sectionNav">
-    <div class="snav-item snav-active" data-sec="sec-1" onclick="openSection('sec-1')" tabindex="-1">01 · Rentabilidad</div>
-    <div class="snav-item" data-sec="sec-2" onclick="openSection('sec-2')">02 · Sin 3709</div>
-    <div class="snav-item" data-sec="sec-3" onclick="openSection('sec-3')">03 · Eficiencia</div>
-    <div class="snav-item" data-sec="sec-4" onclick="openSection('sec-4')">04 · Innovación</div>
-    <div class="snav-item" data-sec="sec-5" onclick="openSection('sec-5')">05 · Expertise</div>
-    <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
-    <div class="snav-item" data-sec="ingresosSection" onclick="openSection('ingresosSection')">07 · Ingresos 2026</div>
-    <div class="snav-item" data-sec="invMediosSection" onclick="openSection('invMediosSection')">08 · Inversión de Medios</div>
-    <div class="snav-item" data-sec="comparacionSection" onclick="openSection('comparacionSection')">09 · Comparación 25 vs 26</div>
-  </div>
-
   <!-- INTRO DIMENSIONES -->
   <div class="intro-section">
     <div class="intro-eyebrow">Texo as a Service · Salud Financiera</div>
