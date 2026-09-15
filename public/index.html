@@ -1069,7 +1069,11 @@ body.fullscreen .main { padding-top:64px; }
   .ingresos-table-grid{grid-template-columns:1fr}
   .ingresos-ebitda-grid{grid-template-columns:repeat(2,1fr)}
   .ingresos-clientes-grid{grid-template-columns:1fr}
+  .ingresos-kpi-grid[style*="repeat(5"]{grid-template-columns:repeat(2,1fr)!important}
 }
+/* ── Inversión de Medios (pestaña 09) ── */
+.gn-ptab{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;font-family:inherit}
+.gn-ptab.active{background:var(--accent);color:#fff;border-color:transparent}
 </style>
 </head>
 <body>
@@ -1098,7 +1102,6 @@ body.fullscreen .main { padding-top:64px; }
       <span style="font-size:13px;font-weight:700;padding:5px 12px;border-radius:6px;background:var(--accent);color:#fff">Salud Financiera</span>
       <a href="/adlens" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">AdLens</a>
       <a href="/marketing" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Marketing</a>
-      <a href="/globalnum" style="font-size:13px;padding:5px 12px;border-radius:6px;color:rgba(255,255,255,.6);text-decoration:none;transition:color .15s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Inversión de Medios</a>
     </nav>
   </div>
   <div class="topbar-right">
@@ -1154,6 +1157,27 @@ body.fullscreen .main { padding-top:64px; }
     <!-- ── COMPARACIÓN SALUD FINANCIERA (2025) VS INGRESOS (2026) ── -->
     <div class="ingresos-section" id="comparacionSection">
       <div id="comparacionContent"></div>
+    </div>
+
+    <!-- ── INVERSIÓN DE MEDIOS (antes módulo aparte "Global Num") ── -->
+    <div class="ingresos-section" id="invMediosSection">
+      <div class="ingresos-header">
+        <div class="ingresos-header-left">
+          <div class="ingresos-header-eyebrow">Capa 04 · Inversión de Medios · Holding</div>
+          <div class="ingresos-header-title" id="gnTitulo">Inversión de Medios</div>
+          <div class="ingresos-header-sub" id="gnSub">—</div>
+        </div>
+        <div class="ingresos-header-right">
+          <input type="file" id="gnFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleGnFile(event)">
+          <button class="ingresos-upload-btn" id="btnGnUpload" onclick="document.getElementById('gnFileInput').click()">↑ Subir Excel</button>
+        </div>
+      </div>
+      <div id="gnContent">
+        <div class="ingresos-empty">
+          <div style="font-size:28px">📂</div>
+          <p>Subí el Excel de Inversión de Medios para ver los datos</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1296,7 +1320,7 @@ async function handleFileSelect(e){
 async function refreshData(){
   const btn=document.getElementById('btnRefresh');
   btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
-  await loadUploads(); await loadLatest(); await loadLatestIngresos(); renderComparacion();
+  await loadUploads(); await loadLatest(); await loadLatestIngresos(); await loadLatestGn(); renderComparacion();
   btn.innerHTML='⟳ Actualizar'; btn.disabled=false;
 }
 
@@ -1359,6 +1383,15 @@ function onFiltroAgenciaChange(val){
       showIngresosSinAgencia(window._agenciaFiltro);
     } else {
       renderIngresos(filteredIng);
+    }
+  }
+  if(window._gnDataRaw){
+    const filteredGn = aplicarFiltroGn(window._gnDataRaw, window._agenciaFiltro);
+    if (window._agenciaFiltro && !filteredGn.rawRows?.length) {
+      mostrarGnSinAgencia(window._agenciaFiltro, window._gnDataRaw.periodo);
+    } else {
+      _gnD = filteredGn;
+      renderGn(filteredGn);
     }
   }
   renderComparacion();
@@ -1744,6 +1777,7 @@ function renderDashboard(data){
     <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
     <div class="snav-item" data-sec="ingresosSection" onclick="openSection('ingresosSection')">07 · Ingresos 2026</div>
     <div class="snav-item" data-sec="comparacionSection" onclick="openSection('comparacionSection')">08 · Comparación 25 vs 26</div>
+    <div class="snav-item" data-sec="invMediosSection" onclick="openSection('invMediosSection')">09 · Inversión de Medios</div>
   </div>
 
   <!-- INTRO DIMENSIONES -->
@@ -2812,7 +2846,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
       }
     }
   } catch(e) {}
-  await loadUploads(); await loadLatest(); await loadLatestIngresos(); renderComparacion();
+  await loadUploads(); await loadLatest(); await loadLatestIngresos(); await loadLatestGn(); renderComparacion();
 });
 
 // ── INGRESOS 2026 ─────────────────────────────────────────────────────────────
@@ -3360,6 +3394,969 @@ function renderComparacion(){
 }
 
 // ── OPEN SECTION ─────────────────────────────────────────────────────────────
+// ── INVERSIÓN DE MEDIOS (antes módulo aparte "Global Num", migrado sep 2026
+// a ser una pestaña más de Salud Financiera) ─────────────────────────────────
+const GN_FONT = { family:"'Inter',sans-serif", size:12 };
+const GN_TICK  = '#9ca3af';
+const GN_GRID  = 'rgba(0,0,0,.06)';
+const GN_MD_COLOR = { 'TV ABIERTA':'#3b82f6', RADIO:'#a855f7', DIGITAL:'#10b981', PRENSA:'#f59e0b', 'TV CABLE':'#ef4444', 'VIA PUBLICA':'#ec4899', OTROS:'#6b7280' };
+const GN_MES_NUM = { Ene:1,Feb:2,Mar:3,Abr:4,May:5,Jun:6,Jul:7,Ago:8,Sep:9,Oct:10,Nov:11,Dic:12 };
+const GN_MES_LABEL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// Cifra completa, sin abreviar: puntos como separador de miles + "Gs" al final
+// (regla explícita del módulo — no confundir con el fmtGs() de Salud Financiera,
+// que SÍ abrevia en M/B/K; por eso este helper tiene nombre propio).
+function gnGroupGs(v) {
+  const n = Math.round(Math.abs(Number(v) || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (Number(v) < 0 ? '-' : '') + n + ' Gs';
+}
+function gnFmtGs(v)       { return v ? gnGroupGs(v) : '0 Gs'; }
+function gnFmtGsShort(v)  { return v ? gnGroupGs(v) : '0 Gs'; }
+function gnFmtGsExacto(v) { return v > 0 ? gnGroupGs(v) : '—'; }
+function gnPct(v, total) { return total > 0 ? (v/total*100).toFixed(1) + '%' : '—'; }
+
+function gnCiRow(label, val) {
+  return `<div class="ci-row"><span class="ci-label">${label}</span><span class="ci-val">${val}</span></div>`;
+}
+function gnCiBadge(txt, tipo) { return `<span class="ci-badge ci-${tipo}">${txt}</span>`; }
+
+function gnNormalizarMedio(tipo) {
+  if (!tipo) return 'OTROS';
+  const t = String(tipo).toUpperCase().trim();
+  if (t.includes('TV') && t.includes('CABLE')) return 'TV CABLE';
+  if (t.includes('TV')) return 'TV ABIERTA';
+  if (t.includes('RADIO')) return 'RADIO';
+  if (t.includes('DIGITAL')) return 'DIGITAL';
+  if (t.includes('PRENSA')) return 'PRENSA';
+  if (t.includes('VIA') || t.includes('PUBLICA')) return 'VIA PUBLICA';
+  return 'OTROS';
+}
+
+function gnParsearEnBrowser(wb) {
+  let tipoCambio = 6000;
+  try {
+    const wsP = wb.Sheets['PARAMETROS'];
+    if (wsP) {
+      const rp = XLSX.utils.sheet_to_json(wsP, { header:1, defval:null });
+      for (const row of rp) {
+        if (row && String(row[0]||'').includes('cambio')) { tipoCambio = parseFloat(row[1]) || 6000; break; }
+      }
+    }
+  } catch(e) {}
+
+  const ws = wb.Sheets['CUBO'];
+  if (!ws) throw new Error('No se encontró la hoja CUBO en el archivo');
+  const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:null });
+  const H = rows[0];
+  const idx = n => H.indexOf(n);
+  const iAgencia=idx('Agencia'), iCliente=idx('Cliente'), iMedio=idx('Medio');
+  const iTipo=idx('Tipo (original)'), iGrupo=idx('Grupo / Proveedor'), iCanal=idx('Canal');
+  const iMes=idx('Mes'), iNMes=idx('Nº Mes'), iAnio=idx('Año');
+  const iMoneda=idx('Moneda');
+  const iImporte  = idx('Importe');
+  const iComision = idx('Comisión');
+  const iImporteGs=idx('Importe Gs'), iComGs=idx('Comisión Gs');
+  const iImpUsd = ['Importe USD','Inversión USD','Importe $','USD'].reduce((acc,n)=>acc>=0?acc:idx(n), -1);
+  const iComUsd = ['Comisión USD','Comision USD','Com USD'].reduce((acc,n)=>acc>=0?acc:idx(n), -1);
+
+  let totalInversion=0, totalComision=0;
+  const clientesSet=new Set(), agenciasSet=new Set();
+  const porMes=Array.from({length:12},(_,i)=>({mes:GN_MES_LABEL[i],nMes:i+1,inversion:0,comision:0}));
+  const porAgencia={}, porMedio={}, porCliente={}, porCanal={};
+  const rawRows=[];
+
+  for (let i=1; i<rows.length; i++) {
+    const r=rows[i];
+    if (!r||!r[iAgencia]) continue;
+    const agencia=String(r[iAgencia]).trim();
+    const cliente=r[iCliente]?String(r[iCliente]).trim():'—';
+    const tipoOrig=r[iTipo]?String(r[iTipo]).trim():'—';
+    const medio=gnNormalizarMedio(r[iMedio]||r[iTipo]);
+    const canal=r[iCanal]?String(r[iCanal]).trim():'—';
+    const grupo=r[iGrupo]?String(r[iGrupo]).trim():'—';
+    const nMes=typeof r[iNMes]==='number'?r[iNMes]:(GN_MES_NUM[r[iMes]]||0);
+    const anio=iAnio>=0&&r[iAnio]?parseInt(r[iAnio])||null:null;
+    const moneda=iMoneda>=0&&r[iMoneda]?String(r[iMoneda]).trim():null;
+    const importe  = iImporte>=0  ? parseFloat(r[iImporte]) ||0 : 0;
+    const comision = iComision>=0 ? parseFloat(r[iComision])||0 : 0;
+    const inv=parseFloat(r[iImporteGs])||0;
+    const com=parseFloat(r[iComGs])||0;
+    const invUsd=iImpUsd>=0?parseFloat(r[iImpUsd])||0:0;
+    const comUsd=iComUsd>=0?parseFloat(r[iComUsd])||0:0;
+    if (nMes<1||nMes>12) continue;
+
+    totalInversion+=inv; totalComision+=com;
+    clientesSet.add(cliente); agenciasSet.add(agencia);
+    porMes[nMes-1].inversion+=inv; porMes[nMes-1].comision+=com;
+    if (!porAgencia[agencia]) porAgencia[agencia]={inversion:0,comision:0};
+    porAgencia[agencia].inversion+=inv; porAgencia[agencia].comision+=com;
+    if (!porMedio[medio]) porMedio[medio]={inversion:0,comision:0};
+    porMedio[medio].inversion+=inv; porMedio[medio].comision+=com;
+    if (!porCliente[cliente]) porCliente[cliente]={inversion:0,comision:0};
+    porCliente[cliente].inversion+=inv; porCliente[cliente].comision+=com;
+    const cKey=grupo!=='—'?grupo:canal;
+    if (!porCanal[cKey]) porCanal[cKey]={inversion:0,comision:0};
+    porCanal[cKey].inversion+=inv; porCanal[cKey].comision+=com;
+    rawRows.push({agencia,cliente,medio,tipo:tipoOrig,grupo,canal,nMes,mes:GN_MES_LABEL[nMes-1],anio,moneda,importe,comision,invGs:inv,comGs:com,invUsd,comUsd});
+  }
+
+  const sumRange=(arr,a,b)=>arr.slice(a,b).reduce((acc,m)=>({inversion:acc.inversion+m.inversion,comision:acc.comision+m.comision}),{inversion:0,comision:0});
+  const s1=sumRange(porMes,0,6), s2=sumRange(porMes,6,12);
+  const q1=sumRange(porMes,0,3), q2=sumRange(porMes,3,6), q3=sumRange(porMes,6,9), q4=sumRange(porMes,9,12);
+
+  const toArr=(obj)=>Object.entries(obj).map(([nombre,d])=>({nombre,...d,pct:totalInversion>0?d.inversion/totalInversion:0})).sort((a,b)=>b.inversion-a.inversion);
+  const mesesConDatos=porMes.filter(m=>m.inversion>0);
+  const periodo=mesesConDatos.length>0?`${mesesConDatos[0].mes} – ${mesesConDatos[mesesConDatos.length-1].mes} 2025`:'2025';
+
+  return {
+    periodo, tipoCambio,
+    totales:{inversion:totalInversion,comision:totalComision,clientes:clientesSet.size,agencias:agenciasSet.size},
+    semestres:[{label:'S1 · Ene–Jun',...s1},{label:'S2 · Jul–Dic',...s2}],
+    trimestres:[{label:'Q1 · Ene–Mar',...q1},{label:'Q2 · Abr–Jun',...q2},{label:'Q3 · Jul–Sep',...q3},{label:'Q4 · Oct–Dic',...q4}],
+    porMes,
+    agencias: toArr(porAgencia),
+    medios:   toArr(porMedio),
+    topClientes: toArr(porCliente).slice(0,10),
+    canales:  toArr(porCanal).slice(0,10),
+    rawRows,
+  };
+}
+
+// ── COMPRESIÓN DETALLE (para entrar dentro del límite de tamaño al guardar en Drive) ──
+function gnCompressRows(rows) {
+  if (!rows || !rows.length) return null;
+  const dict = (arr, val) => { let i = arr.indexOf(val); if (i < 0) { i = arr.length; arr.push(val); } return i; };
+  const ags=[], cls=[], mds=[], tis=[], grs=[], cas=[], mos=[];
+  const data = rows.map(r => [
+    dict(ags, r.agencia), dict(cls, r.cliente), dict(mds, r.medio),
+    dict(tis, r.tipo),    dict(grs, r.grupo),   dict(cas, r.canal),
+    r.nMes, r.anio || 0,  dict(mos, r.moneda || '—'),
+    Math.round(r.invGs),  Math.round(r.comGs),
+    Math.round((r.invUsd || 0) * 100) / 100,
+    Math.round((r.comUsd || 0) * 100) / 100,
+    Math.round((r.importe   || 0) * 10000) / 10000,
+    Math.round((r.comision  || 0) * 10000) / 10000
+  ]);
+  return { ags, cls, mds, tis, grs, cas, mos, data };
+}
+
+function gnDecompressRows(c) {
+  if (!c || !c.data) return [];
+  return c.data.map(r => ({
+    agencia: c.ags[r[0]], cliente: c.cls[r[1]], medio: c.mds[r[2]],
+    tipo:    c.tis[r[3]], grupo:   c.grs[r[4]], canal: c.cas[r[5]],
+    nMes: r[6], mes: GN_MES_LABEL[r[6] - 1], anio: r[7] || null,
+    moneda: c.mos[r[8]],
+    invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12], importe: r[13]||0, comision: r[14]||0
+  }));
+}
+
+async function handleGnFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const btn = document.getElementById('btnGnUpload');
+  if (btn) { btn.textContent = 'Procesando...'; btn.disabled = true; }
+  try {
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
+    const data = gnParsearEnBrowser(wb);
+
+    const { rawRows, ...rest } = data;
+    const dataParaServer = { ...rest, detalle: gnCompressRows(rawRows) };
+
+    const r = await fetch('/api/save-globalnum', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dataParaServer)
+    });
+    const res = await r.json();
+    if (!r.ok) throw new Error(res.error || 'Error del servidor');
+
+    showToast('✓ Inversión de Medios cargada · ' + data.periodo, 'success');
+    window._gnDataRaw = data;
+    const filtro = agenciaActiva();
+    const filtered = aplicarFiltroGn(data, filtro);
+    if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo); }
+    else { _gnD = filtered; renderGn(filtered); }
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    e.target.value = '';
+    if (btn) { btn.textContent = '↑ Subir Excel'; btn.disabled = false; }
+  }
+}
+
+// Recalcula agregados (agencias, medios, topClientes, canales, totales, porMes)
+// a partir de rawRows ya filtradas — misma lógica de agregación que gnParsearEnBrowser.
+function gnRecomputeFromRawRows(rawRows) {
+  let totalInversion=0, totalComision=0;
+  const clientesSet=new Set(), agenciasSet=new Set();
+  const porMes=Array.from({length:12},(_,i)=>({mes:GN_MES_LABEL[i],nMes:i+1,inversion:0,comision:0}));
+  const porAgencia={}, porMedio={}, porCliente={}, porCanal={};
+  rawRows.forEach(r=>{
+    totalInversion+=r.invGs||0; totalComision+=r.comGs||0;
+    clientesSet.add(r.cliente); agenciasSet.add(r.agencia);
+    if (r.nMes>=1&&r.nMes<=12){ porMes[r.nMes-1].inversion+=r.invGs||0; porMes[r.nMes-1].comision+=r.comGs||0; }
+    if (!porAgencia[r.agencia]) porAgencia[r.agencia]={inversion:0,comision:0};
+    porAgencia[r.agencia].inversion+=r.invGs||0; porAgencia[r.agencia].comision+=r.comGs||0;
+    if (!porMedio[r.medio]) porMedio[r.medio]={inversion:0,comision:0};
+    porMedio[r.medio].inversion+=r.invGs||0; porMedio[r.medio].comision+=r.comGs||0;
+    if (!porCliente[r.cliente]) porCliente[r.cliente]={inversion:0,comision:0};
+    porCliente[r.cliente].inversion+=r.invGs||0; porCliente[r.cliente].comision+=r.comGs||0;
+    const cKey=r.grupo&&r.grupo!=='—'?r.grupo:r.canal;
+    if (!porCanal[cKey]) porCanal[cKey]={inversion:0,comision:0};
+    porCanal[cKey].inversion+=r.invGs||0; porCanal[cKey].comision+=r.comGs||0;
+  });
+  const sumRange=(arr,a,b)=>arr.slice(a,b).reduce((acc,m)=>({inversion:acc.inversion+m.inversion,comision:acc.comision+m.comision}),{inversion:0,comision:0});
+  const s1=sumRange(porMes,0,6), s2=sumRange(porMes,6,12);
+  const q1=sumRange(porMes,0,3), q2=sumRange(porMes,3,6), q3=sumRange(porMes,6,9), q4=sumRange(porMes,9,12);
+  const toArr=(obj)=>Object.entries(obj).map(([nombre,d])=>({nombre,...d,pct:totalInversion>0?d.inversion/totalInversion:0})).sort((a,b)=>b.inversion-a.inversion);
+  return {
+    totales:{inversion:totalInversion,comision:totalComision,clientes:clientesSet.size,agencias:agenciasSet.size},
+    semestres:[{label:'S1 · Ene–Jun',...s1},{label:'S2 · Jul–Dic',...s2}],
+    trimestres:[{label:'Q1 · Ene–Mar',...q1},{label:'Q2 · Abr–Jun',...q2},{label:'Q3 · Jul–Sep',...q3},{label:'Q4 · Oct–Dic',...q4}],
+    porMes,
+    agencias: toArr(porAgencia), medios: toArr(porMedio),
+    topClientes: toArr(porCliente).slice(0,10), canales: toArr(porCanal).slice(0,10),
+  };
+}
+
+// Filtro client-side por agencia (mismo patrón que aplicarFiltroSF/aplicarFiltroIngresos):
+// nunca muta el dataset crudo, así "Todas las agencias" no necesita re-fetch.
+function aplicarFiltroGn(data, agencia) {
+  if (!agencia || !data) return data;
+  const rawRows = (data.rawRows||[]).filter(r => (r.agencia||'').toUpperCase() === agencia.toUpperCase());
+  return { ...data, rawRows, ...gnRecomputeFromRawRows(rawRows) };
+}
+
+function mostrarGnSinAgencia(agencia, periodo) {
+  const titulo = document.getElementById('gnTitulo');
+  const sub    = document.getElementById('gnSub');
+  if (titulo) titulo.textContent = `Inversión de Medios · ${periodo || '2025'}`;
+  if (sub)    sub.textContent = `Sin transacciones de ${agencia} en este período`;
+  const content = document.getElementById('gnContent');
+  if (content) content.innerHTML = `<div class="ingresos-empty"><div style="font-size:28px">🔍</div><p>El Excel de Inversión de Medios está cargado, pero <strong>${agencia}</strong> no tiene transacciones registradas en este período.</p></div>`;
+}
+
+async function loadLatestGn() {
+  const titulo = document.getElementById('gnTitulo');
+  const sub    = document.getElementById('gnSub');
+  try {
+    const r = await fetch('/api/latest-globalnum');
+    const data = await r.json();
+    if (data.empty || data.error) {
+      if (titulo) titulo.textContent = 'Inversión de Medios';
+      if (sub)    sub.textContent = 'Sin datos cargados · Subí el Excel para ver los datos';
+      return;
+    }
+    if (data.detalle) data.rawRows = gnDecompressRows(data.detalle);
+    window._gnDataRaw = data;
+    const filtro = agenciaActiva();
+    const filtered = aplicarFiltroGn(data, filtro);
+    if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo); return; }
+    _gnD = filtered;
+    renderGn(filtered);
+  } catch(e) { console.error(e); }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+let _gnD = null;
+let _gnCharts = {};
+
+function renderGn(d) {
+  const titulo = document.getElementById('gnTitulo');
+  const sub    = document.getElementById('gnSub');
+  if (titulo) titulo.textContent = `Inversión de Medios · ${d.periodo || '2025'}`;
+  if (sub)    sub.textContent = `${(d.totales?.clientes||0)} clientes activos · ${(d.totales?.agencias||0)} agencias`;
+
+  const t = d.totales || {};
+  const tc = d.tipoCambio || 6000;
+  const comUsd = t.comision ? Math.round(t.comision / tc) : 0;
+  const hasRows = d.rawRows && d.rawRows.length;
+
+  const kpiHtml = `
+    <div class="ingresos-kpi-grid" style="grid-template-columns:repeat(5,1fr)">
+      <div class="kpi kpi-accent" style="--kpi-color:var(--accent)">
+        <div class="kpi-label">Inversión Total</div>
+        <div class="kpi-value" style="font-size:24px">${gnFmtGs(t.inversion)}</div>
+        <div class="kpi-sub">${d.periodo || ''}</div>
+      </div>
+      <div class="kpi kpi-accent" style="--kpi-color:var(--green)">
+        <div class="kpi-label">Comisión Total</div>
+        <div class="kpi-value kpi-pos" style="font-size:24px">${gnFmtGs(t.comision)}</div>
+        <div class="kpi-sub">${gnPct(t.comision, t.inversion)} sobre inversión</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Comisión en USD</div>
+        <div class="kpi-value" style="font-size:24px">$ ${comUsd.toLocaleString('es-PY')}</div>
+        <div class="kpi-sub">TC: ${tc.toLocaleString('es-PY')} Gs/USD</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Clientes Activos</div>
+        <div class="kpi-value" style="font-size:24px">${t.clientes||0}</div>
+        <div class="kpi-sub">Anunciantes con inversión</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Agencias</div>
+        <div class="kpi-value" style="font-size:24px">${t.agencias||0}</div>
+        <div class="kpi-sub">NASTA · BRICK · LUPE · OMD · ROGER</div>
+      </div>
+    </div>`;
+
+  const agMesHtml = hasRows ? `
+    <div class="chart-card wide" style="margin-bottom:16px">
+      <div class="chart-title">Inversión por agencia y mes</div>
+      <div class="chart-subtitle">Importe Gs. — agrupado por mes</div>
+      <div class="chart-wrap" style="height:400px"><canvas id="gnCAgMes"></canvas></div>
+      <div class="chart-insight" id="gnInsightAgMes"></div>
+    </div>
+    <div class="chart-card wide" style="margin-bottom:16px">
+      <div style="margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:2px">Inversión por mes y agencia</div>
+        <div class="chart-subtitle">Importe Gs. · (% del mes · % de la agencia)</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="gnTAgMes" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead id="gnTAgMesHead"></thead>
+          <tbody id="gnTAgMesBody"></tbody>
+          <tfoot id="gnTAgMesFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="chart-card wide" style="margin-bottom:16px">
+      <div class="chart-title">Mix de medios por agencia</div>
+      <div class="chart-subtitle">Inversión Gs. por medio — desglosado por agencia</div>
+      <div class="chart-wrap" style="height:280px"><canvas id="gnCMixMedAg"></canvas></div>
+      <div class="chart-insight" id="gnInsightMixMedAg"></div>
+    </div>
+    <div class="chart-card wide" style="margin-bottom:16px">
+      <div style="margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:2px">Inversión por medio y agencia</div>
+        <div class="chart-subtitle">Importe Gs. · (% del total de cada agencia)</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="gnTMedAg" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead id="gnTMedAgHead"></thead>
+          <tbody id="gnTMedAgBody"></tbody>
+          <tfoot id="gnTMedAgFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+    <div class="chart-card wide" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div>
+          <div class="chart-title" style="margin-bottom:2px">Top 10 clientes por agencia</div>
+          <div class="chart-subtitle">Importe Gs. · color por agencia</div>
+        </div>
+        <select id="gnFilterCliMes" onchange="renderGnCliMesH()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--white);color:var(--text);font-size:13px;cursor:pointer">
+          <option value="">Todos los meses</option>
+        </select>
+      </div>
+      <div class="chart-wrap" style="height:320px"><canvas id="gnCCliMesH"></canvas></div>
+      <div class="chart-insight" id="gnInsightCliAgencia"></div>
+    </div>` : '';
+
+  const bodyHtml = `
+    ${kpiHtml}
+    <div class="charts-grid" style="margin-bottom:16px;display:grid;grid-template-columns:2fr 1fr;gap:16px">
+      <div class="chart-card">
+        <div class="chart-title">Inversión por agencia</div>
+        <div class="chart-subtitle">Gs. acumulado</div>
+        <div class="chart-wrap"><canvas id="gnCAgencia"></canvas></div>
+        <div class="chart-insight" id="gnInsightAgencia"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Mix de medios</div>
+        <div class="chart-subtitle">Participación % sobre inversión</div>
+        <div class="chart-wrap"><canvas id="gnCMedios"></canvas></div>
+        <div class="chart-insight" id="gnInsightMedios"></div>
+      </div>
+    </div>
+    ${agMesHtml}
+    <div class="chart-card wide" style="margin-bottom:16px">
+      <div class="chart-title">Top 10 clientes · inversión total</div>
+      <div class="chart-subtitle">Importe Gs. acumulado anual</div>
+      <div class="chart-wrap" style="height:320px"><canvas id="gnCClientes"></canvas></div>
+      <div class="chart-insight" id="gnInsightTopCli"></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header">Top canales / proveedores</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>#</th><th>Canal / Proveedor</th><th>Inversión Gs.</th><th>Comisión Gs.</th><th>% del total</th><th></th></tr></thead>
+          <tbody id="gnTbCanales"></tbody>
+        </table>
+      </div>
+      <div class="chart-insight" id="gnInsightCanales"></div>
+    </div>
+    <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap">
+      <div class="period-label-sub" id="gnPeriodLabel" style="font-size:12px;color:var(--muted);font-weight:500">—</div>
+      <div class="period-tabs" style="display:flex;gap:6px">
+        <button class="ptab gn-ptab active" onclick="gnSetPeriod('mensual',this)">Mensual</button>
+        <button class="ptab gn-ptab" onclick="gnSetPeriod('trimestral',this)">Trimestral</button>
+        <button class="ptab gn-ptab" onclick="gnSetPeriod('semestral',this)">Semestral</button>
+      </div>
+    </div>
+    <div class="gn-period-grid" id="gnPeriodBreakdown" style="display:grid;gap:12px;margin-bottom:24px"></div>
+    <div class="chart-card wide" style="margin-bottom:16px;padding:20px 16px">
+      <div class="chart-title">Detalle de inversión</div>
+      <div class="chart-subtitle">Por agencia · cliente · medio · tipo · grupo · mes</div>
+      ${hasRows ? `
+      <div class="gn-detalle-search-row" style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+        <input class="gn-detalle-search" type="text" id="gnDetalleSearch" placeholder="Buscar por cliente, agencia, medio, tipo, grupo..." oninput="filtrarGnDetalle()" style="flex:1;min-width:220px;padding:8px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--text)">
+        <select class="gn-detalle-select" id="gnFilterAgencia" onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todas las agencias</option></select>
+        <select class="gn-detalle-select" id="gnFilterCliente" onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los clientes</option></select>
+        <select class="gn-detalle-select" id="gnFilterMedio"   onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los medios</option></select>
+        <select class="gn-detalle-select" id="gnFilterGrupo"   onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los grupos</option></select>
+        <select class="gn-detalle-select" id="gnFilterMes"     onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los meses</option></select>
+        <select class="gn-detalle-select" id="gnFilterMoneda"  onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todas las monedas</option></select>
+        <span class="gn-detalle-count" id="gnDetalleCount" style="font-size:12px;color:var(--muted);white-space:nowrap;margin-left:auto"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="gnTDetalle">
+          <thead><tr>
+            <th style="text-align:left">Agencia</th><th style="text-align:left">Cliente</th><th style="text-align:left">Medio</th>
+            <th style="text-align:left">Tipo</th><th style="text-align:left">Grupo / Proveedor</th><th style="text-align:left">Canal</th>
+            <th>Mes</th><th>Año</th><th>Moneda</th><th>Importe</th><th>Comisión</th><th>Importe Gs.</th>
+            <th id="gnThUsd" style="display:none">Importe USD</th><th>Com. Gs.</th><th>% Com.</th>
+          </tr></thead>
+          <tbody id="gnTbDetalle"></tbody>
+        </table>
+      </div>
+      <div class="gn-pag-row" style="display:flex;align-items:center;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button class="pag-btn" id="gnPagPrev" onclick="cambiarGnPagina(-1)" style="padding:5px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;background:var(--white);color:var(--text)">← Anterior</button>
+        <span class="pag-info" id="gnPagInfo" style="font-size:13px;color:var(--muted)"></span>
+        <button class="pag-btn" id="gnPagNext" onclick="cambiarGnPagina(1)" style="padding:5px 12px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;background:var(--white);color:var(--text)">Siguiente →</button>
+      </div>` : `<div style="padding:40px 0;text-align:center;color:var(--muted);font-size:14px">Recargá el Excel para ver el detalle de transacciones</div>`}
+    </div>`;
+
+  const content = document.getElementById('gnContent');
+  if (content) content.innerHTML = bodyHtml;
+
+  gnSetPeriod('mensual', content ? content.querySelector('.gn-ptab.active') : null);
+  if (hasRows) renderGnDetalleTabla(d.rawRows);
+  renderGnCharts(d);
+  renderGnInsights(d);
+  renderGnTablaCanales(d.canales, t.inversion);
+}
+
+function gnSetPeriod(tipo, btn) {
+  const content = document.getElementById('gnContent');
+  if (content) content.querySelectorAll('.gn-ptab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (!_gnD) return;
+  const wrap = document.getElementById('gnPeriodBreakdown');
+  if (!wrap) return;
+  if (tipo === 'mensual')     gnRenderPeriodMensual(wrap, _gnD);
+  if (tipo === 'semestral')   gnRenderPeriodSemestral(wrap, _gnD);
+  if (tipo === 'trimestral')  gnRenderPeriodTrimestral(wrap, _gnD);
+}
+
+function gnPeriodRow(label, inv, com, maxInv) {
+  const fillPct = maxInv > 0 ? Math.min(100, inv/maxInv*100) : 0;
+  return `<div class="period-row" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div class="period-row-label" style="min-width:80px;font-size:13px;font-weight:700">${label}</div>
+    <div class="period-row-bar" style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;border-radius:4px;background:#f0f040;width:${fillPct.toFixed(1)}%"></div></div>
+    <div class="period-row-val" style="font-size:13px;font-weight:800;text-align:right;min-width:90px">${gnFmtGs(inv)}</div>
+    <div class="period-row-com" style="font-size:11px;color:var(--muted);min-width:72px;text-align:right">Com: ${gnFmtGsShort(com)}</div>
+  </div>`;
+}
+
+function gnRenderPeriodMensual(wrap, d) {
+  const maxInv = Math.max(...d.porMes.map(m => m.inversion));
+  const rows = d.porMes.map(m => gnPeriodRow(m.mes, m.inversion, m.comision, maxInv)).join('');
+  const conDatos = d.porMes.filter(m => m.inversion > 0);
+  let insightHtml = '';
+  if (conDatos.length) {
+    const mejor  = conDatos.reduce((a,b) => b.inversion > a.inversion ? b : a);
+    const menor  = conDatos.reduce((a,b) => b.inversion < a.inversion ? b : a);
+    const prom   = conDatos.reduce((s,m) => s+m.inversion, 0) / conDatos.length;
+    const varP   = ((mejor.inversion - menor.inversion) / prom * 100).toFixed(0);
+    insightHtml = `<div class="chart-insight" style="margin-top:12px">` +
+      gnCiRow('Objetivo', 'Ver la evolución mes a mes de la inversión total para detectar estacionalidad, picos y valles que guíen la planificación de campañas.') +
+      `<div class="ci-formula">Inversión mensual = suma de importes Gs. del período · barras = % relativo al mes pico</div>` +
+      gnCiRow('Mejor mes',  `<strong>${mejor.mes}</strong> · ${gnFmtGs(mejor.inversion)}`) +
+      gnCiRow('Menor mes',  `<strong>${menor.mes}</strong> · ${gnFmtGs(menor.inversion)}`) +
+      gnCiRow('Variación',  `${varP}% entre pico y valle ${gnCiBadge(+varP > 80 ? 'Alta estacionalidad' : +varP > 40 ? 'Moderada' : 'Estable', +varP > 80 ? 'warn' : 'ok')}`) +
+      `</div>`;
+  }
+  wrap.innerHTML = `<div class="period-card" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:22px 24px">
+    <div class="period-header" style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">Inversión mensual</div>
+    <div class="period-rows" style="display:grid;gap:10px">${rows}</div>
+    ${insightHtml}
+  </div>`;
+}
+
+function gnRenderPeriodSemestral(wrap, d) {
+  const maxInv = Math.max(...d.semestres.map(s => s.inversion));
+  const rows = d.semestres.map(s => gnPeriodRow(s.label, s.inversion, s.comision, maxInv)).join('');
+  const [s1, s2] = d.semestres;
+  let insightHtml = '';
+  if (s1 && s2 && s1.inversion && s2.inversion) {
+    const diff    = ((s2.inversion - s1.inversion) / s1.inversion * 100).toFixed(1);
+    const tipo    = +diff > 5 ? 'ok' : +diff < -5 ? 'bad' : 'warn';
+    const texto   = +diff > 5 ? 'Segundo semestre más fuerte' : +diff < -5 ? 'Caída vs S1' : 'Semestres parejos';
+    insightHtml = `<div class="chart-insight" style="margin-top:12px">` +
+      gnCiRow('Objetivo', 'Comparar S1 (Ene–Jun) vs S2 (Jul–Dic) para detectar si la inversión se concentra en alguna mitad del año y ajustar la planificación presupuestaria.') +
+      `<div class="ci-formula">Inversión semestral = suma Gs. de los 6 meses del período</div>` +
+      gnCiRow('S1 vs S2', `${gnCiBadge(texto, tipo)} variación: <strong>${diff > 0 ? '+' : ''}${diff}%</strong>`) +
+      gnCiRow('Recomendación', +diff < -10 ? 'Reforzar actividad en segundo semestre' : +diff > 10 ? 'Capitalizar el impulso del segundo semestre' : 'Distribución semestral equilibrada') +
+      `</div>`;
+  }
+  wrap.innerHTML = `<div class="period-card" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:22px 24px">
+    <div class="period-header" style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">Inversión por semestre</div>
+    <div class="period-rows" style="display:grid;gap:10px">${rows}</div>
+    ${insightHtml}
+  </div>`;
+}
+
+function gnRenderPeriodTrimestral(wrap, d) {
+  const maxInv = Math.max(...d.trimestres.map(q => q.inversion));
+  const rows = d.trimestres.map(q => gnPeriodRow(q.label, q.inversion, q.comision, maxInv)).join('');
+  const sorted = [...d.trimestres].sort((a,b) => b.inversion - a.inversion);
+  let insightHtml = '';
+  if (sorted.length) {
+    const mejorQ = sorted[0];
+    const menorQ = sorted[sorted.length - 1];
+    insightHtml = `<div class="chart-insight" style="margin-top:12px">` +
+      gnCiRow('Objetivo', 'Agrupar la inversión en bloques de 3 meses para evaluar tendencias trimestrales y comparar el desempeño entre Q1, Q2, Q3 y Q4.') +
+      `<div class="ci-formula">Inversión trimestral = suma Gs. de los 3 meses del trimestre</div>` +
+      gnCiRow('Mejor trimestre', `<strong>${mejorQ.label}</strong> · ${gnFmtGs(mejorQ.inversion)}`) +
+      gnCiRow('Menor trimestre', `<strong>${menorQ.label}</strong> · ${gnFmtGs(menorQ.inversion)}`) +
+      `</div>`;
+  }
+  wrap.innerHTML = `<div class="period-card" style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:22px 24px">
+    <div class="period-header" style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)">Inversión por trimestre</div>
+    <div class="period-rows" style="display:grid;gap:10px">${rows}</div>
+    ${insightHtml}
+  </div>`;
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────────
+function gnDestroyChart(key) { if (_gnCharts[key]) { try { _gnCharts[key].destroy(); } catch(e){} delete _gnCharts[key]; } }
+
+function renderGnCharts(d) {
+  const COMMON = { responsive:true, maintainAspectRatio:false };
+
+  gnDestroyChart('agMes');
+  if (d.rawRows && d.rawRows.length && document.getElementById('gnCAgMes')) {
+    const agList = [...new Set(d.rawRows.map(r=>r.agencia))].sort();
+    const porAgMes = {};
+    agList.forEach(ag => { porAgMes[ag] = Array(12).fill(0); });
+    d.rawRows.forEach(r => { if (porAgMes[r.agencia] && r.nMes >= 1 && r.nMes <= 12) porAgMes[r.agencia][r.nMes-1] += r.invGs; });
+    _gnCharts.agMes = new Chart(document.getElementById('gnCAgMes'), {
+      type: 'bar',
+      data: { labels: GN_MES_LABEL, datasets: agList.map(ag => ({ label: ag, data: porAgMes[ag], backgroundColor: agColor(ag), borderRadius: 4, borderWidth: 0 })) },
+      options: {
+        ...COMMON,
+        plugins: {
+          legend: { labels: { color: GN_TICK, font: GN_FONT, boxWidth: 12, padding: 16 } },
+          tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + gnFmtGsExacto(ctx.parsed.y) } }
+        },
+        scales: {
+          x: { ticks: { color: GN_TICK, font: GN_FONT }, grid: { color: 'transparent' } },
+          y: { ticks: { color: GN_TICK, font: GN_FONT, callback: v => gnFmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid: { color: GN_GRID } }
+        }
+      }
+    });
+
+    const agListM  = [...new Set(d.rawRows.map(r=>r.agencia))].sort();
+    const medList = [...new Set(d.rawRows.map(r=>r.medio).filter(Boolean))].sort();
+    const pivot   = {}; agListM.forEach(ag=>{ pivot[ag]={}; medList.forEach(m=>pivot[ag][m]=0); });
+    d.rawRows.forEach(r=>{ if(r.medio&&pivot[r.agencia]) pivot[r.agencia][r.medio]=(pivot[r.agencia][r.medio]||0)+r.invGs; });
+    const totAg   = {}; agListM.forEach(ag=>{ totAg[ag]=medList.reduce((s,m)=>s+(pivot[ag][m]||0),0); });
+    const MED_COLORS = ['#6c3fc5','#e85d26','#0ea5b0','#d4900a','#d42b4f','#059669','#2563eb','#7c3aed'];
+    gnDestroyChart('mixMedAg');
+    _gnCharts.mixMedAg = new Chart(document.getElementById('gnCMixMedAg'), {
+      type: 'bar',
+      data: { labels: agListM, datasets: medList.map((med, i) => ({ label: med, data: agListM.map(ag => pivot[ag][med] || 0), backgroundColor: MED_COLORS[i % MED_COLORS.length], borderWidth: 0, borderRadius: 0 })) },
+      options: {
+        ...COMMON, indexAxis: 'y',
+        plugins: {
+          legend: { labels: { color: GN_TICK, font: GN_FONT, boxWidth: 12, padding: 14 } },
+          tooltip: { mode: 'index', intersect: false, callbacks: { label: ctx => {
+            const ag  = ctx.chart.data.labels[ctx.dataIndex];
+            const tot = totAg[ag] || 1;
+            const pc = (ctx.parsed.x / tot * 100).toFixed(1);
+            return ` ${ctx.dataset.label}: ${gnFmtGsExacto(ctx.parsed.x)} (${pc}%)`;
+          } } }
+        },
+        scales: {
+          x: { stacked: true, ticks: { color: GN_TICK, font: GN_FONT, callback: v => gnFmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid: { color: GN_GRID } },
+          y: { stacked: true, ticks: { color: GN_TICK, font: GN_FONT }, grid: { color: 'transparent' } }
+        }
+      }
+    });
+
+    renderGnTablaAgMes();
+    renderGnTablaMedAg();
+
+    const mesesDisp = [...new Set(d.rawRows.map(r=>r.nMes))].sort((a,b)=>a-b);
+    const sel = document.getElementById('gnFilterCliMes');
+    if (sel) {
+      sel.innerHTML = '<option value="">Todos los meses</option>' + mesesDisp.map(n=>`<option value="${n}">${GN_MES_LABEL[n-1]}</option>`).join('');
+      renderGnCliMesH();
+    }
+  }
+
+  gnDestroyChart('agencia');
+  const agNames  = d.agencias.map(a => a.nombre);
+  const agColors = agNames.map(n => agColor(n));
+  _gnCharts.agencia = new Chart(document.getElementById('gnCAgencia'), {
+    type: 'bar',
+    data: { labels: agNames, datasets: [{ data: d.agencias.map(a => a.inversion), backgroundColor: agColors, borderColor: agColors, borderWidth: 0, borderRadius: 6 }] },
+    options: {
+      ...COMMON,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{
+        title: ctx => ctx[0].label,
+        label: ctx => ' Inversión: ' + gnFmtGs(ctx.parsed.y),
+        afterLabel: ctx => ' Participación: ' + gnPct(ctx.parsed.y, d.totales.inversion),
+      }}},
+      scales:{
+        x:{ ticks:{ color:GN_TICK, font:{...GN_FONT,weight:'600'} }, grid:{ color:'transparent' }},
+        y:{ ticks:{ color:GN_TICK, font:GN_FONT, callback: v => gnFmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid:{ color:GN_GRID }}
+      }
+    }
+  });
+
+  gnDestroyChart('medios');
+  const mdNames  = d.medios.map(m => m.nombre);
+  const mdColors = mdNames.map(n => GN_MD_COLOR[n] || '#6b7280');
+  _gnCharts.medios = new Chart(document.getElementById('gnCMedios'), {
+    type: 'doughnut',
+    data: { labels: mdNames, datasets: [{ data: d.medios.map(m => m.inversion), backgroundColor: mdColors, borderColor: '#fff', borderWidth: 3 }] },
+    options: {
+      ...COMMON, cutout:'62%',
+      plugins:{ legend:{ position:'bottom', labels:{ color:GN_TICK, font:GN_FONT, padding:12, boxWidth:12 }},
+        tooltip:{ callbacks:{ label: ctx => ' ' + ctx.label + ': ' + gnPct(ctx.parsed, d.totales.inversion) }}
+      }
+    }
+  });
+
+  gnDestroyChart('clientes');
+  const cliNombres = d.topClientes.map(c => c.nombre.length > 30 ? c.nombre.slice(0,28)+'…' : c.nombre);
+  const cliPalette = ['#6c3fc5','#e85d26','#0ea5b0','#d4900a','#d42b4f','#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316','#a855f7','#06b6d4','#84cc16'];
+  const cliColors  = d.topClientes.map((_, i) => cliPalette[i % cliPalette.length]);
+  _gnCharts.clientes = new Chart(document.getElementById('gnCClientes'), {
+    type: 'bar',
+    data: { labels: cliNombres, datasets: [{ data: d.topClientes.map(c => c.inversion), backgroundColor: cliColors.map(c => c + 'cc'), borderColor: cliColors, borderWidth: 1, borderRadius: 4 }] },
+    options: {
+      indexAxis: 'y', ...COMMON,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ' ' + gnFmtGs(ctx.parsed.x) + ' · ' + gnPct(ctx.parsed.x, d.totales.inversion) }}},
+      scales:{
+        x:{ ticks:{ color:GN_TICK, font:GN_FONT, callback: v => gnFmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid:{ color:GN_GRID }},
+        y:{ ticks:{ color:GN_TICK, font:{...GN_FONT,size:11} }, grid:{ color:'transparent' }}
+      }
+    }
+  });
+}
+
+function renderGnTablaAgMes() {
+  if (!_gnD || !_gnD.rawRows || !_gnD.rawRows.length) return;
+  const head = document.getElementById('gnTAgMesHead');
+  if (!head) return;
+  const rows     = _gnD.rawRows;
+  const agencias = [...new Set(rows.map(r => r.agencia))].sort();
+  const pivot    = {};
+  for (let m=1;m<=12;m++) { pivot[m]={}; agencias.forEach(ag=>pivot[m][ag]=0); }
+  rows.forEach(r => { if (r.nMes>=1&&r.nMes<=12) pivot[r.nMes][r.agencia]=(pivot[r.nMes][r.agencia]||0)+r.invGs; });
+  const totAg  = {}; agencias.forEach(ag=>{ totAg[ag]=Object.values(pivot).reduce((s,m)=>s+(m[ag]||0),0); });
+  const totGen = agencias.reduce((s,ag)=>s+totAg[ag],0);
+  const fN     = v => v>0 ? gnGroupGs(v) : '—';
+  const fP     = (v,t) => t>0 ? (v/t*100).toFixed(1)+'%' : '—';
+  const cell   = (v, totMes, totAgencia) => v > 0
+    ? `${fN(v)}<br><span style="font-size:11px;color:var(--muted)">(${fP(v,totMes)} mes · ${fP(v,totAgencia)} ag.)</span>`
+    : '—';
+  head.innerHTML = `<tr><th>Mes</th>${agencias.map(ag=>`<th style="color:${agColor(ag)}">${ag}</th>`).join('')}<th>Total</th></tr>`;
+  document.getElementById('gnTAgMesBody').innerHTML = Array.from({length:12},(_,i)=>i+1)
+    .filter(m => agencias.some(ag=>pivot[m][ag]>0))
+    .map(m => {
+      const tot = agencias.reduce((s,ag)=>s+(pivot[m][ag]||0),0);
+      return `<tr><td>${GN_MES_LABEL[m-1]}</td>${agencias.map(ag=>`<td>${cell(pivot[m][ag], tot, totAg[ag])}</td>`).join('')}<td style="font-weight:700">${fN(tot)}<br><span style="font-size:11px;color:var(--muted)">(${fP(tot,totGen)})</span></td></tr>`;
+    }).join('');
+  document.getElementById('gnTAgMesFoot').innerHTML =
+    `<tr><td>Total general</td>${agencias.map(ag=>`<td style="color:${agColor(ag)}">${fN(totAg[ag])}<br><span style="font-size:11px;color:var(--muted)">(${fP(totAg[ag],totGen)})</span></td>`).join('')}<td>${fN(totGen)}</td></tr>`;
+}
+
+function renderGnTablaMedAg() {
+  if (!_gnD || !_gnD.rawRows || !_gnD.rawRows.length) return;
+  const head = document.getElementById('gnTMedAgHead');
+  if (!head) return;
+  const rows     = _gnD.rawRows;
+  const agencias = [...new Set(rows.map(r => r.agencia))].sort();
+  const medios   = [...new Set(rows.map(r => r.medio).filter(Boolean))].sort();
+  const pivot    = {}; medios.forEach(m=>{ pivot[m]={}; agencias.forEach(ag=>pivot[m][ag]=0); });
+  rows.forEach(r => { if (r.medio&&pivot[r.medio]) pivot[r.medio][r.agencia]=(pivot[r.medio][r.agencia]||0)+r.invGs; });
+  const totAg    = {}; agencias.forEach(ag=>{ totAg[ag]=medios.reduce((s,m)=>s+(pivot[m][ag]||0),0); });
+  const totGen   = agencias.reduce((s,ag)=>s+totAg[ag],0);
+  const fN       = v => v>0 ? gnGroupGs(v) : '—';
+  const fPct     = (v, tot) => tot>0 ? (v/tot*100).toFixed(1)+'%' : '—';
+  const cell     = (v, tot) => v > 0 ? `${fN(v)}<br><span style="font-size:11px;color:var(--muted)">(${fPct(v,tot)})</span>` : '—';
+  head.innerHTML = `<tr><th>Medio</th>${agencias.map(ag=>`<th style="color:${agColor(ag)}">${ag}</th>`).join('')}<th>Total</th></tr>`;
+  document.getElementById('gnTMedAgBody').innerHTML = medios.map(med => {
+    const tot = agencias.reduce((s,ag)=>s+(pivot[med][ag]||0),0);
+    if (!tot) return '';
+    return `<tr><td>${med}</td>${agencias.map(ag=>`<td>${cell(pivot[med][ag], totAg[ag])}</td>`).join('')}<td style="font-weight:700">${fN(tot)}<br><span style="font-size:11px;color:var(--muted)">(${fPct(tot,totGen)})</span></td></tr>`;
+  }).join('');
+  document.getElementById('gnTMedAgFoot').innerHTML =
+    `<tr><td>Total general</td>${agencias.map(ag=>`<td style="color:${agColor(ag)}">${fN(totAg[ag])}</td>`).join('')}<td>${fN(totGen)}</td></tr>`;
+}
+
+function renderGnCliMesH() {
+  if (!_gnD || !_gnD.rawRows || !_gnD.rawRows.length) return;
+  const selEl = document.getElementById('gnFilterCliMes');
+  if (!selEl || !document.getElementById('gnCCliMesH')) return;
+  const mesFiltro = +selEl.value || null;
+  const rows = mesFiltro ? _gnD.rawRows.filter(r => r.nMes === mesFiltro) : _gnD.rawRows;
+
+  const cliTotales = {};
+  rows.forEach(r => { cliTotales[r.cliente] = (cliTotales[r.cliente]||0) + r.invGs; });
+  const topCli = Object.entries(cliTotales).sort((a,b)=>b[1]-a[1]).slice(0,10).map(e=>e[0]);
+  const agList2 = [...new Set(_gnD.rawRows.map(r=>r.agencia))].sort();
+
+  const datasets = agList2.map(ag => ({
+    label: ag,
+    data: topCli.map(cli => rows.filter(r=>r.cliente===cli&&r.agencia===ag).reduce((s,r)=>s+r.invGs,0)),
+    backgroundColor: agColor(ag)+'cc',
+    borderColor: agColor(ag),
+    borderWidth: 0, borderRadius: 3,
+  }));
+
+  const COMMON = { responsive:true, maintainAspectRatio:false };
+  gnDestroyChart('cliMesH');
+  _gnCharts.cliMesH = new Chart(document.getElementById('gnCCliMesH'), {
+    type: 'bar',
+    data: { labels: topCli.map(c=>c.length>35?c.slice(0,33)+'…':c), datasets },
+    options: {
+      indexAxis: 'y', ...COMMON,
+      plugins: {
+        legend: { position:'bottom', labels:{ color:GN_TICK, font:GN_FONT, boxWidth:12, padding:14 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + gnFmtGsExacto(ctx.parsed.x) } }
+      },
+      scales: {
+        x: { stacked:true, ticks:{ color:GN_TICK, font:GN_FONT, callback:v=>gnFmtGsShort(v), maxTicksLimit:4, maxRotation:0 }, grid:{ color:GN_GRID } },
+        y: { stacked:true, ticks:{ color:GN_TICK, font:{...GN_FONT,size:12} }, grid:{ color:'transparent' } }
+      }
+    }
+  });
+}
+
+// ── DETALLE ───────────────────────────────────────────────────────────────────
+let _gnRawRows = [];
+let _gnFiltered = [];
+let _gnPagPage  = 1;
+const _gnPagSize = 15;
+
+function renderGnDetalleTabla(rows) {
+  _gnRawRows = rows || [];
+  if (!_gnRawRows.length || !document.getElementById('gnFilterAgencia')) return;
+
+  const agencias = [...new Set(_gnRawRows.map(r=>r.agencia))].sort();
+  const clientes = [...new Set(_gnRawRows.map(r=>r.cliente))].sort();
+  const medios   = [...new Set(_gnRawRows.map(r=>r.medio))].sort();
+  const grupos   = [...new Set(_gnRawRows.map(r=>r.grupo).filter(g=>g&&g!=='—'))].sort();
+  const meses    = [...new Set(_gnRawRows.map(r=>r.nMes))].sort((a,b)=>a-b);
+  const monedas  = [...new Set(_gnRawRows.map(r=>r.moneda||'—').filter(m=>m&&m!=='—'))].sort();
+
+  document.getElementById('gnFilterAgencia').innerHTML = '<option value="">Todas las agencias</option>' + agencias.map(a=>`<option>${a}</option>`).join('');
+  document.getElementById('gnFilterCliente').innerHTML = '<option value="">Todos los clientes</option>' + clientes.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('gnFilterMedio').innerHTML   = '<option value="">Todos los medios</option>'   + medios.map(m=>`<option>${m}</option>`).join('');
+  document.getElementById('gnFilterGrupo').innerHTML   = '<option value="">Todos los grupos</option>'   + grupos.map(g=>`<option>${g}</option>`).join('');
+  document.getElementById('gnFilterMes').innerHTML     = '<option value="">Todos los meses</option>'    + meses.map(n=>`<option value="${n}">${GN_MES_LABEL[n-1]}</option>`).join('');
+  document.getElementById('gnFilterMoneda').innerHTML  = '<option value="">Todas las monedas</option>'  + monedas.map(m=>`<option>${m}</option>`).join('');
+
+  const hasUsd = _gnRawRows.some(r=>r.invUsd>0);
+  const thUsd = document.getElementById('gnThUsd');
+  if (thUsd) thUsd.style.display = hasUsd ? '' : 'none';
+
+  filtrarGnDetalle();
+}
+
+function filtrarGnDetalle() {
+  const searchEl = document.getElementById('gnDetalleSearch');
+  if (!searchEl) return;
+  const q   = (searchEl.value||'').toLowerCase().trim();
+  const ag  = document.getElementById('gnFilterAgencia').value;
+  const cl  = document.getElementById('gnFilterCliente').value;
+  const med = document.getElementById('gnFilterMedio').value;
+  const gr  = document.getElementById('gnFilterGrupo').value;
+  const mes = document.getElementById('gnFilterMes').value;
+  const mon = document.getElementById('gnFilterMoneda').value;
+
+  _gnFiltered = _gnRawRows.filter(r => {
+    if (ag  && r.agencia !== ag)        return false;
+    if (cl  && r.cliente !== cl)        return false;
+    if (med && r.medio   !== med)       return false;
+    if (gr  && r.grupo   !== gr)        return false;
+    if (mes && r.nMes    !== +mes)      return false;
+    if (mon && (r.moneda||'—') !== mon) return false;
+    if (q) {
+      const txt = [r.agencia,r.cliente,r.medio,r.tipo,r.grupo,r.canal,r.mes,r.moneda||''].join(' ').toLowerCase();
+      if (!txt.includes(q)) return false;
+    }
+    return true;
+  });
+
+  _gnPagPage = 1;
+  renderGnPaginaDetalle();
+}
+
+function cambiarGnPagina(delta) {
+  const total = Math.ceil(_gnFiltered.length / _gnPagSize);
+  _gnPagPage = Math.max(1, Math.min(_gnPagPage + delta, total));
+  renderGnPaginaDetalle();
+}
+
+function renderGnPaginaDetalle() {
+  const tbody = document.getElementById('gnTbDetalle');
+  if (!tbody) return;
+  const total = Math.ceil(_gnFiltered.length / _gnPagSize) || 1;
+  const from  = (_gnPagPage - 1) * _gnPagSize;
+  const page  = _gnFiltered.slice(from, from + _gnPagSize);
+  const hasUsd = _gnRawRows.some(r=>r.invUsd>0);
+
+  const fmtUsd = v => v > 0 ? '$ ' + v.toLocaleString('es-PY') : '—';
+  const fmtNum = v => v > 0 ? v.toLocaleString('es-PY', {minimumFractionDigits:0, maximumFractionDigits:4}) : '—';
+
+  tbody.innerHTML = page.map(r => {
+    const color  = agColor((r.agencia||'').toUpperCase().split(' ')[0]);
+    const comPct = r.invGs > 0 ? (r.comGs / r.invGs * 100).toFixed(1) + '%' : '—';
+    return `<tr>
+      <td style="text-align:left"><span class="ag-dot" style="background:${color}"></span>${r.agencia}</td>
+      <td style="text-align:left;max-width:180px;white-space:normal;font-size:13px">${r.cliente}</td>
+      <td style="text-align:left;font-size:13px">${r.medio}</td>
+      <td style="text-align:left;color:var(--muted);font-size:12px">${r.tipo}</td>
+      <td style="text-align:left;color:var(--muted);font-size:12px">${r.grupo}</td>
+      <td style="text-align:left;color:var(--muted);font-size:12px">${r.canal}</td>
+      <td style="font-size:13px">${r.mes}</td>
+      <td style="font-size:13px">${r.anio||'—'}</td>
+      <td style="font-size:13px;color:var(--muted)">${r.moneda||'—'}</td>
+      <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.importe)}</td>
+      <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.comision)}</td>
+      <td style="font-variant-numeric:tabular-nums;font-size:13px">${gnFmtGsExacto(r.invGs)}</td>
+      ${hasUsd ? `<td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtUsd(r.invUsd)}</td>` : ''}
+      <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--green)">${gnFmtGsExacto(r.comGs)}</td>
+      <td style="font-size:13px;color:var(--muted)">${comPct}</td>
+    </tr>`;
+  }).join('');
+
+  const from1 = _gnFiltered.length ? from + 1 : 0;
+  const to1   = Math.min(from + _gnPagSize, _gnFiltered.length);
+  document.getElementById('gnDetalleCount').textContent = `${from1}–${to1} de ${_gnFiltered.length.toLocaleString('es-PY')} filas`;
+  document.getElementById('gnPagInfo').textContent = `Pág. ${_gnPagPage} de ${total}`;
+  document.getElementById('gnPagPrev').disabled = _gnPagPage <= 1;
+  document.getElementById('gnPagNext').disabled = _gnPagPage >= total;
+}
+
+function renderGnTablaCanales(canales, totalInv) {
+  const tbody = document.getElementById('gnTbCanales');
+  if (!tbody) return;
+  const maxInv = canales[0]?.inversion || 1;
+  tbody.innerHTML = canales.map((c,i) => `
+    <tr>
+      <td style="color:var(--muted);font-size:12px;font-weight:500">${i+1}</td>
+      <td>${c.nombre}</td>
+      <td>${gnFmtGs(c.inversion)}</td>
+      <td style="color:var(--muted)">${gnFmtGs(c.comision)}</td>
+      <td style="font-weight:700;color:var(--text)">${gnPct(c.inversion, totalInv)}</td>
+      <td class="td-bar" style="width:120px"><div class="mini-bar" style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;width:100%"><div style="height:100%;border-radius:2px;background:var(--accent);width:${(c.inversion/maxInv*100).toFixed(1)}%"></div></div></td>
+    </tr>`).join('');
+}
+
+function renderGnInsights(d) {
+  try {
+    const t   = d.totales;
+    if (!t) return;
+    const inv   = t.inversion || 1;
+
+    const elAg = document.getElementById('gnInsightAgencia');
+    if (elAg && d.agencias && d.agencias.length) {
+      const sorted  = [...d.agencias].sort((a,b) => b.inversion - a.inversion);
+      const lider   = sorted[0];
+      const menorAg = sorted[sorted.length - 1];
+      const hhi     = sorted.reduce((s,a) => s + Math.pow(a.inversion / inv, 2), 0);
+      const concRisk= hhi > 0.35 ? 'bad' : hhi > 0.25 ? 'warn' : 'ok';
+      const concLbl = hhi > 0.35 ? 'Concentración alta' : hhi > 0.25 ? 'Moderada' : 'Distribuida';
+      elAg.innerHTML =
+        gnCiRow('Objetivo', 'Comparar el volumen de inversión gestionado por cada agencia del grupo para identificar el peso relativo y el riesgo de concentración.') +
+        `<div class="ci-formula">Participación = Inversión agencia ÷ Inversión total × 100%</div>` +
+        gnCiRow('Líder',    `<strong>${lider.nombre}</strong> · ${gnGroupGs(lider.inversion)} · ${gnPct(lider.inversion, inv)} del total`) +
+        gnCiRow('Menor',    `<strong>${menorAg.nombre}</strong> · ${gnGroupGs(menorAg.inversion)} · ${gnPct(menorAg.inversion, inv)} del total`) +
+        gnCiRow('Concentración', gnCiBadge(concLbl, concRisk) + ` HHI ${hhi.toFixed(2)} — ${hhi > 0.35 ? 'Riesgo si una agencia cae' : hhi > 0.25 ? 'Monitorear dependencia' : 'Portafolio equilibrado'}`);
+    }
+
+    const elMed = document.getElementById('gnInsightMedios');
+    if (elMed && d.medios && d.medios.length) {
+      const sortedM = [...d.medios].sort((a,b) => b.inversion - a.inversion);
+      const topMed  = sortedM[0];
+      const digital = d.medios.find(m => (m.nombre||'').toUpperCase() === 'DIGITAL');
+      const pctDig  = digital ? (digital.inversion / inv * 100) : 0;
+      elMed.innerHTML =
+        gnCiRow('Objetivo', 'Visualizar cómo se distribuye la inversión entre los distintos medios (TV, digital, radio, vía pública, etc.) para evaluar el equilibrio del mix y detectar oportunidades.') +
+        `<div class="ci-formula">Mix = Inversión por medio ÷ Inversión total × 100%</div>` +
+        gnCiRow('Dominante', `<strong>${topMed.nombre}</strong> · ${gnPct(topMed.inversion, inv)} · ${gnGroupGs(topMed.inversion)}`) +
+        gnCiRow('Digital',   digital ? `${gnPct(digital.inversion, inv)} del total ${gnCiBadge(pctDig >= 30 ? 'Fuerte presencia' : pctDig >= 15 ? 'En crecimiento' : 'Oportunidad', pctDig >= 30 ? 'ok' : pctDig >= 15 ? 'warn' : 'bad')}` : 'Sin datos de digital') +
+        gnCiRow('Recomendación', 'Mix equilibrado: TV+Digital+Radio para mayor alcance y frecuencia');
+    }
+
+    const elAgMes = document.getElementById('gnInsightAgMes');
+    if (elAgMes && d.porMes && d.porMes.length) {
+      const conDatos = d.porMes.filter(m => m.inversion > 0);
+      if (conDatos.length) {
+        const mejorMes  = conDatos.reduce((a,b) => b.inversion > a.inversion ? b : a);
+        const menorMes  = conDatos.reduce((a,b) => b.inversion < a.inversion ? b : a);
+        const promedio  = conDatos.reduce((s,m) => s + m.inversion, 0) / conDatos.length;
+        const varPct    = ((mejorMes.inversion - menorMes.inversion) / promedio * 100).toFixed(0);
+        elAgMes.innerHTML =
+          gnCiRow('Objetivo', 'Identificar la estacionalidad de la inversión y el aporte de cada agencia por mes, para planificar la distribución del presupuesto a lo largo del año.') +
+          `<div class="ci-formula">Inversión mensual = suma de importes Gs. de todos los clientes/agencias en el mes</div>` +
+          gnCiRow('Mejor mes',  `<strong>${mejorMes.mes}</strong> · ${gnGroupGs(mejorMes.inversion)}`) +
+          gnCiRow('Menor mes',  `<strong>${menorMes.mes}</strong> · ${gnGroupGs(menorMes.inversion)}`) +
+          gnCiRow('Variación',  `${varPct}% entre pico y valle ${gnCiBadge(+varPct > 80 ? 'Alta estacionalidad' : +varPct > 40 ? 'Moderada' : 'Estable', +varPct > 80 ? 'warn' : 'ok')}`) +
+          gnCiRow('Recomendación', +varPct > 60 ? 'Planificar acciones en meses bajos para suavizar la curva' : 'Distribución mensual saludable');
+      }
+    }
+
+    const elCliAg = document.getElementById('gnInsightCliAgencia');
+    if (elCliAg && d.rawRows && d.rawRows.length) {
+      const cliTotMap = {};
+      d.rawRows.forEach(r => { cliTotMap[r.cliente] = (cliTotMap[r.cliente]||0) + (r.invGs||0); });
+      const cliSorted = Object.entries(cliTotMap).sort((a,b) => b[1]-a[1]);
+      if (cliSorted.length) {
+        const top1cli   = cliSorted[0];
+        const top3sum   = cliSorted.slice(0,3).reduce((s,e) => s+e[1], 0);
+        const pctTop1   = top1cli[1] / inv * 100;
+        const pctTop3   = top3sum   / inv * 100;
+        elCliAg.innerHTML =
+          gnCiRow('Objetivo', 'Mostrar qué clientes concentran más inversión y a través de qué agencias operan, para detectar dependencias y oportunidades de cross-selling entre agencias.') +
+          `<div class="ci-formula">Barras apiladas: cada color es una agencia · filtrar por mes con el selector superior</div>` +
+          gnCiRow('Mayor cliente', `<strong>${top1cli[0]}</strong> · ${gnGroupGs(top1cli[1])} · ${gnPct(top1cli[1], inv)} del total ${gnCiBadge(pctTop1 > 20 ? 'Riesgo concentración' : 'Normal', pctTop1 > 20 ? 'warn' : 'ok')}`) +
+          gnCiRow('Top 3 clientes', `concentran el <strong>${pctTop3.toFixed(1)}%</strong> de la inversión total`) +
+          gnCiRow('Recomendación', pctTop1 > 20 ? 'Diversificar para reducir dependencia del cliente líder' : 'Cartera de clientes bien distribuida');
+      }
+    }
+
+    const elTopCli = document.getElementById('gnInsightTopCli');
+    if (elTopCli && d.topClientes && d.topClientes.length) {
+      const top1c   = d.topClientes[0];
+      const pctLead = top1c.inversion / inv * 100;
+      elTopCli.innerHTML =
+        gnCiRow('Objetivo', 'Identificar los clientes de mayor volumen de inversión en el período para priorizar la gestión comercial y evaluar el riesgo de dependencia.') +
+        `<div class="ci-formula">Inversión total = suma anual de importe Gs. por cliente (todos los medios y meses)</div>` +
+        gnCiRow('Mayor cliente', `<strong>${top1c.nombre}</strong> · ${gnGroupGs(top1c.inversion)} · ${gnPct(top1c.inversion, inv)} del total`) +
+        gnCiRow('Concentración top 1', gnCiBadge(pctLead > 15 ? 'Alta dependencia' : 'Saludable', pctLead > 15 ? 'warn' : 'ok'));
+    }
+
+    const elCanales = document.getElementById('gnInsightCanales');
+    if (elCanales && d.canales && d.canales.length) {
+      const topCanal = d.canales[0];
+      elCanales.innerHTML =
+        gnCiRow('Objetivo', 'Ver a través de qué canales o proveedores se ejecuta la inversión, más allá del medio general.') +
+        gnCiRow('Mayor canal', `<strong>${topCanal.nombre}</strong> · ${gnGroupGs(topCanal.inversion)} · ${gnPct(topCanal.inversion, inv)} del total`);
+    }
+  } catch(e) { console.error('renderGnInsights', e); }
+}
+
 function openSection(id) {
   const el = document.getElementById(id);
   if (el) {
@@ -3376,7 +4373,7 @@ function openSection(id) {
 function initScrollSpy() {
   const mainEl = document.getElementById('main');
   if (!mainEl) return;
-  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','ingresosSection','comparacionSection'];
+  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','ingresosSection','comparacionSection','invMediosSection'];
   mainEl.addEventListener('scroll', () => {
     let current = 'sec-1';
     for (const id of secIds) {
