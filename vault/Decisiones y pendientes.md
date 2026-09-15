@@ -5,7 +5,6 @@ Bitácora de decisiones grandes (más reciente primero) + lo que queda por hacer
 ## Pendientes activos
 
 - [ ] **AdLens y Marketing sin datos reales en el asistente de IA.** Cablear `bigquery.buildAdlensData()`+`filtrarAdlens()` y `HOLDING_DATA`/intel de Drive respectivamente. Ver [[Asistente IA]].
-- [ ] **La pestaña "09 · Inversión de Medios" (Salud Financiera) no tiene asistente de IA propio.** La migración desde `/globalnum` portó todo el dashboard pero no el chat "Analista de Inversión" (choque de ids con el chat de SF). Ver [[Capa 04 - Inversión de Medios]] para el plan sugerido (sumar un resumen al `bloqueDatos` del chat de SF, mismo patrón que Ingresos 2026).
 - [ ] **Voz solo en Salud Financiera** (piloto). Replicar a AdLens, Marketing si el piloto funciona bien (Inversión de Medios ya no es un módulo aparte).
 - [ ] **Avatar del bot** solo en Salud Financiera (header del chat + favicon). Replicar a los otros 3 módulos si se quiere consistencia visual.
 - [ ] **Nombres de anunciantes de AdLens** vienen pegados sin espacios desde BigQuery (`BANCOFAMILIAR`). Falta mapa de corrección manual (`NOMBRE_MAP`).
@@ -29,6 +28,8 @@ Se evaluaron dos caminos (ver [[Asistente IA]]). Se eligió: sin `lib/jarvis.js`
 **Sep 2026 — Renombre "Global Num" → "Inversión de Medios".** Cambio de nombre visible en toda la UI (nav de las 4 capas, tarjeta de inicio, panel admin) y dentro del propio módulo, que además usaba internamente "Inversión Publicitaria" — quedó unificado. No se tocaron rutas, nombres de archivo ni endpoints internos (`/globalnum`, `globalnum.html`, `/api/*-globalnum`).
 
 **Sep 2026 — Inversión de Medios deja de ser una capa aparte, pasa a ser la pestaña "09" de Salud Financiera.** Migración completa del dashboard (6 gráficos, tablas cruzadas, detalle filtrable, desglose mensual/trimestral/semestral) a `public/index.html`, reutilizando los mismos endpoints de datos. Se sacó el link del nav de las otras capas y de `/home`; `/globalnum` sigue funcionando standalone (con su asistente de IA propio) pero sin acceso directo desde ningún menú. Ver [[Capa 04 - Inversión de Medios]].
+
+**Sep 2026 — El chat de Salud Financiera ahora conoce Inversión de Medios (3ra fuente).** Mismo patrón que Ingresos 2026: el cliente manda `window._gnData` (ya filtrado por agencia) en el POST a `/api/chat`, el servidor arma un resumen por agencia/medio con cifras completas sin abreviar y re-filtra server-side por seguridad. `METODOLOGIA_SF` actualizada para citar las 3 fuentes por separado sin mezclar cifras. Se sacó AMPLIFY del selector "ver como agencia" — no tiene datos propios en ningún dataset cargado hoy (se investigó si "VIA PUBLICA" en Detalle de Ingresos era AMPLIFY mal etiquetada; no lo es, es una línea de producción trade distinta).
 
 **Sep 2026 — Topbar responsive roto en anchos intermedios.** El logo se partía en 2-3 líneas y los botones quedaban fuera de pantalla en laptops con la ventana achicada (y en mobile real). Corregido en los 4 módulos: topbar fluido que envuelve a 2ª/3ª fila en vez de partir texto.
 
