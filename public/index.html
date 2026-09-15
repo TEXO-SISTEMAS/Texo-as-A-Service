@@ -1153,11 +1153,6 @@ body.fullscreen .main { padding-top:64px; }
       </div>
     </div>
 
-    <!-- ── COMPARACIÓN SALUD FINANCIERA (2025) VS INGRESOS (2026) ── -->
-    <div class="ingresos-section" id="comparacionSection">
-      <div id="comparacionContent"></div>
-    </div>
-
     <!-- ── INVERSIÓN DE MEDIOS (antes módulo aparte "Global Num") ── -->
     <div class="ingresos-section" id="invMediosSection">
       <div class="ingresos-header">
@@ -1177,6 +1172,11 @@ body.fullscreen .main { padding-top:64px; }
           <p>Subí el Excel de Inversión de Medios para ver los datos</p>
         </div>
       </div>
+    </div>
+
+    <!-- ── COMPARACIÓN SALUD FINANCIERA (2025) VS INGRESOS (2026) ── -->
+    <div class="ingresos-section" id="comparacionSection">
+      <div id="comparacionContent"></div>
     </div>
   </div>
 
@@ -1775,8 +1775,8 @@ function renderDashboard(data){
     <div class="snav-item" data-sec="sec-5" onclick="openSection('sec-5')">05 · Expertise</div>
     <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
     <div class="snav-item" data-sec="ingresosSection" onclick="openSection('ingresosSection')">07 · Ingresos 2026</div>
-    <div class="snav-item" data-sec="comparacionSection" onclick="openSection('comparacionSection')">08 · Comparación 25 vs 26</div>
-    <div class="snav-item" data-sec="invMediosSection" onclick="openSection('invMediosSection')">09 · Inversión de Medios</div>
+    <div class="snav-item" data-sec="invMediosSection" onclick="openSection('invMediosSection')">08 · Inversión de Medios</div>
+    <div class="snav-item" data-sec="comparacionSection" onclick="openSection('comparacionSection')">09 · Comparación 25 vs 26</div>
   </div>
 
   <!-- INTRO DIMENSIONES -->
@@ -3320,7 +3320,7 @@ function renderComparacion(){
 
   el.innerHTML = `
     <div class="sec-block">
-      <div class="sec-label">08 · Comparación</div>
+      <div class="sec-label">09 · Comparación</div>
       <div class="sec-heading">¿Cómo estamos vs. el período anterior?</div>
       <div class="sec-bar"></div>
     </div>
@@ -4373,7 +4373,7 @@ function openSection(id) {
 function initScrollSpy() {
   const mainEl = document.getElementById('main');
   if (!mainEl) return;
-  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','ingresosSection','comparacionSection','invMediosSection'];
+  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','ingresosSection','invMediosSection','comparacionSection'];
   mainEl.addEventListener('scroll', () => {
     let current = 'sec-1';
     for (const id of secIds) {
