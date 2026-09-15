@@ -879,7 +879,7 @@ QUÉ MIDE ESTA CAPA
 La Salud Financiera evalúa la rentabilidad real de cada agencia del grupo Texo y del holding en conjunto. Cruza el P&L del período (Excel "SALUD FINANCIERA POR ARENA POAS") con métricas derivadas. Las agencias son BRICK, NASTA, LUPE, OMD y ROGER. En el Excel original los montos vienen en miles de Gs.; en el bloque DATOS de más abajo ya están convertidos a millones de Gs.
 
 DE DÓNDE SALEN LOS DATOS
-Un Excel con una hoja por agencia (SALUD BRICK, SALUD NASTA, etc.) más una hoja CONSOLIDADO AGENCIAS; un parser lo convierte a JSON. El bloque DATOS de más abajo ya viene filtrado por la agencia del usuario cuando corresponde. Hay un segundo dataset, el "Detalle de Ingresos 2026" (período enero–junio 2026), con su propio P&L interno: cuando lo uses aclará "Según el Detalle de Ingresos 2026"; para las cifras del Excel decí "Según los datos de Salud Financiera".
+Un Excel con una hoja por agencia (SALUD BRICK, SALUD NASTA, etc.) más una hoja CONSOLIDADO AGENCIAS; un parser lo convierte a JSON. El bloque DATOS de más abajo ya viene filtrado por la agencia del usuario cuando corresponde. Hay dos datasets más, ambos con su propio período y estructura — nunca los mezcles con los números de Salud Financiera al citarlos: el "Detalle de Ingresos 2026" (período enero–junio 2026, su propio P&L interno) y "Inversión de Medios" (pauta publicitaria por agencia y medio, cifras siempre completas sin abreviar — "Gs." con el número entero, nunca "millones"). Citá cada uno con su propia fuente: "Según los datos de Salud Financiera", "Según el Detalle de Ingresos 2026", "Según Inversión de Medios".
 
 CONCEPTOS BASE (filas del Excel)
 - FACTURACIÓN: lo que se le factura al cliente. Se abre en dos arenas: CC (Creación de Contenido) y DC (Distribución de Contenido).
@@ -950,7 +950,7 @@ IDs: sec-1, cEbitdaDCCC, cMargen, sec-2, cEbitda, sec-3, cRendInv, cPC, cPers, s
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { messages, data, context, ingresosData } = req.body;
+    const { messages, data, context, ingresosData, gnData } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'messages requerido' });
 
     // ── CONTEXTO MARKETING ────────────────────────────────────────────────────
@@ -1068,6 +1068,29 @@ ${ebLines ? `\nEBITDA por empresa (P&L interno):\n${ebLines}` : ''}
 ${topCli ? `\nTop clientes (% facturación):\n${topCli}` : ''}`;
     }
 
+    // ── Resumen Inversión de Medios (pestaña "09" de Salud Financiera) ─────────
+    let gnResumen = '';
+    if (gnData && gnData.totales) {
+      const gnAgencias = req.user?.agencia ? filtrarAgencias(gnData.agencias, req.user.agencia) : gnData.agencias;
+      // Regla del módulo: cifras SIEMPRE completas, nunca abreviadas ("Gs." + número entero).
+      const fmtGnGs = v => Math.round(Math.abs(Number(v)||0)).toLocaleString('es-PY') + ' Gs.';
+      const t = gnData.totales;
+      const agLinesGn = (gnAgencias||[]).map(a =>
+        `  ${a.nombre}: Inversión ${fmtGnGs(a.inversion)}, Comisión ${fmtGnGs(a.comision)}, ${((a.pct||0)*100).toFixed(1)}% del total`
+      ).join('\n');
+      const medLinesGn = (gnData.medios||[]).map(m =>
+        `  ${m.nombre}: ${fmtGnGs(m.inversion)} (${((m.pct||0)*100).toFixed(1)}%)`
+      ).join('\n');
+      gnResumen = `
+
+DATOS DE INVERSIÓN DE MEDIOS (período ${gnData.periodo || ''}):
+Inversión total: ${fmtGnGs(t.inversion)} | Comisión total: ${fmtGnGs(t.comision)} | Clientes activos: ${t.clientes||0} | Agencias con datos: ${t.agencias||0}
+
+Por agencia:
+${agLinesGn || '  (sin datos para esta agencia en este dataset)'}
+${medLinesGn ? `\nPor medio:\n${medLinesGn}` : ''}`;
+    }
+
     const agenciaRestriccion = req.user?.agencia
       ? `\n⚠️ RESTRICCIÓN DE ACCESO: Este usuario solo tiene acceso a los datos de la agencia ${req.user.agencia}. Tenés ÚNICAMENTE los datos de ${req.user.agencia} en este sistema. Si el usuario pregunta sobre CUALQUIER OTRA agencia (BRICK, NASTA, LUPE, OMD, ROGER, AMPLIFY u otra), respondé SIEMPRE: "Solo tengo acceso a los datos de ${req.user.agencia}. No puedo mostrarte información de otras agencias." No uses datos del historial de conversación anterior que pueda contener información de otras agencias.\n`
       : '';
@@ -1081,7 +1104,8 @@ Los montos monetarios ya traen la cifra calculada como "Gs. X millones" (p. ej. 
 
 DATOS ACTUALES DE LAS AGENCIAS:
 ${agenciasResumen}
-${ingresosResumen}`;
+${ingresosResumen}
+${gnResumen}`;
 
     const response = await getAnthropic().messages.create({
       model: MODEL_CHAT,

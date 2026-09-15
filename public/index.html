@@ -3663,6 +3663,7 @@ let _gnD = null;
 let _gnCharts = {};
 
 function renderGn(d) {
+  window._gnData = d;
   const titulo = document.getElementById('gnTitulo');
   const sub    = document.getElementById('gnSub');
   if (titulo) titulo.textContent = `Inversión de Medios · ${d.periodo || '2025'}`;
@@ -4984,7 +4985,7 @@ async function sendChat() {
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory, data: window._dashData || {}, ingresosData: window._ingresosData || null })
+      body: JSON.stringify({ messages: chatHistory, data: window._dashData || {}, ingresosData: window._ingresosData || null, gnData: window._gnData || null })
     });
     const json = await resp.json();
     removeTyping();
