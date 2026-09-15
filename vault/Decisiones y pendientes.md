@@ -5,7 +5,8 @@ Bitácora de decisiones grandes (más reciente primero) + lo que queda por hacer
 ## Pendientes activos
 
 - [ ] **AdLens y Marketing sin datos reales en el asistente de IA.** Cablear `bigquery.buildAdlensData()`+`filtrarAdlens()` y `HOLDING_DATA`/intel de Drive respectivamente. Ver [[Asistente IA]].
-- [ ] **Voz solo en Salud Financiera** (piloto). Replicar a AdLens, Marketing, Inversión de Medios si el piloto funciona bien.
+- [ ] **La pestaña "09 · Inversión de Medios" (Salud Financiera) no tiene asistente de IA propio.** La migración desde `/globalnum` portó todo el dashboard pero no el chat "Analista de Inversión" (choque de ids con el chat de SF). Ver [[Capa 04 - Inversión de Medios]] para el plan sugerido (sumar un resumen al `bloqueDatos` del chat de SF, mismo patrón que Ingresos 2026).
+- [ ] **Voz solo en Salud Financiera** (piloto). Replicar a AdLens, Marketing si el piloto funciona bien (Inversión de Medios ya no es un módulo aparte).
 - [ ] **Avatar del bot** solo en Salud Financiera (header del chat + favicon). Replicar a los otros 3 módulos si se quiere consistencia visual.
 - [ ] **Nombres de anunciantes de AdLens** vienen pegados sin espacios desde BigQuery (`BANCOFAMILIAR`). Falta mapa de corrección manual (`NOMBRE_MAP`).
 - [ ] **Prompt caching** en el asistente de SF — se intentó con `system` como array + `cache_control`, rompió la respuesta, se revirtió a string plano. Si se reintenta, probar con cuidado.
@@ -26,6 +27,8 @@ Se evaluaron dos caminos (ver [[Asistente IA]]). Se eligió: sin `lib/jarvis.js`
 **Sep 2026 — Inversión de Medios (antes "Global Num"): cifras completas, sin abreviar.** A pedido explícito, todo el módulo (UI + asistente) muestra el número completo con puntos de miles y "Gs" al final — nada de "M"/"B"/"millones"/"mil millones". Ver [[Capa 04 - Inversión de Medios]].
 
 **Sep 2026 — Renombre "Global Num" → "Inversión de Medios".** Cambio de nombre visible en toda la UI (nav de las 4 capas, tarjeta de inicio, panel admin) y dentro del propio módulo, que además usaba internamente "Inversión Publicitaria" — quedó unificado. No se tocaron rutas, nombres de archivo ni endpoints internos (`/globalnum`, `globalnum.html`, `/api/*-globalnum`).
+
+**Sep 2026 — Inversión de Medios deja de ser una capa aparte, pasa a ser la pestaña "09" de Salud Financiera.** Migración completa del dashboard (6 gráficos, tablas cruzadas, detalle filtrable, desglose mensual/trimestral/semestral) a `public/index.html`, reutilizando los mismos endpoints de datos. Se sacó el link del nav de las otras capas y de `/home`; `/globalnum` sigue funcionando standalone (con su asistente de IA propio) pero sin acceso directo desde ningún menú. Ver [[Capa 04 - Inversión de Medios]].
 
 **Sep 2026 — Topbar responsive roto en anchos intermedios.** El logo se partía en 2-3 líneas y los botones quedaban fuera de pantalla en laptops con la ventana achicada (y en mobile real). Corregido en los 4 módulos: topbar fluido que envuelve a 2ª/3ª fila en vez de partir texto.
 

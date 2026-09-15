@@ -6,11 +6,11 @@ Ver también [[Inicio]].
 
 - **Deploy:** Vercel, automático al pushear a `master`.
 - **Servidor:** `server.js` — Node.js + Express, monolítico (~1200+ líneas). Exporta `app` como función serverless; corre standalone en local con `npm start`.
-- **Frontend:** 4 páginas HTML estáticas en `public/`, sin framework ni build — todo el CSS y JS inline en cada archivo:
-  - `index.html` — Salud Financiera (~3900 líneas)
+- **Frontend:** 3 páginas HTML estáticas "de capa" en `public/`, sin framework ni build — todo el CSS y JS inline en cada archivo:
+  - `index.html` — Salud Financiera, incluye la pestaña "09 · Inversión de Medios" (~4400 líneas)
   - `adlens.html` — AdLens
   - `marketing.html` — Inteligencia de Marketing
-  - `globalnum.html` — Inversión de Medios (nombre interno del archivo/rutas sigue siendo "globalnum")
+  - `globalnum.html` — página vieja de Inversión de Medios (antes "Global Num"), **sin link en ningún nav desde sep 2026** pero sigue online y funcional en `/globalnum`; su dashboard se migró a la pestaña de `index.html` (nombres `gn*`/`Gn*`, no reutiliza el código de este archivo)
   - `home.html`, `login.html`, `admin.html` — páginas de soporte
 - **Storage:** Google Drive (vía service account), NO una base de datos tradicional. `drive.js` es el wrapper — todo son archivos JSON en una sola carpeta plana (`DRIVE_FOLDER_ID`), diferenciados por nombre de archivo.
 - **IA:** Anthropic Claude SDK (`@anthropic-ai/sdk`) integrado directo en `server.js`. Ver [[Asistente IA]].
@@ -47,4 +47,4 @@ Son de un proyecto anterior distinto ("AI Data Chat" — cruce de Excels ERP/DNI
 3. Chat → `POST /api/chat` → `server.js` arma el contexto y llama a la API de Anthropic → responde.
 4. Historial de chat → se guarda en Drive como JSON, un archivo por conversación.
 
-Cada módulo (AdLens, Marketing, Inversión de Medios) tiene su propia variante de este flujo — ver la nota de cada [[Capa 01 - Salud Financiera|capa]].
+Cada módulo (AdLens, Marketing) tiene su propia variante de este flujo — ver la nota de cada capa. Inversión de Medios usa el mismo patrón pero dentro de `index.html` (`/api/save-globalnum` y `/api/latest-globalnum`, sin cambios desde que era capa aparte).

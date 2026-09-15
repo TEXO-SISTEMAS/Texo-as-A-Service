@@ -1,10 +1,27 @@
-# Capa 04 — Inversión de Medios
+# Inversión de Medios
 
-Antes llamada "Global Num" en la UI (renombrado sep 2026); el código interno
-(`globalnum.html`, `globalnum_parser.js`, rutas `/globalnum` y
-`/api/*-globalnum`) sigue usando el nombre viejo — no se tocó a propósito.
+**Ya no es una capa aparte (sep 2026).** Antes vivía en `/globalnum` con su
+propio link en el nav de las otras 3 capas; ahora es la pestaña
+**"09 · Inversión de Medios"** dentro de [[Capa 01 - Salud Financiera]]
+(`public/index.html`), migrada con toda su funcionalidad (gráficos, tablas
+cruzadas, detalle filtrable, desglose mensual/trimestral/semestral). El nav
+de AdLens/Marketing/Salud Financiera y la tarjeta de `/home` ya no linkean a
+`/globalnum`.
 
-Página: `public/globalnum.html`. Ver [[Arquitectura]], [[Asistente IA]].
+Antes se llamó "Global Num" en la UI (renombrado sep 2026, previo a esta
+migración); el código interno (`globalnum.html`, `globalnum_parser.js`,
+rutas `/globalnum` y `/api/*-globalnum`) sigue usando ese nombre viejo — no
+se tocó a propósito, ni al renombrar ni al migrar, porque cambiar rutas
+rompería enlaces existentes.
+
+**`public/globalnum.html` sigue existiendo y funcionando standalone** (con
+su propio asistente de IA, `/api/ask-globalnum` — ver más abajo) pero ya no
+tiene ningún link hacia ella; solo accesible tipeando la URL directamente.
+El código nuevo de la pestaña, en `public/index.html`, es una migración
+independiente — usa los mismos endpoints de datos (`/api/save-globalnum`,
+`/api/latest-globalnum`) pero todo el JS/CSS de renderizado está reescrito
+con prefijo `gn`/`Gn` para no chocar con nombres ya usados en Salud
+Financiera. Ver [[Arquitectura]], [[Asistente IA]], [[Decisiones y pendientes]].
 
 ## Qué es
 
@@ -27,3 +44,5 @@ A pedido explícito de Danilo, **todo el módulo muestra el número completo, si
 ## Asistente de IA
 
 Endpoint propio: `POST /api/ask-globalnum` (no comparte el `/api/chat` genérico). Recibe `summary` armado en el cliente (`_gnSummary`), no directo del servidor. Ver [[Asistente IA]].
+
+**Pendiente:** la migración a pestaña (arriba) portó el dashboard completo pero **no** el chat "Analista de Inversión" — habría chocado de ids con el chat de Salud Financiera (`btnChat`/`chatSidebar`/`toggleChat`, sin sufijo GN a diferencia del resto de sus elementos). Por ahora la pestaña nueva no tiene asistente de IA propio; el chat de Salud Financiera tampoco conoce estos datos todavía. Si se quiere, el camino más simple es extender el `bloqueDatos` del `/api/chat` de Salud Financiera con un resumen de Inversión de Medios (mismo patrón que ya existe para Ingresos 2026), en vez de portar el chat separado. Ver [[Decisiones y pendientes]].

@@ -5,11 +5,10 @@ Documentación interna del proyecto. Actualizar a mano cuando algo cambie de fon
 ## Mapa rápido
 
 - [[Arquitectura]] — qué está deployado de verdad, stack, variables de entorno
-- **Módulos (capas):**
-  - [[Capa 01 - Salud Financiera]]
+- **Módulos (capas), sep 2026 en adelante 3 capas + 1 pestaña:**
+  - [[Capa 01 - Salud Financiera]] — incluye la pestaña "09 · Inversión de Medios" (ver [[Capa 04 - Inversión de Medios]], ya no es capa aparte)
   - [[Capa 02 - Marketing]]
   - [[Capa 03 - AdLens]]
-  - [[Capa 04 - Inversión de Medios]]
 - [[Asistente IA]] — cómo está armado el chat con IA en cada módulo
 - [[Acceso y usuarios]] — login, multi-tenancy por agencia
 - [[Glosario]] — 3709, CC/DC, EBITDA, y demás siglas del negocio
