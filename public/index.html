@@ -1150,6 +1150,11 @@ body.fullscreen .main { padding-top:64px; }
         </div>
       </div>
     </div>
+
+    <!-- ── COMPARACIÓN SALUD FINANCIERA (2025) VS INGRESOS (2026) ── -->
+    <div class="ingresos-section" id="comparacionSection">
+      <div id="comparacionContent"></div>
+    </div>
   </div>
 
   <!-- CHAT SIDEBAR -->
@@ -1283,7 +1288,7 @@ async function handleFileSelect(e){
     const data=await r.json();
     if(!r.ok) throw new Error(data.error||'Error al subir');
     showToast(`✓ ${data.agencias} agencias cargadas`,'success');
-    await loadUploads(); await loadDashboard(data.fileId);
+    await loadUploads(); await loadDashboard(data.fileId); renderComparacion();
   } catch(err){ showToast('✗ '+err.message,'error'); }
   finally{ btn.innerHTML='⟳ Actualizar'; btn.disabled=false; }
 }
@@ -1291,7 +1296,7 @@ async function handleFileSelect(e){
 async function refreshData(){
   const btn=document.getElementById('btnRefresh');
   btn.innerHTML='<span class="spinner"></span>'; btn.disabled=true;
-  await loadUploads(); await loadLatest();
+  await loadUploads(); await loadLatest(); await loadLatestIngresos(); renderComparacion();
   btn.innerHTML='⟳ Actualizar'; btn.disabled=false;
 }
 
@@ -1347,6 +1352,7 @@ function onFiltroAgenciaChange(val){
   if(window._ingresosDataRaw){
     renderIngresos(aplicarFiltroIngresos(window._ingresosDataRaw, window._agenciaFiltro));
   }
+  renderComparacion();
 }
 
 async function loadLatest(){
@@ -1728,6 +1734,7 @@ function renderDashboard(data){
     <div class="snav-item" data-sec="sec-5" onclick="openSection('sec-5')">05 · Expertise</div>
     <div class="snav-item" data-sec="sec-6" onclick="openSection('sec-6')">06 · Concentración</div>
     <div class="snav-item" data-sec="ingresosSection" onclick="openSection('ingresosSection')">07 · Ingresos 2026</div>
+    <div class="snav-item" data-sec="comparacionSection" onclick="openSection('comparacionSection')">08 · Comparación 25 vs 26</div>
   </div>
 
   <!-- INTRO DIMENSIONES -->
@@ -2796,7 +2803,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
       }
     }
   } catch(e) {}
-  await loadUploads(); await loadLatest(); await loadLatestIngresos();
+  await loadUploads(); await loadLatest(); await loadLatestIngresos(); renderComparacion();
 });
 
 // ── INGRESOS 2026 ─────────────────────────────────────────────────────────────
@@ -2883,6 +2890,7 @@ async function handleIngresosFileSelect(e) {
     if (!r.ok) throw new Error(data.error || 'Error al guardar');
     showToast(`✓ Ingresos cargados — ${parsed.periodo}`, 'success');
     await loadLatestIngresos();
+    renderComparacion();
   } catch(err) {
     showToast('✗ ' + err.message, 'error');
   } finally {
@@ -3192,6 +3200,146 @@ function renderIngresos(d) {
   });
 }
 
+// ── COMPARACIÓN SALUD FINANCIERA (2025) VS DETALLE DE INGRESOS (2026) ────────
+// Solo se comparan proporciones (margen EBITDA, rendimiento de inversión,
+// per cápita mensualizado) y el orden entre agencias — nunca montos en
+// guaraníes, porque los dos datasets cubren cantidades de meses distintas
+// (Salud Financiera = acumulado a varios meses de 2025; Ingresos = un
+// rango de meses de 2026) y comparar totales daría una lectura engañosa.
+const MESES_NOMBRE = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+function agenciaActiva(){ return window._userAgencia || window._agenciaFiltro || null; }
+
+function renderComparacion(){
+  const el = document.getElementById('comparacionContent');
+  if (!el) return;
+
+  const sfRaw  = window._dashDataRaw;
+  const ingRaw = window._ingresosDataRaw;
+  const filtro = agenciaActiva();
+
+  if (!sfRaw || !sfRaw.agencias?.length) {
+    el.innerHTML = `<div class="ingresos-empty"><div style="font-size:28px">📊</div><p>Cargá los datos de Salud Financiera para ver esta comparación.</p></div>`;
+    return;
+  }
+  if (!ingRaw || !ingRaw.ebitda?.length) {
+    el.innerHTML = `<div class="ingresos-empty"><div style="font-size:28px">📂</div><p>Cargá el Excel de Detalle de Ingresos 2026 (con la hoja de EBITDA) para ver esta comparación.</p></div>`;
+    return;
+  }
+
+  const agSF  = filtrarAgenciasClient(sfRaw.agencias, filtro) || sfRaw.agencias;
+  const ebIng = filtro ? ingRaw.ebitda.filter(e=>(e.empresa||'').toUpperCase()===filtro.toUpperCase()) : ingRaw.ebitda;
+
+  // Meses que cubre Salud Financiera, a partir de "CALCULO REALIZADO AL CORTE <MES> <AÑO>"
+  const corteUpper = (sfRaw.fecha_corte||'').toUpperCase();
+  let mesesSF = 0, mesCorteNombre = '';
+  for (let i=0;i<MESES_NOMBRE.length;i++){
+    if (corteUpper.includes(MESES_NOMBRE[i])) { mesesSF = i+1; mesCorteNombre = MESES_NOMBRE[i].charAt(0)+MESES_NOMBRE[i].slice(1).toLowerCase(); break; }
+  }
+  const mesesIng = ingRaw.periodos?.length || 0;
+  const periodoIngLabel = ingRaw.periodo || '2026';
+
+  // Cruce por nombre de agencia (solo las que existen en ambos datasets)
+  const rows = agSF.map(a=>{
+    const ie = ebIng.find(e=>(e.empresa||'').toUpperCase()===a.nombre.toUpperCase());
+    if (!ie) return null;
+    const facSF=parseFloat(a.facturacion_total||0), ebSF=parseFloat(a.ebitda||0);
+    const margenSF = facSF>0 ? ebSF/facSF : 0;
+    const facIng=parseFloat(ie.facturacion||0), ebIngV=parseFloat(ie.ebitda||0);
+    const margenIng = facIng>0 ? ebIngV/facIng : 0;
+    const egSF = parseFloat(a.total_egresos||0);
+    const rendSF = egSF>0 ? ebSF/egSF : 0;
+    const egIng = parseFloat(ie.rrhh||0)+parseFloat(ie.comerciales||0)+parseFloat(ie.admin||0);
+    const rendIng = egIng>0 ? ebIngV/egIng : 0;
+    const pcSF  = mesesSF>0  ? (parseFloat(a.percapita_ebitda||0)/1e3)/mesesSF  : null;
+    const pcIng = mesesIng>0 ? (parseFloat(ie.percapita||0)/1e3)/mesesIng : null;
+    return { nombre:a.nombre, margenSF, margenIng, rendSF, rendIng, pcSF, pcIng };
+  }).filter(Boolean);
+
+  if (!rows.length) {
+    el.innerHTML = `<div class="ingresos-empty"><div style="font-size:28px">🔍</div><p>No hay agencias en común entre Salud Financiera y Detalle de Ingresos para comparar${filtro?` (con el filtro "${filtro}" activo)`:''}.</p></div>`;
+    return;
+  }
+
+  const rankSF  = [...rows].sort((x,y)=>y.margenSF-x.margenSF).map(r=>r.nombre);
+  const rankIng = [...rows].sort((x,y)=>y.margenIng-x.margenIng).map(r=>r.nombre);
+  const dp = (v) => (v*100).toFixed(1)+'%';
+  const deltaCls = d => d>0.001?'val-pos':d<-0.001?'val-neg':'';
+  const deltaTxt = d => (d>0?'+':'')+(d*100).toFixed(1)+' pts';
+
+  el.innerHTML = `
+    <div class="sec-block">
+      <div class="sec-label">08 · Comparación</div>
+      <div class="sec-heading">¿Cómo estamos vs. el período anterior?</div>
+      <div class="sec-bar"></div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">1</div><div class="sec-step-title">¿Qué se está comparando acá?</div></div>
+      <div class="sec-step-body">
+        <strong>Salud Financiera</strong> es un acumulado real de ${mesesSF||'varios'} meses de 2025${mesCorteNombre?` (Enero–${mesCorteNombre} 2025)`:''}. <strong>Detalle de Ingresos</strong> es el período real ${periodoIngLabel} de 2026 (${mesesIng||'varios'} meses). Son bases de tiempo distintas — ${mesesSF||'?'} meses contra ${mesesIng||'?'} meses, de años distintos.<br><br>
+        Por eso acá <strong>no se comparan montos en guaraníes</strong> (facturación, revenue, EBITDA en Gs.) — comparar esos totales sería engañoso, porque el que suma más meses siempre va a dar un número más grande, sin que eso signifique que le fue mejor.<br><br>
+        Lo que sí se compara son <strong>proporciones</strong>, que no dependen de cuántos meses se sumaron: el margen EBITDA, el rendimiento de inversión, el EBITDA por persona <em>mensualizado</em>, y el orden (ranking) entre agencias en cada período.
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">2</div><div class="sec-step-title">¿Cómo se calcula?</div></div>
+      <div class="sec-step-body"><div class="step-formula">
+        <div class="step-formula-row"><div class="step-formula-label">Margen EBITDA</div><div class="step-formula-val">EBITDA ÷ Facturación Total × 100% — igual en los dos datasets</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Rendimiento de inversión</div><div class="step-formula-val">EBITDA ÷ (RRHH + Comercial + Admin) × 100%</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Per cápita mensual</div><div class="step-formula-val">(EBITDA ÷ Personas) ÷ cantidad de meses del período — para que 2025 y 2026 midan "por mes" y no "por período completo"</div></div>
+        <div class="step-formula-row"><div class="step-formula-label">Ranking</div><div class="step-formula-val">Orden de mayor a menor margen EBITDA, calculado por separado en cada período</div></div>
+      </div></div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">3</div><div class="sec-step-title">Márgenes y rendimiento, lado a lado</div></div>
+      <div class="sec-step-body">
+        <table class="rent-table">
+          <thead><tr><th>Agencia</th><th>Margen EBITDA 2025</th><th>Margen EBITDA 2026</th><th>Δ</th><th>Rendimiento Inv. 2025</th><th>Rendimiento Inv. 2026</th><th>Δ</th></tr></thead>
+          <tbody>${rows.map(r=>{
+            const dM = r.margenIng-r.margenSF, dR = r.rendIng-r.rendSF;
+            return `<tr>
+              <td><span class="ag-dot" style="background:${agColor(r.nombre)}"></span><strong>${r.nombre}</strong></td>
+              <td>${dp(r.margenSF)}</td><td>${dp(r.margenIng)}</td><td class="${deltaCls(dM)}">${deltaTxt(dM)}</td>
+              <td>${dp(r.rendSF)}</td><td>${dp(r.rendIng)}</td><td class="${deltaCls(dR)}">${deltaTxt(dR)}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+        ${mesesSF>0 && mesesIng>0 ? `
+        <table class="rent-table" style="margin-top:16px">
+          <thead><tr><th>Agencia</th><th>EBITDA por persona / mes · 2025</th><th>EBITDA por persona / mes · 2026</th><th>Δ</th></tr></thead>
+          <tbody>${rows.map(r=>{
+            const dPc = (r.pcIng??0)-(r.pcSF??0);
+            return `<tr>
+              <td><span class="ag-dot" style="background:${agColor(r.nombre)}"></span><strong>${r.nombre}</strong></td>
+              <td>${r.pcSF!=null?r.pcSF.toFixed(1)+'M Gs.':'—'}</td><td>${r.pcIng!=null?r.pcIng.toFixed(1)+'M Gs.':'—'}</td>
+              <td class="${deltaCls(dPc)}">${r.pcSF!=null&&r.pcIng!=null?(dPc>0?'+':'')+dPc.toFixed(1)+'M Gs.':'—'}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>` : ''}
+      </div>
+    </div>
+    <div class="sec-step">
+      <div class="sec-step-header"><div class="sec-step-num">4</div><div class="sec-step-title">Ranking por margen EBITDA</div></div>
+      <div class="sec-step-body">
+        ${rows.length>1 ? `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:520px">
+          <div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px">2025${mesCorteNombre?` (a ${mesCorteNombre})`:''}</div>
+            ${rankSF.map((n,i)=>`<div style="padding:6px 0;display:flex;align-items:center;gap:8px"><span style="color:rgba(255,255,255,.4);font-weight:700;width:16px">${i+1}</span><span class="ag-dot" style="background:${agColor(n)}"></span>${n}</div>`).join('')}
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:8px">2026 (${periodoIngLabel})</div>
+            ${rankIng.map((n,i)=>{
+              const antes = rankSF.indexOf(n);
+              const arrow = antes===-1||antes===i ? '' : antes>i ? ' <span class="val-pos">▲</span>' : ' <span class="val-neg">▼</span>';
+              return `<div style="padding:6px 0;display:flex;align-items:center;gap:8px"><span style="color:rgba(255,255,255,.4);font-weight:700;width:16px">${i+1}</span><span class="ag-dot" style="background:${agColor(n)}"></span>${n}${arrow}</div>`;
+            }).join('')}
+          </div>
+        </div>` : `<p>Con una sola agencia en la vista no hay un ranking que comparar — solo aplica con varias agencias a la vez.</p>`}
+      </div>
+    </div>
+  `;
+}
+
 // ── OPEN SECTION ─────────────────────────────────────────────────────────────
 function openSection(id) {
   const el = document.getElementById(id);
@@ -3209,7 +3357,7 @@ function openSection(id) {
 function initScrollSpy() {
   const mainEl = document.getElementById('main');
   if (!mainEl) return;
-  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','ingresosSection'];
+  const secIds = ['sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','ingresosSection','comparacionSection'];
   mainEl.addEventListener('scroll', () => {
     let current = 'sec-1';
     for (const id of secIds) {
