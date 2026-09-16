@@ -375,18 +375,22 @@ function gnCompressRowsServer(rows) {
   return { ags, cls, mds, tis, grs, cas, mos, data };
 }
 
-// Sincroniza y guarda en Drive (globalnum-latest.json) — el mismo archivo que
-// actualiza la carga manual de Excel, así "09 · Inversión de Medios" no
-// necesita saber si el dato vino de un Excel o de Odoo.
+// Archivo propio en Drive — separado de globalnum-latest.json (el Excel 2025)
+// para que sincronizar con Odoo nunca pise esos datos. La pestaña "2026" del
+// frontend lee de acá.
+const ODOO_GN_FILENAME = 'globalnum-odoo-2026.json';
+
+// Sincroniza y guarda en Drive, en su propio archivo (ODOO_GN_FILENAME).
 async function odooSyncAndSave(drive, opts) {
   const { dataset, meta } = await odooSyncInversionMedios(opts);
   const { rawRows, ...rest } = dataset;
   const toSave = { ...rest, detalle: gnCompressRowsServer(rawRows), sincronizado_desde: 'odoo', sincronizado_en: new Date().toISOString() };
-  await drive.saveGlobalnum(toSave);
+  await drive.saveFileByName(ODOO_GN_FILENAME, toSave);
   return { meta, periodo: dataset.periodo, totales: dataset.totales };
 }
 
 module.exports = {
   odooExecuteKw, odooAuthenticate, odooResolveMenu, odooDiag, odooModelFields,
   odooFetchInversionMedios, odooSyncInversionMedios, odooSyncAndSave, GN_AGENCIA_MAP,
+  ODOO_GN_FILENAME,
 };

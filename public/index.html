@@ -1192,9 +1192,14 @@ body.fullscreen .main { padding-top:64px; }
           <div class="ingresos-header-title" id="gnTitulo">Inversión de Medios</div>
           <div class="ingresos-header-sub" id="gnSub">—</div>
         </div>
-        <div class="ingresos-header-right">
+        <div class="ingresos-header-right" style="display:flex;align-items:center;gap:10px">
+          <div class="gn-year-tabs" style="display:flex;gap:6px">
+            <button class="gn-ptab active" id="gnYearTab2025" onclick="gnSetYear('2025')">2025</button>
+            <button class="gn-ptab" id="gnYearTab2026" onclick="gnSetYear('2026')">2026</button>
+          </div>
           <input type="file" id="gnFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleGnFile(event)">
           <button class="ingresos-upload-btn" id="btnGnUpload" onclick="document.getElementById('gnFileInput').click()">↑ Subir Excel</button>
+          <button class="ingresos-upload-btn" id="btnGnOdooSync" style="display:none" onclick="sincronizarOdooGn()">⟳ Sincronizar con Odoo</button>
         </div>
       </div>
       <div id="gnContent">
@@ -3683,6 +3688,58 @@ async function loadLatestGn() {
     _gnD = filtered;
     renderGn(filtered);
   } catch(e) { console.error(e); }
+}
+
+async function loadLatestGnOdoo() {
+  const titulo = document.getElementById('gnTitulo');
+  const sub    = document.getElementById('gnSub');
+  try {
+    const r = await fetch('/api/latest-globalnum-odoo');
+    const data = await r.json();
+    if (data.empty || data.error) {
+      if (titulo) titulo.textContent = 'Inversión de Medios · 2026';
+      if (sub)    sub.textContent = 'Sin datos sincronizados todavía desde Odoo';
+      const content = document.getElementById('gnContent');
+      if (content) content.innerHTML = `<div class="ingresos-empty"><div style="font-size:28px">🔗</div><p>Todavía no se sincronizó Inversión de Medios 2026 desde Odoo.</p></div>`;
+      return;
+    }
+    if (data.detalle) data.rawRows = gnDecompressRows(data.detalle);
+    window._gnDataRaw = data;
+    const filtro = agenciaActiva();
+    const filtered = aplicarFiltroGn(data, filtro);
+    if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo || '2026'); return; }
+    _gnD = filtered;
+    renderGn(filtered);
+  } catch(e) { console.error(e); }
+}
+
+async function sincronizarOdooGn() {
+  const btn = document.getElementById('btnGnOdooSync');
+  if (btn) { btn.textContent = 'Sincronizando...'; btn.disabled = true; }
+  try {
+    const r = await fetch('/api/admin/odoo-sync-medios', { method: 'POST' });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error del servidor');
+    showToast(`✓ ${data.meta.filasUsadas} filas sincronizadas desde Odoo`, 'success');
+    await loadLatestGnOdoo();
+  } catch(err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    if (btn) { btn.textContent = '⟳ Sincronizar con Odoo'; btn.disabled = false; }
+  }
+}
+
+let _gnYear = '2025';
+function gnSetYear(year) {
+  _gnYear = year;
+  document.getElementById('gnYearTab2025')?.classList.toggle('active', year === '2025');
+  document.getElementById('gnYearTab2026')?.classList.toggle('active', year === '2026');
+  const btnExcel = document.getElementById('btnGnUpload');
+  const btnOdoo  = document.getElementById('btnGnOdooSync');
+  const isAdmin  = window._userEmail === 'danilo.sosa@texo.com.py';
+  if (btnExcel) btnExcel.style.display = (year === '2025' && !window._userAgencia) ? '' : 'none';
+  if (btnOdoo)  btnOdoo.style.display  = (year === '2026' && isAdmin) ? '' : 'none';
+  if (year === '2025') loadLatestGn(); else loadLatestGnOdoo();
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────

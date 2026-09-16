@@ -12,7 +12,7 @@ const { parseAdlens } = require('./adlens_parser');
 const { parseIngresos } = require('./ingresos_parser');
 const { parseGlobalnum } = require('./globalnum_parser');
 const drive = require('./drive');
-const { odooExecuteKw, odooResolveMenu, odooDiag, odooModelFields, odooSyncAndSave } = require('./odoo');
+const { odooExecuteKw, odooResolveMenu, odooDiag, odooModelFields, odooSyncAndSave, ODOO_GN_FILENAME } = require('./odoo');
 
 // ── RSS UTILITIES ─────────────────────────────────────────────────────────────
 function fetchURL(url) {
@@ -675,6 +675,19 @@ app.post('/api/save-globalnum', async (req, res) => {
 app.get('/api/latest-globalnum', requireAuth, async (req, res) => {
   try {
     const data = await drive.getLatestGlobalnum();
+    if (!data) return res.json({ empty: true });
+    const resultado = req.user?.agencia ? filtrarGlobalnum(data, req.user.agencia) : data;
+    res.json(resultado);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Igual que /api/latest-globalnum pero lee el dataset sincronizado desde Odoo
+// (2026 en adelante), guardado aparte para no pisar el Excel de 2025.
+app.get('/api/latest-globalnum-odoo', requireAuth, async (req, res) => {
+  try {
+    const data = await drive.getFileByName(ODOO_GN_FILENAME);
     if (!data) return res.json({ empty: true });
     const resultado = req.user?.agencia ? filtrarGlobalnum(data, req.user.agencia) : data;
     res.json(resultado);
