@@ -372,7 +372,7 @@ app.get('/api/admin/odoo-inspect', requireAdmin, async (req, res) => {
 // Separa "¿el endpoint responde?" de "¿las credenciales sirven?" — ver odoo.js
 app.get('/api/admin/odoo-diag', requireAdmin, async (req, res) => {
   try {
-    const result = await odooDiag();
+    const result = await odooDiag(req.query.login);
     res.json(result);
   } catch (err) {
     console.error('ERROR /api/admin/odoo-diag:', err);

@@ -64,9 +64,10 @@ async function odooExecuteKw(model, method, args = [], kwargs = {}) {
 // necesita credenciales — common.version() es público en toda instancia
 // Odoo) de "¿las credenciales son correctas?" (authenticate), para no tener
 // que adivinar en cuál de los dos pasos está el problema.
-async function odooDiag() {
+async function odooDiag(loginOverride) {
   const rawKey = process.env.ODOO_API_KEY || '';
   const rawUser = process.env.ODOO_USERNAME || '';
+  const loginTried = (loginOverride || ODOO_USERNAME || '').trim();
   const envCheck = {
     ODOO_URL: ODOO_URL || null,
     ODOO_DB: ODOO_DB || null,
@@ -76,6 +77,7 @@ async function odooDiag() {
     ODOO_API_KEY_length: ODOO_API_KEY.length,
     ODOO_API_KEY_had_whitespace: rawKey !== ODOO_API_KEY,
     ODOO_API_KEY_preview: ODOO_API_KEY ? `${ODOO_API_KEY.slice(0, 4)}…${ODOO_API_KEY.slice(-4)}` : null,
+    login_tried: loginTried,
   };
 
   let version = null, versionError = null;
@@ -83,8 +85,8 @@ async function odooDiag() {
   catch (e) { versionError = e.message; }
 
   let uid = null, authError = null;
-  if (ODOO_DB && ODOO_USERNAME && ODOO_API_KEY) {
-    try { uid = await odooRpc('common', 'authenticate', [ODOO_DB, ODOO_USERNAME, ODOO_API_KEY, {}]); }
+  if (ODOO_DB && loginTried && ODOO_API_KEY) {
+    try { uid = await odooRpc('common', 'authenticate', [ODOO_DB, loginTried, ODOO_API_KEY, {}]); }
     catch (e) { authError = e.message; }
   }
 
