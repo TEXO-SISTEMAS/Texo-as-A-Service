@@ -211,8 +211,9 @@ async function odooEstadosInversionMedios() {
 // Modelo real: "inversion.medios" (custom, confirmado sep 2026). Mapeo de
 // compañía -> agencia confirmado a mano con Danilo; las que no aparecen en
 // este mapa (TEXO S.A. = holding sin inversión propia; PROJECT SOCIEDAD
-// ANONIMA = pendiente de aclarar por qué está separada de MEDIABRAND, por
-// ahora se excluye) simplemente se descartan al sincronizar.
+// ANONIMA y COATI SOCIEDAD ANONIMA = entidades separadas, sin agencia propia
+// del holding — confirmado por Danilo sep 2026) simplemente se descartan al
+// sincronizar.
 const GN_AGENCIA_MAP = {
   'PUBLICITARIA NASTA SA': 'NASTA',
   'BRICK SA': 'BRICK',
