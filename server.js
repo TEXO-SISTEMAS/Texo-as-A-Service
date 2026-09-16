@@ -12,7 +12,7 @@ const { parseAdlens } = require('./adlens_parser');
 const { parseIngresos } = require('./ingresos_parser');
 const { parseGlobalnum } = require('./globalnum_parser');
 const drive = require('./drive');
-const { odooExecuteKw, odooResolveMenu } = require('./odoo');
+const { odooExecuteKw, odooResolveMenu, odooDiag } = require('./odoo');
 
 // ── RSS UTILITIES ─────────────────────────────────────────────────────────────
 function fetchURL(url) {
@@ -365,6 +365,17 @@ app.get('/api/admin/odoo-inspect', requireAdmin, async (req, res) => {
     res.json({ ok: true, ...result });
   } catch (err) {
     console.error('ERROR /api/admin/odoo-inspect:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Separa "¿el endpoint responde?" de "¿las credenciales sirven?" — ver odoo.js
+app.get('/api/admin/odoo-diag', requireAdmin, async (req, res) => {
+  try {
+    const result = await odooDiag();
+    res.json(result);
+  } catch (err) {
+    console.error('ERROR /api/admin/odoo-diag:', err);
     res.status(500).json({ error: err.message });
   }
 });

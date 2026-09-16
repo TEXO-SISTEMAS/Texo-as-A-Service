@@ -58,6 +58,32 @@ async function odooExecuteKw(model, method, args = [], kwargs = {}) {
   return odooRpc('object', 'execute_kw', [ODOO_DB, uid, ODOO_API_KEY, model, method, args, kwargs]);
 }
 
+// Diagnóstico de conexión: separa "¿el endpoint JSON-RPC responde?" (no
+// necesita credenciales — common.version() es público en toda instancia
+// Odoo) de "¿las credenciales son correctas?" (authenticate), para no tener
+// que adivinar en cuál de los dos pasos está el problema.
+async function odooDiag() {
+  const envCheck = {
+    ODOO_URL: ODOO_URL || null,
+    ODOO_DB: ODOO_DB || null,
+    ODOO_USERNAME: ODOO_USERNAME || null,
+    ODOO_API_KEY_set: !!ODOO_API_KEY,
+    ODOO_API_KEY_length: ODOO_API_KEY ? ODOO_API_KEY.length : 0,
+  };
+
+  let version = null, versionError = null;
+  try { version = await odooRpc('common', 'version', []); }
+  catch (e) { versionError = e.message; }
+
+  let uid = null, authError = null;
+  if (ODOO_DB && ODOO_USERNAME && ODOO_API_KEY) {
+    try { uid = await odooRpc('common', 'authenticate', [ODOO_DB, ODOO_USERNAME, ODOO_API_KEY, {}]); }
+    catch (e) { authError = e.message; }
+  }
+
+  return { envCheck, version, versionError, uid, authResult: uid === false ? 'Odoo devolvió false (usuario/API key/DB incorrectos)' : (uid ? 'OK' : null), authError };
+}
+
 // Resuelve un menú de Odoo (el número que aparece en la URL como menu_id=XXX)
 // hasta el modelo técnico real que muestra esa pantalla, más la lista de
 // campos disponibles — para no tener que adivinar de qué tabla traer los datos.
@@ -80,4 +106,4 @@ async function odooResolveMenu(menuId) {
   return { menu, action, model, fields };
 }
 
-module.exports = { odooExecuteKw, odooAuthenticate, odooResolveMenu };
+module.exports = { odooExecuteKw, odooAuthenticate, odooResolveMenu, odooDiag };
