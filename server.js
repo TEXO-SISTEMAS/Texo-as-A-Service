@@ -12,6 +12,7 @@ const { parseAdlens } = require('./adlens_parser');
 const { parseIngresos } = require('./ingresos_parser');
 const { parseGlobalnum } = require('./globalnum_parser');
 const drive = require('./drive');
+const { odooExecuteKw, odooResolveMenu } = require('./odoo');
 
 // ── RSS UTILITIES ─────────────────────────────────────────────────────────────
 function fetchURL(url) {
@@ -352,6 +353,21 @@ function requireAdmin(req, res, next) {
   if (req.user?.email !== SUPER_ADMIN) return res.status(403).json({ error: 'Solo el administrador puede hacer esto' });
   next();
 }
+
+// ── ODOO — DIAGNÓSTICO (integración en curso) ─────────────────────────────────
+// Resuelve un menú de Odoo (el número de la URL, ej. ".../menu_id=821") al
+// modelo técnico real que muestra, con sus campos — para mapear qué traer sin
+// tener que adivinar. Ej: GET /api/admin/odoo-inspect?menu_id=821
+app.get('/api/admin/odoo-inspect', requireAdmin, async (req, res) => {
+  try {
+    const menuId = req.query.menu_id || '821';
+    const result = await odooResolveMenu(menuId);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('ERROR /api/admin/odoo-inspect:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get('/api/admin/usuarios', requireAdmin, async (req, res) => {
   try {
