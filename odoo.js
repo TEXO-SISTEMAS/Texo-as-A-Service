@@ -194,4 +194,199 @@ async function odooModelFields(model, sampleLimit = 3) {
   return { model, count: fields.length, fields, sample, sampleError };
 }
 
-module.exports = { odooExecuteKw, odooAuthenticate, odooResolveMenu, odooDiag, odooModelFields };
+// ── SINCRONIZACIÓN: INVERSIÓN DE MEDIOS ───────────────────────────────────────
+// Modelo real: "inversion.medios" (custom, confirmado sep 2026). Mapeo de
+// compañía -> agencia confirmado a mano con Danilo; las que no aparecen en
+// este mapa (TEXO S.A. = holding sin inversión propia; PROJECT SOCIEDAD
+// ANONIMA = pendiente de aclarar por qué está separada de MEDIABRAND, por
+// ahora se excluye) simplemente se descartan al sincronizar.
+const GN_AGENCIA_MAP = {
+  'PUBLICITARIA NASTA SA': 'NASTA',
+  'BRICK SA': 'BRICK',
+  'ENE S.A.': 'LUPE',
+  'MEDIABRAND S.A.': 'OMD',
+  'LA MEDIA DE LUPE S.A.': 'ROGER',
+};
+
+const GN_MES_LABEL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function gnNormalizarMedio(tipo) {
+  if (!tipo) return 'OTROS';
+  const t = String(tipo).toUpperCase();
+  if (t.includes('TV') && t.includes('CABLE')) return 'TV CABLE';
+  if (t.includes('TV')) return 'TV ABIERTA';
+  if (t.includes('RADIO')) return 'RADIO';
+  if (t.includes('DIGITAL')) return 'DIGITAL';
+  if (t.includes('PRENSA')) return 'PRENSA';
+  if (t.includes('VIA') || t.includes('PUBLICA')) return 'VIA PUBLICA';
+  return 'OTROS';
+}
+
+// "2026-03-24 21:10:55" o "2026-03-24" → {anio, nMes, mes}. Parseo por string,
+// no por Date(), para no arrastrar corrimientos de huso horario.
+function gnParseFecha(str) {
+  if (!str || typeof str !== 'string' || str.length < 7) return null;
+  const anio = parseInt(str.slice(0, 4), 10);
+  const nMes = parseInt(str.slice(5, 7), 10);
+  if (!anio || !nMes || nMes < 1 || nMes > 12) return null;
+  return { anio, nMes, mes: GN_MES_LABEL[nMes - 1] };
+}
+
+const m2o = (v) => (Array.isArray(v) && v.length > 1) ? v[1] : null;
+
+// Trae TODAS las inversion.medios confirmadas de Odoo, paginado, y las
+// transforma al mismo shape de "fila cruda" que ya usa el resto del módulo
+// (agencia/cliente/medio/tipo/grupo/canal/nMes/mes/anio/moneda/importe/
+// comision/invGs/comGs/invUsd/comUsd) — mismos nombres que gnParsearEnBrowser
+// en public/index.html, para no tener que tocar el render del lado cliente.
+async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
+  const domain = [['state', '=', 'confirmado'], ['fecha_desde', '>=', '2026-01-01']];
+  const fields = [
+    'company_id', 'partner_id', 'tipo_medio_id', 'grupo_id', 'canal_id',
+    'fecha_desde', 'create_date', 'currency_id', 'es_moneda_extranjera',
+    'monto_negociado', 'valor_comision',
+    'total_monto_negociado_pyg', 'valor_comision_pyg',
+    'total_monto_negociado_ext', 'valor_comision_ext',
+  ];
+
+  const rawRows = [];
+  let offset = 0, total = null, skippedCompania = 0;
+  for (;;) {
+    const page = await odooExecuteKw('inversion.medios', 'search_read', [domain], {
+      fields, limit: pageSize, offset, order: 'id asc',
+    });
+    if (total === null) {
+      total = await odooExecuteKw('inversion.medios', 'search_count', [domain]);
+    }
+    for (const r of page) {
+      const companiaNombre = m2o(r.company_id);
+      const agencia = GN_AGENCIA_MAP[companiaNombre];
+      if (!agencia) { skippedCompania++; continue; }
+
+      const fecha = gnParseFecha(r.fecha_desde) || gnParseFecha(r.create_date);
+      if (!fecha) continue; // sin fecha no se puede ubicar en el calendario
+
+      const tipoLabel = m2o(r.tipo_medio_id) || '';
+      rawRows.push({
+        agencia,
+        cliente: m2o(r.partner_id) || '—',
+        medio: gnNormalizarMedio(tipoLabel),
+        tipo: tipoLabel || '—',
+        grupo: m2o(r.grupo_id) || '—',
+        canal: m2o(r.canal_id) || '—',
+        nMes: fecha.nMes, mes: fecha.mes, anio: fecha.anio,
+        moneda: m2o(r.currency_id),
+        importe: r.monto_negociado || 0,
+        comision: r.valor_comision || 0,
+        invGs: r.total_monto_negociado_pyg || 0,
+        comGs: r.valor_comision_pyg || 0,
+        invUsd: r.es_moneda_extranjera ? (r.total_monto_negociado_ext || 0) : 0,
+        comUsd: r.es_moneda_extranjera ? (r.valor_comision_ext || 0) : 0,
+      });
+    }
+    offset += page.length;
+    if (onProgress) onProgress({ offset, total });
+    if (page.length < pageSize || offset >= total) break;
+  }
+  return { rawRows, total, skippedCompania };
+}
+
+// Agrega rawRows al mismo shape que ya guarda /api/save-globalnum — mismo
+// cálculo que gnRecomputeFromRawRows() en public/index.html (por agencia,
+// medio, cliente, canal, mes, semestre, trimestre) para que la pestaña
+// "09 · Inversión de Medios" no necesite ningún cambio de frontend.
+function buildGnDataset(rawRows) {
+  let totalInversion = 0, totalComision = 0;
+  const clientesSet = new Set(), agenciasSet = new Set();
+  const porMes = Array.from({ length: 12 }, (_, i) => ({ mes: GN_MES_LABEL[i], nMes: i + 1, inversion: 0, comision: 0 }));
+  const porAgencia = {}, porMedio = {}, porCliente = {}, porCanal = {};
+
+  for (const r of rawRows) {
+    totalInversion += r.invGs; totalComision += r.comGs;
+    clientesSet.add(r.cliente); agenciasSet.add(r.agencia);
+    if (r.nMes >= 1 && r.nMes <= 12) { porMes[r.nMes - 1].inversion += r.invGs; porMes[r.nMes - 1].comision += r.comGs; }
+    (porAgencia[r.agencia] ??= { inversion: 0, comision: 0 });
+    porAgencia[r.agencia].inversion += r.invGs; porAgencia[r.agencia].comision += r.comGs;
+    (porMedio[r.medio] ??= { inversion: 0, comision: 0 });
+    porMedio[r.medio].inversion += r.invGs; porMedio[r.medio].comision += r.comGs;
+    (porCliente[r.cliente] ??= { inversion: 0, comision: 0 });
+    porCliente[r.cliente].inversion += r.invGs; porCliente[r.cliente].comision += r.comGs;
+    const cKey = r.grupo && r.grupo !== '—' ? r.grupo : r.canal;
+    (porCanal[cKey] ??= { inversion: 0, comision: 0 });
+    porCanal[cKey].inversion += r.invGs; porCanal[cKey].comision += r.comGs;
+  }
+
+  const sumRange = (arr, a, b) => arr.slice(a, b).reduce((acc, m) => ({ inversion: acc.inversion + m.inversion, comision: acc.comision + m.comision }), { inversion: 0, comision: 0 });
+  const s1 = sumRange(porMes, 0, 6), s2 = sumRange(porMes, 6, 12);
+  const q1 = sumRange(porMes, 0, 3), q2 = sumRange(porMes, 3, 6), q3 = sumRange(porMes, 6, 9), q4 = sumRange(porMes, 9, 12);
+  const toArr = (obj) => Object.entries(obj).map(([nombre, d]) => ({ nombre, ...d, pct: totalInversion > 0 ? d.inversion / totalInversion : 0 })).sort((a, b) => b.inversion - a.inversion);
+
+  const mesesConDatos = porMes.filter(m => m.inversion > 0);
+  const anios = [...new Set(rawRows.map(r => r.anio))].sort();
+  const periodo = mesesConDatos.length
+    ? `${mesesConDatos[0].mes} – ${mesesConDatos[mesesConDatos.length - 1].mes}${anios.length ? ' ' + anios.join('-') : ''}`
+    : '';
+
+  // tipoCambio: promedio ponderado real de las filas en moneda extranjera —
+  // no un valor fijo. Solo para el KPI "Comisión en USD" del dashboard.
+  const extRows = rawRows.filter(r => r.invUsd > 0);
+  const sumExtGs = extRows.reduce((s, r) => s + r.invGs, 0);
+  const sumExtUsd = extRows.reduce((s, r) => s + r.invUsd, 0);
+  const tipoCambio = sumExtUsd > 0 ? Math.round(sumExtGs / sumExtUsd) : 6000;
+
+  return {
+    periodo, tipoCambio,
+    totales: { inversion: Math.round(totalInversion), comision: Math.round(totalComision), clientes: clientesSet.size, agencias: agenciasSet.size },
+    semestres: [{ label: 'S1 · Ene–Jun', ...s1 }, { label: 'S2 · Jul–Dic', ...s2 }],
+    trimestres: [{ label: 'Q1 · Ene–Mar', ...q1 }, { label: 'Q2 · Abr–Jun', ...q2 }, { label: 'Q3 · Jul–Sep', ...q3 }, { label: 'Q4 · Oct–Dic', ...q4 }],
+    porMes,
+    agencias: toArr(porAgencia), medios: toArr(porMedio),
+    topClientes: toArr(porCliente).slice(0, 10), canales: toArr(porCanal).slice(0, 10),
+    rawRows,
+  };
+}
+
+// Trae de Odoo + arma el dataset completo — no guarda en Drive (eso lo hace
+// odooSyncAndSave, reusando drive.saveGlobalnum() para no duplicar esa lógica).
+async function odooSyncInversionMedios(opts) {
+  const { rawRows, total, skippedCompania } = await odooFetchInversionMedios(opts);
+  const dataset = buildGnDataset(rawRows);
+  return { dataset, meta: { totalEnOdoo: total, filasUsadas: rawRows.length, descartadasPorCompania: skippedCompania } };
+}
+
+// Mismo algoritmo de compresión que gnCompressRows() en public/index.html —
+// diccionario de strings repetidas en vez de guardarlas enteras en cada fila.
+// Necesario para que loadLatestGn() en el cliente (que ya sabe descomprimir
+// data.detalle) pueda leer esto sin cambios de frontend.
+function gnCompressRowsServer(rows) {
+  if (!rows || !rows.length) return null;
+  const dict = (arr, val) => { let i = arr.indexOf(val); if (i < 0) { i = arr.length; arr.push(val); } return i; };
+  const ags = [], cls = [], mds = [], tis = [], grs = [], cas = [], mos = [];
+  const data = rows.map(r => [
+    dict(ags, r.agencia), dict(cls, r.cliente), dict(mds, r.medio),
+    dict(tis, r.tipo), dict(grs, r.grupo), dict(cas, r.canal),
+    r.nMes, r.anio || 0, dict(mos, r.moneda || '—'),
+    Math.round(r.invGs), Math.round(r.comGs),
+    Math.round((r.invUsd || 0) * 100) / 100,
+    Math.round((r.comUsd || 0) * 100) / 100,
+    Math.round((r.importe || 0) * 10000) / 10000,
+    Math.round((r.comision || 0) * 10000) / 10000,
+  ]);
+  return { ags, cls, mds, tis, grs, cas, mos, data };
+}
+
+// Sincroniza y guarda en Drive (globalnum-latest.json) — el mismo archivo que
+// actualiza la carga manual de Excel, así "09 · Inversión de Medios" no
+// necesita saber si el dato vino de un Excel o de Odoo.
+async function odooSyncAndSave(drive, opts) {
+  const { dataset, meta } = await odooSyncInversionMedios(opts);
+  const { rawRows, ...rest } = dataset;
+  const toSave = { ...rest, detalle: gnCompressRowsServer(rawRows), sincronizado_desde: 'odoo', sincronizado_en: new Date().toISOString() };
+  await drive.saveGlobalnum(toSave);
+  return { meta, periodo: dataset.periodo, totales: dataset.totales };
+}
+
+module.exports = {
+  odooExecuteKw, odooAuthenticate, odooResolveMenu, odooDiag, odooModelFields,
+  odooFetchInversionMedios, odooSyncInversionMedios, odooSyncAndSave, GN_AGENCIA_MAP,
+};

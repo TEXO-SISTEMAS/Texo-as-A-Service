@@ -12,7 +12,7 @@ const { parseAdlens } = require('./adlens_parser');
 const { parseIngresos } = require('./ingresos_parser');
 const { parseGlobalnum } = require('./globalnum_parser');
 const drive = require('./drive');
-const { odooExecuteKw, odooResolveMenu, odooDiag, odooModelFields } = require('./odoo');
+const { odooExecuteKw, odooResolveMenu, odooDiag, odooModelFields, odooSyncAndSave } = require('./odoo');
 
 // ── RSS UTILITIES ─────────────────────────────────────────────────────────────
 function fetchURL(url) {
@@ -389,6 +389,19 @@ app.get('/api/admin/odoo-diag', requireAdmin, async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('ERROR /api/admin/odoo-diag:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Trae inversion.medios confirmados de Odoo (2026 en adelante), arma el
+// dataset y lo guarda en globalnum-latest.json — mismo archivo que actualiza
+// la carga manual de Excel, así "09 · Inversión de Medios" no distingue el origen.
+app.post('/api/admin/odoo-sync-medios', requireAdmin, async (req, res) => {
+  try {
+    const result = await odooSyncAndSave(drive);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('ERROR /api/admin/odoo-sync-medios:', err);
     res.status(500).json({ error: err.message });
   }
 });
