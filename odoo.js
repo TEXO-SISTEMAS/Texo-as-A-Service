@@ -260,7 +260,11 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
       total = await odooExecuteKw('inversion.medios', 'search_count', [domain]);
     }
     for (const r of page) {
-      const companiaNombre = m2o(r.company_id);
+      // Odoo devuelve algunos nombres de compañía con un espacio final
+      // (ej. "BRICK SA ") — sin el trim() no matcheaban contra el mapa y se
+      // descartaban por error miles de filas válidas.
+      const companiaRaw = m2o(r.company_id);
+      const companiaNombre = companiaRaw ? companiaRaw.trim() : companiaRaw;
       const agencia = GN_AGENCIA_MAP[companiaNombre];
       if (!agencia) {
         skippedCompania++;
