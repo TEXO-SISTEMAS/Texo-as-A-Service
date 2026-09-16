@@ -405,15 +405,34 @@ app.get('/api/admin/odoo-diag', requireAdmin, async (req, res) => {
   }
 });
 
-// Trae inversion.medios confirmados de Odoo (2026 en adelante), arma el
-// dataset y lo guarda en globalnum-latest.json — mismo archivo que actualiza
-// la carga manual de Excel, así "09 · Inversión de Medios" no distingue el origen.
+// Trae inversion.medios de Odoo (2026, confirmado + a_confirmar) y guarda el
+// dataset agregado en globalnum-odoo-2026.json — archivo aparte del Excel
+// 2025, así la pestaña "2026" de Inversión de Medios lo lee sin pisar nada.
 app.post('/api/admin/odoo-sync-medios', requireAdmin, async (req, res) => {
   try {
     const result = await odooSyncAndSave(drive);
     res.json({ ok: true, ...result });
   } catch (err) {
     console.error('ERROR /api/admin/odoo-sync-medios:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Mismo sync, disparado por Vercel Cron (ver vercel.json) en vez de un clic
+// admin. Vercel agrega automáticamente "Authorization: Bearer $CRON_SECRET"
+// en las invocaciones de cron si esa env var existe — la verificamos acá para
+// que nadie más pueda pegarle a este endpoint sin el secreto.
+app.get('/api/cron/odoo-sync-medios', async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.authorization !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+  try {
+    const result = await odooSyncAndSave(drive);
+    console.log(`[cron] odoo-sync-medios OK · ${result.meta.filasUsadas}/${result.meta.totalEnOdoo} filas`);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('ERROR /api/cron/odoo-sync-medios:', err);
     res.status(500).json({ error: err.message });
   }
 });
