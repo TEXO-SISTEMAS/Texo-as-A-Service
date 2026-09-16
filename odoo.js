@@ -250,7 +250,8 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
   ];
 
   const rawRows = [];
-  let offset = 0, total = null, skippedCompania = 0;
+  let offset = 0, total = null, skippedCompania = 0, skippedFecha = 0;
+  const skippedPorCompania = {};
   for (;;) {
     const page = await odooExecuteKw('inversion.medios', 'search_read', [domain], {
       fields, limit: pageSize, offset, order: 'id asc',
@@ -261,10 +262,15 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
     for (const r of page) {
       const companiaNombre = m2o(r.company_id);
       const agencia = GN_AGENCIA_MAP[companiaNombre];
-      if (!agencia) { skippedCompania++; continue; }
+      if (!agencia) {
+        skippedCompania++;
+        const key = companiaNombre || '(sin compañía)';
+        skippedPorCompania[key] = (skippedPorCompania[key] || 0) + 1;
+        continue;
+      }
 
       const fecha = gnParseFecha(r.fecha_desde) || gnParseFecha(r.create_date);
-      if (!fecha) continue; // sin fecha no se puede ubicar en el calendario
+      if (!fecha) { skippedFecha++; continue; } // sin fecha no se puede ubicar en el calendario
 
       const tipoLabel = m2o(r.tipo_medio_id) || '';
       rawRows.push({
@@ -288,7 +294,7 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
     if (onProgress) onProgress({ offset, total });
     if (page.length < pageSize || offset >= total) break;
   }
-  return { rawRows, total, skippedCompania };
+  return { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania };
 }
 
 // Agrega rawRows al mismo shape que ya guarda /api/save-globalnum — mismo
@@ -349,9 +355,18 @@ function buildGnDataset(rawRows) {
 // Trae de Odoo + arma el dataset completo — no guarda en Drive (eso lo hace
 // odooSyncAndSave, reusando drive.saveGlobalnum() para no duplicar esa lógica).
 async function odooSyncInversionMedios(opts) {
-  const { rawRows, total, skippedCompania } = await odooFetchInversionMedios(opts);
+  const { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania } = await odooFetchInversionMedios(opts);
   const dataset = buildGnDataset(rawRows);
-  return { dataset, meta: { totalEnOdoo: total, filasUsadas: rawRows.length, descartadasPorCompania: skippedCompania } };
+  return {
+    dataset,
+    meta: {
+      totalEnOdoo: total,
+      filasUsadas: rawRows.length,
+      descartadasPorCompania: skippedCompania,
+      descartadasPorFecha: skippedFecha,
+      companiasDescartadas: skippedPorCompania,
+    },
+  };
 }
 
 // Mismo algoritmo de compresión que gnCompressRows() en public/index.html —

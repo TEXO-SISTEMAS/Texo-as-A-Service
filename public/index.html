@@ -3720,7 +3720,9 @@ async function sincronizarOdooGn() {
     const r = await fetch('/api/admin/odoo-sync-medios', { method: 'POST' });
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Error del servidor');
-    showToast(`✓ ${data.meta.filasUsadas} filas sincronizadas desde Odoo`, 'success');
+    const m = data.meta || {};
+    showToast(`✓ ${m.filasUsadas} de ${m.totalEnOdoo} filas de Odoo (${m.descartadasPorCompania||0} de compañías fuera del mapa, ${m.descartadasPorFecha||0} sin fecha)`, 'success');
+    if (m.companiasDescartadas) console.log('Odoo — compañías descartadas:', m.companiasDescartadas);
     await loadLatestGnOdoo();
   } catch(err) {
     showToast('Error: ' + err.message, 'error');
