@@ -210,16 +210,18 @@ async function odooEstadosInversionMedios() {
 // ── SINCRONIZACIÓN: INVERSIÓN DE MEDIOS ───────────────────────────────────────
 // Modelo real: "inversion.medios" (custom, confirmado sep 2026). Mapeo de
 // compañía -> agencia confirmado a mano con Danilo; las que no aparecen en
-// este mapa (TEXO S.A. = holding sin inversión propia; PROJECT SOCIEDAD
-// ANONIMA y COATI SOCIEDAD ANONIMA = entidades separadas, sin agencia propia
-// del holding — confirmado por Danilo sep 2026) simplemente se descartan al
-// sincronizar.
+// este mapa (por ahora solo TEXO S.A., el holding sin inversión propia) se
+// descartan al sincronizar. PROJECT y COATI son agencias propias del holding,
+// no se excluyen — confirmado por Danilo sep 2026. Falta agregar LOYALTY
+// (nombre legal en Odoo todavía sin confirmar).
 const GN_AGENCIA_MAP = {
   'PUBLICITARIA NASTA SA': 'NASTA',
   'BRICK SA': 'BRICK',
   'ENE S.A.': 'LUPE',
   'MEDIABRAND S.A.': 'OMD',
   'LA MEDIA DE LUPE S.A.': 'ROGER',
+  'PROJECT SOCIEDAD ANONIMA': 'PROJECT',
+  'COATI SOCIEDAD ANONIMA': 'COATI',
 };
 
 const GN_MES_LABEL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
