@@ -240,7 +240,7 @@ const m2o = (v) => (Array.isArray(v) && v.length > 1) ? v[1] : null;
 // comision/invGs/comGs/invUsd/comUsd) — mismos nombres que gnParsearEnBrowser
 // en public/index.html, para no tener que tocar el render del lado cliente.
 async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
-  const domain = [['state', '=', 'confirmado'], ['fecha_desde', '>=', '2026-01-01']];
+  const domain = [['fecha_desde', '>=', '2026-01-01']];
   const fields = [
     'company_id', 'partner_id', 'tipo_medio_id', 'grupo_id', 'canal_id',
     'fecha_desde', 'create_date', 'currency_id', 'es_moneda_extranjera',
