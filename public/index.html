@@ -980,7 +980,12 @@ body.fullscreen .main { padding-top:64px; }
    entra, en vez de partir palabras o esconder botones fuera de pantalla.
    ══════════════════════════════════════════════════════════════════════════════ */
 .btn{white-space:nowrap}
-.topbar{flex-wrap:wrap;row-gap:8px}
+/* height:60px fijo en la regla base solo se anulaba a partir de ≤1400px, pero
+   flex-wrap:wrap (de acá abajo) es incondicional — con nombres de nav largos
+   ("Facturación y Posicionamiento de Texo", etc.) el topbar-right ya necesita
+   envolver a una 2ª fila en anchos grandes también, y esa fila se desbordaba
+   por fuera de la caja de 60px en vez de empujar #main hacia abajo. */
+.topbar{flex-wrap:wrap;row-gap:8px;height:auto;min-height:60px;padding:10px 32px}
 .topbar-left{flex-wrap:wrap;row-gap:6px;min-width:0}
 .topbar-right{flex-shrink:0}
 /* Nav siempre puede scrollear horizontalmente en vez de desbordar la página —
