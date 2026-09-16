@@ -418,13 +418,27 @@ app.post('/api/admin/odoo-sync-medios', requireAdmin, async (req, res) => {
   }
 });
 
+// Diagnóstico seguro (no expone el secreto completo) para confirmar que
+// CRON_SECRET llegó bien a esta deployment — mismo patrón que usamos para
+// depurar la API key de Odoo.
+app.get('/api/admin/cron-secret-diag', requireAdmin, (req, res) => {
+  const raw = process.env.CRON_SECRET || '';
+  res.json({
+    presente: !!raw,
+    largo: raw.length,
+    teniaEspacios: raw !== raw.trim(),
+    preview: raw ? `${raw.slice(0, 4)}...${raw.slice(-4)}` : null,
+  });
+});
+
 // Mismo sync, disparado por Vercel Cron (ver vercel.json) en vez de un clic
 // admin. Vercel agrega automáticamente "Authorization: Bearer $CRON_SECRET"
 // en las invocaciones de cron si esa env var existe — la verificamos acá para
 // que nadie más pueda pegarle a este endpoint sin el secreto.
 app.get('/api/cron/odoo-sync-medios', async (req, res) => {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.authorization !== `Bearer ${secret}`) {
+  const secret = (process.env.CRON_SECRET || '').trim();
+  const authHeader = (req.headers.authorization || '').trim();
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return res.status(401).json({ error: 'No autorizado' });
   }
   try {
