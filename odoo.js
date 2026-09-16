@@ -60,6 +60,48 @@ async function odooExecuteKw(model, method, args = [], kwargs = {}) {
   return odooRpc('object', 'execute_kw', [ODOO_DB, uid, ODOO_API_KEY, model, method, args, kwargs]);
 }
 
+function xmlEscape(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Prueba la autenticación por XML-RPC (el otro protocolo que expone la API
+// externa de Odoo, /xmlrpc/2/common) en paralelo a JSON-RPC — algunas
+// instancias de Odoo Online habilitan uno sí y el otro no, aunque ambos
+// respondan igual a llamadas públicas como version(). Parser mínimo a mano
+// (sin agregar dependencias) para esta única llamada.
+async function odooXmlRpcAuthenticate(login) {
+  if (!ODOO_URL || !ODOO_DB || !login || !ODOO_API_KEY) return { skipped: true };
+  const body = `<?xml version="1.0"?>
+<methodCall>
+  <methodName>authenticate</methodName>
+  <params>
+    <param><value><string>${xmlEscape(ODOO_DB)}</string></value></param>
+    <param><value><string>${xmlEscape(login)}</string></value></param>
+    <param><value><string>${xmlEscape(ODOO_API_KEY)}</string></value></param>
+    <param><value><struct></struct></value></param>
+  </params>
+</methodCall>`;
+  let text;
+  try {
+    const r = await fetch(`${ODOO_URL}/xmlrpc/2/common`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/xml' },
+      body,
+    });
+    text = await r.text();
+    if (!r.ok) return { httpStatus: r.status, raw: text.slice(0, 500) };
+  } catch (e) {
+    return { fetchError: e.message };
+  }
+  const faultMatch = text.match(/<name>faultString<\/name>\s*<value><string>([\s\S]*?)<\/string>/);
+  if (faultMatch) return { fault: faultMatch[1] };
+  const intMatch = text.match(/<int>(\d+)<\/int>/);
+  if (intMatch) return { uid: Number(intMatch[1]) };
+  const boolMatch = text.match(/<boolean>(\d)<\/boolean>/);
+  if (boolMatch) return { uid: boolMatch[1] === '1' };
+  return { unparsed: text.slice(0, 500) };
+}
+
 // Diagnóstico de conexión: separa "¿el endpoint JSON-RPC responde?" (no
 // necesita credenciales — common.version() es público en toda instancia
 // Odoo) de "¿las credenciales son correctas?" (authenticate), para no tener
@@ -90,7 +132,15 @@ async function odooDiag(loginOverride) {
     catch (e) { authError = e.message; }
   }
 
-  return { envCheck, version, versionError, uid, authResult: uid === false ? 'Odoo devolvió false (usuario/API key/DB incorrectos)' : (uid ? 'OK' : null), authError };
+  const xmlrpc = await odooXmlRpcAuthenticate(loginTried);
+
+  return {
+    envCheck, version, versionError,
+    jsonrpc_uid: uid,
+    jsonrpc_authResult: uid === false ? 'Odoo devolvió false (usuario/API key/DB incorrectos)' : (uid ? 'OK' : null),
+    authError,
+    xmlrpc,
+  };
 }
 
 // Resuelve un menú de Odoo (el número que aparece en la URL como menu_id=XXX)
