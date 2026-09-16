@@ -126,6 +126,16 @@ async function odooDiag(loginOverride) {
   try { version = await odooRpc('common', 'version', []); }
   catch (e) { versionError = e.message; }
 
+  // db.list() no necesita credenciales — si responde, confirma (o descarta)
+  // el nombre exacto de la base sin tener que adivinar. Algunas instancias
+  // de Odoo Online lo deshabilitan por seguridad; si tira error, no es un
+  // problema, solo no aporta este dato puntual.
+  let dbList = null, dbListError = null, dbNameMatches = null;
+  try {
+    dbList = await odooRpc('db', 'list', []);
+    dbNameMatches = Array.isArray(dbList) ? dbList.includes(ODOO_DB) : null;
+  } catch (e) { dbListError = e.message; }
+
   let uid = null, authError = null;
   if (ODOO_DB && loginTried && ODOO_API_KEY) {
     try { uid = await odooRpc('common', 'authenticate', [ODOO_DB, loginTried, ODOO_API_KEY, {}]); }
@@ -136,6 +146,7 @@ async function odooDiag(loginOverride) {
 
   return {
     envCheck, version, versionError,
+    dbList, dbListError, dbNameMatches,
     jsonrpc_uid: uid,
     jsonrpc_authResult: uid === false ? 'Odoo devolvió false (usuario/API key/DB incorrectos)' : (uid ? 'OK' : null),
     authError,
