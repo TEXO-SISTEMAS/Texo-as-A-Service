@@ -184,8 +184,10 @@ async function sincronizarOdoo() {
     if (!r.ok) throw new Error(data.error);
     const m = data.meta || {};
     const detalleComp = m.companiasDescartadas ? Object.entries(m.companiasDescartadas).map(([k,v]) => `${k}: ${v}`).join(' · ') : '';
+    const detalleAnios = m.aniosDetectados ? Object.entries(m.aniosDetectados).map(([k,v]) => `${k}: ${v}`).join(' · ') : '';
     el.innerHTML = `✓ ${m.filasUsadas} filas sincronizadas (de ${m.totalEnOdoo} en Odoo, ${m.descartadasPorCompania||0} descartadas por compañía, ${m.descartadasPorFecha||0} sin fecha) · ${data.periodo || ''}` +
-      (detalleComp ? `<div style="margin-top:6px;font-size:11.5px;color:var(--muted)">Compañías fuera del mapa: ${detalleComp}</div>` : '');
+      (detalleComp ? `<div style="margin-top:6px;font-size:11.5px;color:var(--muted)">Compañías fuera del mapa: ${detalleComp}</div>` : '') +
+      (detalleAnios ? `<div style="margin-top:4px;font-size:11.5px;color:var(--muted)">Años detectados: ${detalleAnios} (fallback a create_date en ${m.usoFallbackCreateDate||0} filas)</div>` : '');
     showToast('✓ Inversión de Medios sincronizada desde Odoo', 'success');
   } catch(e) {
     el.textContent = '';

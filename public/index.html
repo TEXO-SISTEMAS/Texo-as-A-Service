@@ -3723,6 +3723,7 @@ async function sincronizarOdooGn() {
     const m = data.meta || {};
     showToast(`✓ ${m.filasUsadas} de ${m.totalEnOdoo} filas de Odoo (${m.descartadasPorCompania||0} de compañías fuera del mapa, ${m.descartadasPorFecha||0} sin fecha)`, 'success');
     if (m.companiasDescartadas) console.log('Odoo — compañías descartadas:', m.companiasDescartadas);
+    console.log('Odoo — años detectados en fecha_desde/create_date:', m.aniosDetectados, '· filas que usaron create_date como fallback:', m.usoFallbackCreateDate);
     await loadLatestGnOdoo();
   } catch(err) {
     showToast('Error: ' + err.message, 'error');
