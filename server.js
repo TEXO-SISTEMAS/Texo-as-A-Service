@@ -12,7 +12,7 @@ const { parseAdlens } = require('./adlens_parser');
 const { parseIngresos } = require('./ingresos_parser');
 const { parseGlobalnum } = require('./globalnum_parser');
 const drive = require('./drive');
-const { odooExecuteKw, odooResolveMenu, odooDiag, odooModelFields, odooSyncAndSave, ODOO_GN_FILENAME } = require('./odoo');
+const { odooExecuteKw, odooResolveMenu, odooDiag, odooModelFields, odooSyncAndSave, ODOO_GN_FILENAME, odooEstadosInversionMedios } = require('./odoo');
 
 // ── RSS UTILITIES ─────────────────────────────────────────────────────────────
 function fetchURL(url) {
@@ -378,6 +378,18 @@ app.get('/api/admin/odoo-fields', requireAdmin, async (req, res) => {
     res.json({ ok: true, ...result });
   } catch (err) {
     console.error('ERROR /api/admin/odoo-fields:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Estados reales que puede tener inversion.medios + cuántos registros de
+// 2026 hay en cada uno, para decidir con datos qué excluir del sync.
+app.get('/api/admin/odoo-estados', requireAdmin, async (req, res) => {
+  try {
+    const result = await odooEstadosInversionMedios();
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('ERROR /api/admin/odoo-estados:', err);
     res.status(500).json({ error: err.message });
   }
 });

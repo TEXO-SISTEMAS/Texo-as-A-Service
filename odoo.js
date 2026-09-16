@@ -194,6 +194,19 @@ async function odooModelFields(model, sampleLimit = 3) {
   return { model, count: fields.length, fields, sample, sampleError };
 }
 
+// Lista los estados reales que puede tener inversion.medios (selection del
+// campo) + cuántos registros de 2026 hay en cada uno — para decidir con datos
+// reales qué estados incluir/excluir del sync, en vez de adivinar.
+async function odooEstadosInversionMedios() {
+  const domain = [['fecha_desde', '>=', '2026-01-01'], ['fecha_desde', '<', '2027-01-01']];
+  const fieldDef = await odooExecuteKw('inversion.medios', 'fields_get', [['state']], { attributes: ['string', 'selection'] });
+  const selection = fieldDef.state?.selection || [];
+  const groups = await odooExecuteKw('inversion.medios', 'read_group', [domain, ['state'], ['state']]);
+  const conteoPorEstado = {};
+  for (const g of groups) conteoPorEstado[g.state] = g['state_count'] ?? g['__count'] ?? 0;
+  return { selection, conteoPorEstado };
+}
+
 // ── SINCRONIZACIÓN: INVERSIÓN DE MEDIOS ───────────────────────────────────────
 // Modelo real: "inversion.medios" (custom, confirmado sep 2026). Mapeo de
 // compañía -> agencia confirmado a mano con Danilo; las que no aparecen en
@@ -416,5 +429,5 @@ async function odooSyncAndSave(drive, opts) {
 module.exports = {
   odooExecuteKw, odooAuthenticate, odooResolveMenu, odooDiag, odooModelFields,
   odooFetchInversionMedios, odooSyncInversionMedios, odooSyncAndSave, GN_AGENCIA_MAP,
-  ODOO_GN_FILENAME,
+  ODOO_GN_FILENAME, odooEstadosInversionMedios,
 };
