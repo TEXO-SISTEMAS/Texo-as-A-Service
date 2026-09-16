@@ -253,7 +253,10 @@ const m2o = (v) => (Array.isArray(v) && v.length > 1) ? v[1] : null;
 // comision/invGs/comGs/invUsd/comUsd) — mismos nombres que gnParsearEnBrowser
 // en public/index.html, para no tener que tocar el render del lado cliente.
 async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
-  const domain = [['fecha_desde', '>=', '2026-01-01'], ['fecha_desde', '<', '2027-01-01']];
+  // Todos los estados menos cancelado (confirmado + a_confirmar por ahora,
+  // sep 2026) — decisión confirmada con Danilo viendo el conteo real por
+  // estado vía /api/admin/odoo-estados.
+  const domain = [['fecha_desde', '>=', '2026-01-01'], ['fecha_desde', '<', '2027-01-01'], ['state', '!=', 'cancelado']];
   const fields = [
     'company_id', 'partner_id', 'tipo_medio_id', 'grupo_id', 'canal_id',
     'fecha_desde', 'create_date', 'currency_id', 'es_moneda_extranjera',
