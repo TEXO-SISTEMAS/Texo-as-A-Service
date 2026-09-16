@@ -326,6 +326,28 @@ app.get('/logo-impulsados.png', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/logo-impulsados.png'));
 });
 
+// Sync de Inversión de Medios disparado por Vercel Cron (ver vercel.json) o
+// probado a mano con curl — se autentica con CRON_SECRET (header
+// Authorization: Bearer ...), no con cookie de sesión, así que tiene que
+// quedar ANTES de "PROTECCIÓN GLOBAL": requireAuth exige cookie y lo hubiera
+// bloqueado antes de llegar a este chequeo (bug real, así se manifestó: el
+// cron devolvía "No autorizado" incluso con el secreto correcto).
+app.get('/api/cron/odoo-sync-medios', async (req, res) => {
+  const secret = (process.env.CRON_SECRET || '').trim();
+  const authHeader = (req.headers.authorization || '').trim();
+  if (!secret || authHeader !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+  try {
+    const result = await odooSyncAndSave(drive);
+    console.log(`[cron] odoo-sync-medios OK · ${result.meta.filasUsadas}/${result.meta.totalEnOdoo} filas`);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('ERROR /api/cron/odoo-sync-medios:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── PROTECCIÓN GLOBAL ─────────────────────────────────────────────────────────
 app.use(requireAuth);
 
@@ -429,26 +451,6 @@ app.get('/api/admin/cron-secret-diag', requireAdmin, (req, res) => {
     teniaEspacios: raw !== raw.trim(),
     preview: raw ? `${raw.slice(0, 4)}...${raw.slice(-4)}` : null,
   });
-});
-
-// Mismo sync, disparado por Vercel Cron (ver vercel.json) en vez de un clic
-// admin. Vercel agrega automáticamente "Authorization: Bearer $CRON_SECRET"
-// en las invocaciones de cron si esa env var existe — la verificamos acá para
-// que nadie más pueda pegarle a este endpoint sin el secreto.
-app.get('/api/cron/odoo-sync-medios', async (req, res) => {
-  const secret = (process.env.CRON_SECRET || '').trim();
-  const authHeader = (req.headers.authorization || '').trim();
-  if (!secret || authHeader !== `Bearer ${secret}`) {
-    return res.status(401).json({ error: 'No autorizado' });
-  }
-  try {
-    const result = await odooSyncAndSave(drive);
-    console.log(`[cron] odoo-sync-medios OK · ${result.meta.filasUsadas}/${result.meta.totalEnOdoo} filas`);
-    res.json({ ok: true, ...result });
-  } catch (err) {
-    console.error('ERROR /api/cron/odoo-sync-medios:', err);
-    res.status(500).json({ error: err.message });
-  }
 });
 
 app.get('/api/admin/usuarios', requireAdmin, async (req, res) => {
