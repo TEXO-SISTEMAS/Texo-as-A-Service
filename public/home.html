@@ -43,6 +43,10 @@ body::before{
   padding:0 32px;
   gap:32px;
 }
+.main.has-grid{max-width:1080px}
+.mod-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.mod-grid .mod-card{align-items:flex-start;flex-direction:column;gap:14px}
+.mod-grid .mod-cta{align-self:flex-end}
 
 .hero-title{
   font-size:clamp(36px,5vw,60px);font-weight:900;line-height:1.05;
@@ -117,7 +121,7 @@ body::before{
 </div>
 
 <!-- Contenido principal -->
-<div class="main">
+<div class="main has-grid">
 
   <h1 class="hero-title">Cerebro <span class="hl">Texo</span></h1>
 
@@ -126,6 +130,8 @@ body::before{
     TAS es el cerebro digital que lo cambia. Integra las 5 capas de información del holding: Redes y Cultura Organizacional, AdLens (Macro Mercado), Tool X (Micro Mercado), Facturación y Posicionamiento, y Aprendizajes, en una sola plataforma operativa con IA que analiza, alerta y responde.<br><br>
     No estamos haciendo un dashboard. Estamos construyendo la memoria viva del holding.
   </p>
+
+  <div class="mod-grid">
 
   <!-- Salud Financiera -->
   <a href="/index" class="mod-card">
@@ -186,6 +192,8 @@ body::before{
       </svg>
     </div>
   </a>
+
+  </div>
 
 </div>
 
