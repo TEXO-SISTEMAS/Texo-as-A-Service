@@ -12,7 +12,7 @@ const { parseAdlens } = require('./adlens_parser');
 const { parseIngresos } = require('./ingresos_parser');
 const { parseGlobalnum } = require('./globalnum_parser');
 const drive = require('./drive');
-const { odooExecuteKw, odooResolveMenu, odooDiag } = require('./odoo');
+const { odooExecuteKw, odooResolveMenu, odooDiag, odooModelFields } = require('./odoo');
 
 // ── RSS UTILITIES ─────────────────────────────────────────────────────────────
 function fetchURL(url) {
@@ -365,6 +365,19 @@ app.get('/api/admin/odoo-inspect', requireAdmin, async (req, res) => {
     res.json({ ok: true, ...result });
   } catch (err) {
     console.error('ERROR /api/admin/odoo-inspect:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Campos + muestra de datos de un modelo ya conocido, ej.
+// GET /api/admin/odoo-fields?model=inversion.medios
+app.get('/api/admin/odoo-fields', requireAdmin, async (req, res) => {
+  try {
+    if (!req.query.model) return res.status(400).json({ error: 'Falta ?model=' });
+    const result = await odooModelFields(req.query.model, req.query.limit ? Number(req.query.limit) : 3);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('ERROR /api/admin/odoo-fields:', err);
     res.status(500).json({ error: err.message });
   }
 });

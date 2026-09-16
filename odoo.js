@@ -176,4 +176,22 @@ async function odooResolveMenu(menuId) {
   return { menu, action, model, fields };
 }
 
-module.exports = { odooExecuteKw, odooAuthenticate, odooResolveMenu, odooDiag };
+// Campos + un par de registros de muestra de un modelo conocido — para
+// modelos custom (como "inversion.medios") donde ya sabemos el nombre técnico
+// (por ejemplo, leído directo de la URL de Odoo con ?debug=1) y no hace falta
+// pasar por ir.ui.menu/ir.actions.act_window (que pide permisos extra).
+async function odooModelFields(model, sampleLimit = 3) {
+  const fieldsRaw = await odooExecuteKw(model, 'fields_get', [], { attributes: ['string', 'type', 'relation', 'required'] });
+  const fields = Object.entries(fieldsRaw)
+    .map(([name, def]) => ({ name, label: def.string, type: def.type, relation: def.relation || null, required: !!def.required }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  let sample = null, sampleError = null;
+  try {
+    sample = await odooExecuteKw(model, 'search_read', [[]], { limit: sampleLimit });
+  } catch (e) { sampleError = e.message; }
+
+  return { model, count: fields.length, fields, sample, sampleError };
+}
+
+module.exports = { odooExecuteKw, odooAuthenticate, odooResolveMenu, odooDiag, odooModelFields };
