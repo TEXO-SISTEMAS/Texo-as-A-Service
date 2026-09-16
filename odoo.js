@@ -11,10 +11,12 @@
 //   ODOO_API_KEY   — API key generada en Odoo (Mi Perfil → Seguridad de la
 //                    Cuenta → Claves API) — reemplaza a la contraseña
 
-const ODOO_URL      = (process.env.ODOO_URL || '').replace(/\/+$/, '');
-const ODOO_DB       = process.env.ODOO_DB;
-const ODOO_USERNAME = process.env.ODOO_USERNAME;
-const ODOO_API_KEY  = process.env.ODOO_API_KEY;
+// .trim() defensivo — un espacio o salto de línea de más al pegar la API key
+// en Vercel alcanza para que Odoo rechace la autenticación sin avisar por qué.
+const ODOO_URL      = (process.env.ODOO_URL || '').trim().replace(/\/+$/, '');
+const ODOO_DB       = (process.env.ODOO_DB || '').trim();
+const ODOO_USERNAME = (process.env.ODOO_USERNAME || '').trim();
+const ODOO_API_KEY  = (process.env.ODOO_API_KEY || '').trim();
 
 let _odooUid = null;
 
@@ -63,12 +65,17 @@ async function odooExecuteKw(model, method, args = [], kwargs = {}) {
 // Odoo) de "¿las credenciales son correctas?" (authenticate), para no tener
 // que adivinar en cuál de los dos pasos está el problema.
 async function odooDiag() {
+  const rawKey = process.env.ODOO_API_KEY || '';
+  const rawUser = process.env.ODOO_USERNAME || '';
   const envCheck = {
     ODOO_URL: ODOO_URL || null,
     ODOO_DB: ODOO_DB || null,
     ODOO_USERNAME: ODOO_USERNAME || null,
+    ODOO_USERNAME_had_whitespace: rawUser !== ODOO_USERNAME,
     ODOO_API_KEY_set: !!ODOO_API_KEY,
-    ODOO_API_KEY_length: ODOO_API_KEY ? ODOO_API_KEY.length : 0,
+    ODOO_API_KEY_length: ODOO_API_KEY.length,
+    ODOO_API_KEY_had_whitespace: rawKey !== ODOO_API_KEY,
+    ODOO_API_KEY_preview: ODOO_API_KEY ? `${ODOO_API_KEY.slice(0, 4)}…${ODOO_API_KEY.slice(-4)}` : null,
   };
 
   let version = null, versionError = null;
