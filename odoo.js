@@ -260,12 +260,23 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
   // sep 2026) — decisión confirmada con Danilo viendo el conteo real por
   // estado vía /api/admin/odoo-estados.
   const domain = [['fecha_desde', '>=', '2026-01-01'], ['fecha_desde', '<', '2027-01-01'], ['state', '!=', 'cancelado']];
+
+  // El campo "Orden de Venta" no se adivina por nombre (no confirmado contra
+  // Odoo) — se busca dinámicamente el many2one que apunta a sale.order, así
+  // si el nombre real difiere de lo esperado esto no rompe el resto del sync.
+  let campoOrdenVenta = null;
+  try {
+    const fieldDefs = await odooExecuteKw('inversion.medios', 'fields_get', [], { attributes: ['type', 'relation'] });
+    campoOrdenVenta = Object.keys(fieldDefs).find(k => fieldDefs[k].type === 'many2one' && fieldDefs[k].relation === 'sale.order') || null;
+  } catch (e) { /* si falla, seguimos sin este campo */ }
+
   const fields = [
     'company_id', 'partner_id', 'tipo_medio_id', 'grupo_id', 'canal_id',
     'fecha_desde', 'create_date', 'currency_id', 'es_moneda_extranjera',
     'monto_negociado', 'valor_comision',
     'total_monto_negociado_pyg', 'valor_comision_pyg',
     'total_monto_negociado_ext', 'valor_comision_ext',
+    ...(campoOrdenVenta ? [campoOrdenVenta] : []),
   ];
 
   const rawRows = [];
@@ -314,13 +325,14 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
         comGs: r.valor_comision_pyg || 0,
         invUsd: r.es_moneda_extranjera ? (r.total_monto_negociado_ext || 0) : 0,
         comUsd: r.es_moneda_extranjera ? (r.valor_comision_ext || 0) : 0,
+        ordenVenta: campoOrdenVenta ? (m2o(r[campoOrdenVenta]) || '—') : '—',
       });
     }
     offset += page.length;
     if (onProgress) onProgress({ offset, total });
     if (page.length < pageSize || offset >= total) break;
   }
-  return { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania, usoFallbackCreateDate, aniosDetectados };
+  return { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania, usoFallbackCreateDate, aniosDetectados, campoOrdenVenta };
 }
 
 // Agrega rawRows al mismo shape que ya guarda /api/save-globalnum — mismo
@@ -381,7 +393,7 @@ function buildGnDataset(rawRows) {
 // Trae de Odoo + arma el dataset completo — no guarda en Drive (eso lo hace
 // odooSyncAndSave, reusando drive.saveGlobalnum() para no duplicar esa lógica).
 async function odooSyncInversionMedios(opts) {
-  const { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania, usoFallbackCreateDate, aniosDetectados } = await odooFetchInversionMedios(opts);
+  const { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania, usoFallbackCreateDate, aniosDetectados, campoOrdenVenta } = await odooFetchInversionMedios(opts);
   const dataset = buildGnDataset(rawRows);
   return {
     dataset,
@@ -393,6 +405,7 @@ async function odooSyncInversionMedios(opts) {
       companiasDescartadas: skippedPorCompania,
       usoFallbackCreateDate,
       aniosDetectados,
+      campoOrdenVenta,
     },
   };
 }
@@ -404,7 +417,7 @@ async function odooSyncInversionMedios(opts) {
 function gnCompressRowsServer(rows) {
   if (!rows || !rows.length) return null;
   const dict = (arr, val) => { let i = arr.indexOf(val); if (i < 0) { i = arr.length; arr.push(val); } return i; };
-  const ags = [], cls = [], mds = [], tis = [], grs = [], cas = [], mos = [];
+  const ags = [], cls = [], mds = [], tis = [], grs = [], cas = [], mos = [], ovs = [];
   const data = rows.map(r => [
     dict(ags, r.agencia), dict(cls, r.cliente), dict(mds, r.medio),
     dict(tis, r.tipo), dict(grs, r.grupo), dict(cas, r.canal),
@@ -414,8 +427,9 @@ function gnCompressRowsServer(rows) {
     Math.round((r.comUsd || 0) * 100) / 100,
     Math.round((r.importe || 0) * 10000) / 10000,
     Math.round((r.comision || 0) * 10000) / 10000,
+    dict(ovs, r.ordenVenta || '—'),
   ]);
-  return { ags, cls, mds, tis, grs, cas, mos, data };
+  return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
 }
 
 // Archivo propio en Drive — separado de globalnum-latest.json (el Excel 2025)

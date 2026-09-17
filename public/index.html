@@ -3558,7 +3558,7 @@ function gnParsearEnBrowser(wb) {
 function gnCompressRows(rows) {
   if (!rows || !rows.length) return null;
   const dict = (arr, val) => { let i = arr.indexOf(val); if (i < 0) { i = arr.length; arr.push(val); } return i; };
-  const ags=[], cls=[], mds=[], tis=[], grs=[], cas=[], mos=[];
+  const ags=[], cls=[], mds=[], tis=[], grs=[], cas=[], mos=[], ovs=[];
   const data = rows.map(r => [
     dict(ags, r.agencia), dict(cls, r.cliente), dict(mds, r.medio),
     dict(tis, r.tipo),    dict(grs, r.grupo),   dict(cas, r.canal),
@@ -3567,9 +3567,10 @@ function gnCompressRows(rows) {
     Math.round((r.invUsd || 0) * 100) / 100,
     Math.round((r.comUsd || 0) * 100) / 100,
     Math.round((r.importe   || 0) * 10000) / 10000,
-    Math.round((r.comision  || 0) * 10000) / 10000
+    Math.round((r.comision  || 0) * 10000) / 10000,
+    dict(ovs, r.ordenVenta || '—')
   ]);
-  return { ags, cls, mds, tis, grs, cas, mos, data };
+  return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
 }
 
 function gnDecompressRows(c) {
@@ -3579,7 +3580,8 @@ function gnDecompressRows(c) {
     tipo:    c.tis[r[3]], grupo:   c.grs[r[4]], canal: c.cas[r[5]],
     nMes: r[6], mes: GN_MES_LABEL[r[6] - 1], anio: r[7] || null,
     moneda: c.mos[r[8]],
-    invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12], importe: r[13]||0, comision: r[14]||0
+    invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12], importe: r[13]||0, comision: r[14]||0,
+    ordenVenta: (c.ovs && r[15] != null) ? c.ovs[r[15]] : '—'
   }));
 }
 
@@ -3903,7 +3905,7 @@ function renderGn(d) {
       <div style="overflow-x:auto">
         <table id="gnTDetalle">
           <thead><tr>
-            <th style="text-align:left">Agencia</th><th style="text-align:left">Cliente</th><th style="text-align:left">Medio</th>
+            <th style="text-align:left">Agencia</th><th style="text-align:left">Cliente</th><th style="text-align:left">Pedido</th><th style="text-align:left">Medio</th>
             <th style="text-align:left">Tipo</th><th style="text-align:left">Grupo / Proveedor</th><th style="text-align:left">Canal</th>
             <th>Mes</th><th>Año</th><th>Moneda</th><th>Importe</th><th>Comisión</th><th>Importe Gs.</th>
             <th id="gnThUsd" style="display:none">Importe USD</th><th>Com. Gs.</th><th>% Com.</th>
@@ -4279,7 +4281,7 @@ function filtrarGnDetalle() {
     if (mes && r.nMes    !== +mes)      return false;
     if (mon && (r.moneda||'—') !== mon) return false;
     if (q) {
-      const txt = [r.agencia,r.cliente,r.medio,r.tipo,r.grupo,r.canal,r.mes,r.moneda||''].join(' ').toLowerCase();
+      const txt = [r.agencia,r.cliente,r.ordenVenta||'',r.medio,r.tipo,r.grupo,r.canal,r.mes,r.moneda||''].join(' ').toLowerCase();
       if (!txt.includes(q)) return false;
     }
     return true;
@@ -4312,6 +4314,7 @@ function renderGnPaginaDetalle() {
     return `<tr>
       <td style="text-align:left"><span class="ag-dot" style="background:${color}"></span>${r.agencia}</td>
       <td style="text-align:left;max-width:180px;white-space:normal;font-size:13px">${r.cliente}</td>
+      <td style="text-align:left;font-size:12px;color:var(--muted)">${r.ordenVenta||'—'}</td>
       <td style="text-align:left;font-size:13px">${r.medio}</td>
       <td style="text-align:left;color:var(--muted);font-size:12px">${r.tipo}</td>
       <td style="text-align:left;color:var(--muted);font-size:12px">${r.grupo}</td>
