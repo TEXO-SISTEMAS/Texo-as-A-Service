@@ -348,6 +348,9 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
         invUsd: r.es_moneda_extranjera ? (r.total_monto_negociado_ext || 0) : 0,
         comUsd: r.es_moneda_extranjera ? (r.valor_comision_ext || 0) : 0,
         ordenVenta: campoOrdenVenta ? (m2o(r[campoOrdenVenta]) || '—') : '—',
+        // ID interno del pedido en Odoo (no el nombre "S00207") — para armar
+        // un link directo al registro real y poder auditar fila por fila.
+        ordenVentaId: (campoOrdenVenta && Array.isArray(r[campoOrdenVenta])) ? r[campoOrdenVenta][0] : 0,
       });
     }
     offset += page.length;
@@ -467,6 +470,7 @@ function gnCompressRowsServer(rows) {
     Math.round((r.importe || 0) * 10000) / 10000,
     Math.round((r.comision || 0) * 10000) / 10000,
     dict(ovs, r.ordenVenta || '—'),
+    r.ordenVentaId || 0,
   ]);
   return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
 }

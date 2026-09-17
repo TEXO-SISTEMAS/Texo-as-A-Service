@@ -3434,6 +3434,12 @@ const GN_GRID  = 'rgba(0,0,0,.06)';
 const GN_MD_COLOR = { 'TV ABIERTA':'#3b82f6', RADIO:'#a855f7', DIGITAL:'#10b981', PRENSA:'#f59e0b', 'TV CABLE':'#ef4444', 'VIA PUBLICA':'#ec4899', OTROS:'#6b7280' };
 const GN_MES_NUM = { Ene:1,Feb:2,Mar:3,Abr:4,May:5,Jun:6,Jul:7,Ago:8,Sep:9,Oct:10,Nov:11,Dic:12 };
 const GN_MES_LABEL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+// URL base de Odoo — no es secreto (es solo la dirección de la instancia,
+// misma que ya se comparte para el login), a diferencia de la API key.
+const ODOO_BASE_URL = 'https://texo.odoo.com';
+function gnOdooLink(id) {
+  return id ? `${ODOO_BASE_URL}/web#id=${id}&model=sale.order&view_type=form` : null;
+}
 
 // Cifra completa, sin abreviar: puntos como separador de miles + "Gs" al final
 // (regla explícita del módulo — no confundir con el fmtGs() de Salud Financiera,
@@ -3568,7 +3574,8 @@ function gnCompressRows(rows) {
     Math.round((r.comUsd || 0) * 100) / 100,
     Math.round((r.importe   || 0) * 10000) / 10000,
     Math.round((r.comision  || 0) * 10000) / 10000,
-    dict(ovs, r.ordenVenta || '—')
+    dict(ovs, r.ordenVenta || '—'),
+    r.ordenVentaId || 0
   ]);
   return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
 }
@@ -3581,7 +3588,8 @@ function gnDecompressRows(c) {
     nMes: r[6], mes: GN_MES_LABEL[r[6] - 1], anio: r[7] || null,
     moneda: c.mos[r[8]],
     invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12], importe: r[13]||0, comision: r[14]||0,
-    ordenVenta: (c.ovs && r[15] != null) ? c.ovs[r[15]] : '—'
+    ordenVenta: (c.ovs && r[15] != null) ? c.ovs[r[15]] : '—',
+    ordenVentaId: r[16] || 0
   }));
 }
 
@@ -4326,7 +4334,7 @@ function renderGnPaginaDetalle() {
     return `<tr>
       <td style="text-align:left"><span class="ag-dot" style="background:${color}"></span>${r.agencia}</td>
       <td style="text-align:left;max-width:180px;white-space:normal;font-size:13px">${r.cliente}</td>
-      <td style="text-align:left;font-size:12px;color:var(--muted)">${r.ordenVenta||'—'}</td>
+      <td style="text-align:left;font-size:12px;color:var(--muted)">${r.ordenVenta||'—'}${gnOdooLink(r.ordenVentaId) ? ` <a href="${gnOdooLink(r.ordenVentaId)}" target="_blank" rel="noopener" title="Ver pedido en Odoo" style="color:var(--accent);text-decoration:none">↗</a>` : ''}</td>
       <td style="text-align:left;font-size:13px">${r.medio}</td>
       <td style="text-align:left;color:var(--muted);font-size:12px">${r.tipo}</td>
       <td style="text-align:left;color:var(--muted);font-size:12px">${r.grupo}</td>
