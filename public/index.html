@@ -3575,9 +3575,7 @@ function gnCompressRows(rows) {
     Math.round((r.importe   || 0) * 10000) / 10000,
     Math.round((r.comision  || 0) * 10000) / 10000,
     dict(ovs, r.ordenVenta || '—'),
-    r.ordenVentaId || 0,
-    Math.round(r.comisionAgenciaGs || 0),
-    Math.round((r.comisionAgenciaUsd || 0) * 100) / 100
+    r.ordenVentaId || 0
   ]);
   return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
 }
@@ -3591,9 +3589,7 @@ function gnDecompressRows(c) {
     moneda: c.mos[r[8]],
     invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12], importe: r[13]||0, comision: r[14]||0,
     ordenVenta: (c.ovs && r[15] != null) ? c.ovs[r[15]] : '—',
-    ordenVentaId: r[16] || 0,
-    comisionAgenciaGs: r[17] || 0,
-    comisionAgenciaUsd: r[18] || 0
+    ordenVentaId: r[16] || 0
   }));
 }
 
@@ -3935,15 +3931,10 @@ function renderGn(d) {
             <th style="text-align:left">Agencia</th><th style="text-align:left">Cliente</th><th style="text-align:left">Pedido</th><th style="text-align:left">Medio</th>
             <th style="text-align:left">Tipo</th><th style="text-align:left">Grupo / Proveedor</th><th style="text-align:left">Canal</th>
             <th>Mes</th><th>Año</th><th>Moneda</th>
-            <th title="Monto negociado en la moneda original">Importe</th><th title="Comisión 3709 en la moneda original">Comisión</th>
-            <th style="color:var(--muted2)">Importe Gs.</th>
-            <th style="color:var(--muted2)" title="Comisión 3709 (valor_comision) — no confundir con la de Agencia">Com. 3709 Gs.</th>
-            <th style="color:var(--muted2)" title="Comisión de Agencia (comision_agencia_amount) — la que aparece como línea propia en el pedido de Odoo">Com. Agencia Gs.</th>
-            <th title="Importe Gs. + Com. Agencia Gs. — comparable directo contra el Total del pedido en Odoo">TOTAL</th>
-            <th id="gnThUsd" style="display:none;color:var(--lupe)">Importe USD</th>
-            <th id="gnThComUsd" style="display:none;color:var(--lupe)">Com. 3709 USD</th>
-            <th id="gnThComAgUsd" style="display:none;color:var(--lupe)">Com. Agencia USD</th>
-            <th>% Com. 3709</th>
+            <th title="Monto negociado en la moneda original">Importe</th><th title="Comisión en la moneda original">Comisión</th>
+            <th style="color:var(--muted2)">Importe Gs.</th><th style="color:var(--muted2)">Com. Gs.</th>
+            <th id="gnThUsd" style="display:none;color:var(--lupe)">Importe USD</th><th id="gnThComUsd" style="display:none;color:var(--lupe)">Com. USD</th>
+            <th>% Com.</th>
           </tr></thead>
           <tbody id="gnTbDetalle"></tbody>
         </table>
@@ -4293,10 +4284,8 @@ function renderGnDetalleTabla(rows) {
   const hasUsd = _gnRawRows.some(r=>r.invUsd>0);
   const thUsd = document.getElementById('gnThUsd');
   const thComUsd = document.getElementById('gnThComUsd');
-  const thComAgUsd = document.getElementById('gnThComAgUsd');
   if (thUsd) thUsd.style.display = hasUsd ? '' : 'none';
   if (thComUsd) thComUsd.style.display = hasUsd ? '' : 'none';
-  if (thComAgUsd) thComAgUsd.style.display = hasUsd ? '' : 'none';
 
   filtrarGnDetalle();
 }
@@ -4355,8 +4344,6 @@ function gnAgruparPorPedido(rows) {
       g.comGs    = (g.comGs    || 0) + (r.comGs    || 0);
       g.invUsd   = (g.invUsd   || 0) + (r.invUsd   || 0);
       g.comUsd   = (g.comUsd   || 0) + (r.comUsd   || 0);
-      g.comisionAgenciaGs  = (g.comisionAgenciaGs  || 0) + (r.comisionAgenciaGs  || 0);
-      g.comisionAgenciaUsd = (g.comisionAgenciaUsd || 0) + (r.comisionAgenciaUsd || 0);
       g._lineas++;
       g._medios.add(r.medio);
       g._monedas.add(r.moneda || '—');
@@ -4408,9 +4395,7 @@ function renderGnPaginaDetalle() {
       <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.comision)}</td>
       <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted2)">${gnFmtGsExacto(r.invGs)}</td>
       <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted2)">${gnFmtGsExacto(r.comGs)}</td>
-      <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted2)">${gnFmtGsExacto(r.comisionAgenciaGs)}</td>
-      <td style="font-variant-numeric:tabular-nums;font-size:13px;font-weight:700">${gnFmtGsExacto((r.invGs||0) + (r.comisionAgenciaGs||0))}</td>
-      ${hasUsd ? `<td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--lupe)">${fmtUsd(r.invUsd)}</td><td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--lupe)">${fmtUsd(r.comUsd)}</td><td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--lupe)">${fmtUsd(r.comisionAgenciaUsd)}</td>` : ''}
+      ${hasUsd ? `<td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--lupe)">${fmtUsd(r.invUsd)}</td><td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--lupe)">${fmtUsd(r.comUsd)}</td>` : ''}
       <td style="font-size:13px;color:var(--muted)">${comPct}</td>
     </tr>`;
   }).join('');

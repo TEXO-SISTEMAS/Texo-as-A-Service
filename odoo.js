@@ -298,8 +298,9 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
     'monto_negociado', 'valor_comision',
     'total_monto_negociado_pyg', 'valor_comision_pyg',
     'total_monto_negociado_ext', 'valor_comision_ext',
-    // Comisión de Agencia — concepto de negocio distinto a "Comisión 3709"
-    // (valor_comision*), independiente de ese otro porcentaje.
+    // Comisión de Agencia — concepto distinto a "Comisión 3709" (valor_comision*),
+    // agregado en diagnóstico para confirmar su comportamiento (¿ya en Gs? ¿tiene
+    // variante USD?) antes de sumarlo como columna real.
     'comision_agencia_amount', 'comision_agencia_percent',
     ...(campoOrdenVenta ? [campoOrdenVenta] : []),
   ];
@@ -307,6 +308,7 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
   const rawRows = [];
   let offset = 0, total = null, skippedCompania = 0, skippedFecha = 0, usoFallbackCreateDate = 0;
   const skippedPorCompania = {}, aniosDetectados = {};
+  const muestraComisionAgencia = []; // diagnóstico temporal, ver comentario en 'fields'
   for (;;) {
     const page = await odooExecuteKw('inversion.medios', 'search_read', [domain], {
       fields, limit: pageSize, offset, order: 'id asc',
@@ -350,25 +352,30 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
         comGs: r.valor_comision_pyg || 0,
         invUsd: r.es_moneda_extranjera ? (r.total_monto_negociado_ext || 0) : 0,
         comUsd: r.es_moneda_extranjera ? (r.valor_comision_ext || 0) : 0,
-        // Comisión de Agencia — campo distinto a valor_comision ("Comisión
-        // 3709"), independiente de ese otro porcentaje. comision_agencia_amount
-        // viene en la moneda original (no en Gs), así que para Gs se recalcula
-        // con el % sobre el monto ya convertido — confirmado contra Odoo:
-        // 0.1 × 58.587.640 = 5.858.764, exacto igual a la línea "Comisión de
-        // Agencia" del pedido real.
-        comisionAgenciaGs: Math.round((r.comision_agencia_percent || 0) * (r.total_monto_negociado_pyg || 0)),
-        comisionAgenciaUsd: r.es_moneda_extranjera ? (r.comision_agencia_amount || 0) : 0,
         ordenVenta: campoOrdenVenta ? (m2o(r[campoOrdenVenta]) || '—') : '—',
         // ID interno del pedido en Odoo (no el nombre "S00207") — para armar
         // un link directo al registro real y poder auditar fila por fila.
         ordenVentaId: (campoOrdenVenta && Array.isArray(r[campoOrdenVenta])) ? r[campoOrdenVenta][0] : 0,
       });
+      if (muestraComisionAgencia.length < 5) {
+        muestraComisionAgencia.push({
+          ordenVenta: campoOrdenVenta ? m2o(r[campoOrdenVenta]) : null,
+          moneda: m2o(r.currency_id),
+          esMonedaExtranjera: r.es_moneda_extranjera,
+          monto_negociado: r.monto_negociado,
+          total_monto_negociado_pyg: r.total_monto_negociado_pyg,
+          valor_comision: r.valor_comision,
+          valor_comision_pyg: r.valor_comision_pyg,
+          comision_agencia_amount: r.comision_agencia_amount,
+          comision_agencia_percent: r.comision_agencia_percent,
+        });
+      }
     }
     offset += page.length;
     if (onProgress) onProgress({ offset, total });
     if (page.length < pageSize || offset >= total) break;
   }
-  return { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania, usoFallbackCreateDate, aniosDetectados, campoOrdenVenta };
+  return { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania, usoFallbackCreateDate, aniosDetectados, campoOrdenVenta, muestraComisionAgencia };
 }
 
 // Agrega rawRows al mismo shape que ya guarda /api/save-globalnum — mismo
@@ -429,7 +436,7 @@ function buildGnDataset(rawRows) {
 // Trae de Odoo + arma el dataset completo — no guarda en Drive (eso lo hace
 // odooSyncAndSave, reusando drive.saveGlobalnum() para no duplicar esa lógica).
 async function odooSyncInversionMedios(opts) {
-  const { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania, usoFallbackCreateDate, aniosDetectados, campoOrdenVenta } = await odooFetchInversionMedios(opts);
+  const { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania, usoFallbackCreateDate, aniosDetectados, campoOrdenVenta, muestraComisionAgencia } = await odooFetchInversionMedios(opts);
   const dataset = buildGnDataset(rawRows);
 
   let verificacion = null;
@@ -459,6 +466,7 @@ async function odooSyncInversionMedios(opts) {
       aniosDetectados,
       campoOrdenVenta,
       verificacion,
+      muestraComisionAgencia,
     },
   };
 }
@@ -482,8 +490,6 @@ function gnCompressRowsServer(rows) {
     Math.round((r.comision || 0) * 10000) / 10000,
     dict(ovs, r.ordenVenta || '—'),
     r.ordenVentaId || 0,
-    Math.round(r.comisionAgenciaGs || 0),
-    Math.round((r.comisionAgenciaUsd || 0) * 100) / 100,
   ]);
   return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
 }
