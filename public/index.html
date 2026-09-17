@@ -3727,6 +3727,18 @@ async function sincronizarOdooGn() {
     showToast(`✓ ${m.filasUsadas} de ${m.totalEnOdoo} filas de Odoo (${m.descartadasPorCompania||0} de compañías fuera del mapa, ${m.descartadasPorFecha||0} sin fecha) · campo Pedido: ${m.campoOrdenVenta || 'no encontrado'}`, 'success');
     if (m.companiasDescartadas) console.log('Odoo — compañías descartadas:', m.companiasDescartadas);
     console.log('Odoo — años detectados en fecha_desde/create_date:', m.aniosDetectados, '· filas que usaron create_date como fallback:', m.usoFallbackCreateDate);
+    const v = m.verificacion;
+    if (v) {
+      if (v.error) {
+        showToast('⚠ No se pudo verificar el total contra Odoo: ' + v.error, 'error');
+      } else {
+        const fmtGs = n => Math.round(n).toLocaleString('es-PY') + ' Gs.';
+        showToast(v.coincideExacto
+          ? `✓ Verificado contra Odoo: el total coincide exacto (${fmtGs(v.totalOdooTodasCompanias)})`
+          : `⚠ Diferencia vs. Odoo: nuestro total ${fmtGs(v.totalCalculado)} vs. Odoo ${fmtGs(v.totalOdooTodasCompanias)} (dif. ${fmtGs(v.diferencia)}${m.descartadasPorCompania ? ' — esperado, hay compañías fuera del mapa' : ''})`,
+          v.coincideExacto ? 'success' : 'error');
+      }
+    }
     await loadLatestGnOdoo();
   } catch(err) {
     showToast('Error: ' + err.message, 'error');

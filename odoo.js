@@ -255,11 +255,33 @@ const m2o = (v) => (Array.isArray(v) && v.length > 1) ? v[1] : null;
 // (agencia/cliente/medio/tipo/grupo/canal/nMes/mes/anio/moneda/importe/
 // comision/invGs/comGs/invUsd/comUsd) — mismos nombres que gnParsearEnBrowser
 // en public/index.html, para no tener que tocar el render del lado cliente.
+// Único lugar donde vive este filtro — lo usa tanto el fetch real como la
+// verificación contra Odoo, así nunca pueden quedar desalineados entre sí.
+// Todos los estados menos cancelado (confirmado + a_confirmar por ahora,
+// sep 2026) — decisión confirmada con Danilo viendo el conteo real por
+// estado vía /api/admin/odoo-estados. Sin filtro de compañía: ese mapeo pasa
+// del lado de acá (JS), no es representable 1:1 como domain de Odoo.
+function domainInversionMedios2026() {
+  return [['fecha_desde', '>=', '2026-01-01'], ['fecha_desde', '<', '2027-01-01'], ['state', '!=', 'cancelado']];
+}
+
+// Le pregunta a Odoo directamente (read_group, sin pasar por nuestro código
+// de agregación) cuánto suma total_monto_negociado_pyg para el mismo filtro
+// de fecha/estado — sirve para probar que no solo trajimos los datos, sino
+// que los sumamos igual que Odoo. No filtra por compañía (ver comentario de
+// domainInversionMedios2026), así que si hay compañías descartadas del mapeo
+// la diferencia es esperada, no un error.
+async function odooVerificarTotalInversion() {
+  const domain = domainInversionMedios2026();
+  const [grupo] = await odooExecuteKw('inversion.medios', 'read_group', [domain, ['total_monto_negociado_pyg'], []]);
+  return {
+    totalOdooTodasCompanias: Math.round(grupo?.total_monto_negociado_pyg || 0),
+    registrosOdoo: grupo?.__count ?? null,
+  };
+}
+
 async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
-  // Todos los estados menos cancelado (confirmado + a_confirmar por ahora,
-  // sep 2026) — decisión confirmada con Danilo viendo el conteo real por
-  // estado vía /api/admin/odoo-estados.
-  const domain = [['fecha_desde', '>=', '2026-01-01'], ['fecha_desde', '<', '2027-01-01'], ['state', '!=', 'cancelado']];
+  const domain = domainInversionMedios2026();
 
   // El campo "Orden de Venta" no se adivina por nombre (no confirmado contra
   // Odoo) — se busca dinámicamente el many2one que apunta a sale.order, así
@@ -395,6 +417,22 @@ function buildGnDataset(rawRows) {
 async function odooSyncInversionMedios(opts) {
   const { rawRows, total, skippedCompania, skippedFecha, skippedPorCompania, usoFallbackCreateDate, aniosDetectados, campoOrdenVenta } = await odooFetchInversionMedios(opts);
   const dataset = buildGnDataset(rawRows);
+
+  let verificacion = null;
+  try {
+    const { totalOdooTodasCompanias, registrosOdoo } = await odooVerificarTotalInversion();
+    const totalCalculado = dataset.totales.inversion;
+    verificacion = {
+      totalOdooTodasCompanias,
+      registrosOdoo,
+      totalCalculado,
+      diferencia: totalOdooTodasCompanias - totalCalculado,
+      // Solo esperable que coincida exacto si no se descartó ninguna
+      // compañía — si hubo descartadas, la diferencia es ese monto, no un error.
+      coincideExacto: skippedCompania === 0 && Math.abs(totalOdooTodasCompanias - totalCalculado) < 1,
+    };
+  } catch (e) { verificacion = { error: e.message }; }
+
   return {
     dataset,
     meta: {
@@ -406,6 +444,7 @@ async function odooSyncInversionMedios(opts) {
       usoFallbackCreateDate,
       aniosDetectados,
       campoOrdenVenta,
+      verificacion,
     },
   };
 }
