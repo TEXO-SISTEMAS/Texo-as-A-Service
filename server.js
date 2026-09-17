@@ -127,11 +127,14 @@ async function resolverAgencia(email) {
   const emailLower = email.toLowerCase();
   // 1. Super admin y usuarios extra → acceso completo
   if (emailLower === SUPER_ADMIN || USUARIOS_EXTRA.includes(emailLower)) return null;
-  // 2. Buscar en lista Drive (asignación explícita tiene prioridad)
+  // 2. Asignación explícita en /admin siempre gana, incluido "Acceso completo"
+  //    (agencia = null a propósito) — antes, si el email quedaba en un dominio
+  //    de agencia (ej. @lupe.com.py), la detección automática del paso 3 lo
+  //    pisaba igual, ignorando la elección explícita del admin.
   const lista = await getUsuariosData();
   const stored = lista.find(u => (u.email || '').toLowerCase() === emailLower);
-  if (stored?.agencia) return stored.agencia;
-  // 3. Detección automática por dominio
+  if (stored) return stored.agencia || null;
+  // 3. Sin registro explícito → detección automática por dominio
   const domain = emailLower.split('@')[1];
   return DOMAIN_AGENCIA[domain] || null;
 }
