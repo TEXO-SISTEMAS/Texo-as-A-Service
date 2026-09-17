@@ -135,6 +135,16 @@ async function resolverAgencia(email) {
   const domain = emailLower.split('@')[1];
   return DOMAIN_AGENCIA[domain] || null;
 }
+// Devuelve si el email es administrador: el super admin siempre lo es, o
+// cualquier usuario marcado explícitamente como tal en la lista de Drive
+// (el único que puede marcar esa casilla es el propio super admin, desde /admin).
+async function resolverEsAdmin(email) {
+  const emailLower = email.toLowerCase();
+  if (emailLower === SUPER_ADMIN) return true;
+  const lista = await getUsuariosData();
+  const stored = lista.find(u => (u.email || '').toLowerCase() === emailLower);
+  return !!stored?.es_admin;
+}
 function invalidarCacheUsuarios() { _usuariosCache = null; _usuariosCacheTs = 0; }
 
 // Filtra el array de agencias según el rol del usuario
@@ -246,11 +256,12 @@ async function requireAuth(req, res, next) {
   }
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    // La agencia se re-resuelve en cada request (no se confía en el valor grabado
-    // en el JWT al momento del login) para que los cambios hechos en /admin se
-    // reflejen sin que el usuario tenga que cerrar sesión y volver a entrar.
+    // La agencia y el rol de admin se re-resuelven en cada request (no se confía
+    // en el valor grabado en el JWT al momento del login) para que los cambios
+    // hechos en /admin se reflejen sin que el usuario tenga que volver a entrar.
     const agencia = await resolverAgencia(payload.email);
-    req.user = { ...payload, agencia };
+    const esAdmin = await resolverEsAdmin(payload.email);
+    req.user = { ...payload, agencia, esAdmin };
     next();
   } catch(e) {
     res.clearCookie('session');
@@ -372,7 +383,13 @@ app.get('/api/me', (req, res) => res.json(req.user));
 
 // ── ADMIN: GESTIÓN DE USUARIOS ────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
-  if (req.user?.email !== SUPER_ADMIN) return res.status(403).json({ error: 'Solo el administrador puede hacer esto' });
+  if (!req.user?.esAdmin) return res.status(403).json({ error: 'Solo un administrador puede hacer esto' });
+  next();
+}
+// Gestionar otros administradores (agregar/quitar la marca es_admin) queda
+// reservado al super admin — un admin normal no puede crear más admins.
+function requireSuperAdmin(req, res, next) {
+  if (req.user?.email !== SUPER_ADMIN) return res.status(403).json({ error: 'Solo el administrador principal puede hacer esto' });
   next();
 }
 
@@ -453,29 +470,29 @@ app.get('/api/admin/cron-secret-diag', requireAdmin, (req, res) => {
   });
 });
 
-app.get('/api/admin/usuarios', requireAdmin, async (req, res) => {
+app.get('/api/admin/usuarios', requireSuperAdmin, async (req, res) => {
   try {
     const data = await drive.getUsuarios();
     res.json(data);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/admin/usuarios', requireAdmin, async (req, res) => {
+app.post('/api/admin/usuarios', requireSuperAdmin, async (req, res) => {
   try {
-    const { email, agencia } = req.body;
+    const { email, agencia, es_admin } = req.body;
     if (!email || !email.includes('@')) return res.status(400).json({ error: 'Email inválido' });
     const data = await drive.getUsuarios();
     const lista = data.usuarios || [];
     const emailLower = email.toLowerCase().trim();
     if (lista.find(u => u.email.toLowerCase() === emailLower)) return res.status(409).json({ error: 'El usuario ya existe' });
-    lista.push({ email: emailLower, agencia: agencia || null, agregado_en: new Date().toISOString(), agregado_por: req.user.email });
+    lista.push({ email: emailLower, agencia: agencia || null, es_admin: !!es_admin, agregado_en: new Date().toISOString(), agregado_por: req.user.email });
     await drive.saveUsuarios({ usuarios: lista });
     invalidarCacheUsuarios();
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/admin/usuarios/:email', requireAdmin, async (req, res) => {
+app.delete('/api/admin/usuarios/:email', requireSuperAdmin, async (req, res) => {
   try {
     const emailTarget = decodeURIComponent(req.params.email).toLowerCase();
     if (emailTarget === SUPER_ADMIN) return res.status(400).json({ error: 'No podés eliminar al administrador principal' });
@@ -487,8 +504,25 @@ app.delete('/api/admin/usuarios/:email', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Marca/desmarca a un usuario ya existente como administrador — separado del
+// alta/baja para no tener que borrar y volver a crear solo para tocar este flag.
+app.patch('/api/admin/usuarios/:email', requireSuperAdmin, async (req, res) => {
+  try {
+    const emailTarget = decodeURIComponent(req.params.email).toLowerCase();
+    const { es_admin } = req.body;
+    const data = await drive.getUsuarios();
+    const lista = data.usuarios || [];
+    const usuario = lista.find(u => u.email.toLowerCase() === emailTarget);
+    if (!usuario) return res.status(404).json({ error: 'Usuario no encontrado' });
+    usuario.es_admin = !!es_admin;
+    await drive.saveUsuarios({ usuarios: lista });
+    invalidarCacheUsuarios();
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── USO / COSTO DE IA ─────────────────────────────────────────────────────────
-app.get('/api/admin/usage', requireAdmin, async (req, res) => {
+app.get('/api/admin/usage', requireSuperAdmin, async (req, res) => {
   try {
     const days = Math.min(90, Math.max(1, parseInt(req.query.days) || 30));
     const files = await drive.listFilesByPrefix('usage-');
@@ -543,7 +577,7 @@ app.get('/api/admin/usage', requireAdmin, async (req, res) => {
 // ── BORRAR TODOS LOS CHATS (todas las sesiones, todos los módulos) ───────────
 // GET = solo cuenta cuántos hay, para mostrar antes de confirmar.
 // DELETE = borra de verdad. Ambos solo accesibles por el admin.
-app.get('/api/admin/chats/all', requireAdmin, async (req, res) => {
+app.get('/api/admin/chats/all', requireSuperAdmin, async (req, res) => {
   try {
     const files = await drive.listAllChatFiles();
     res.json({ count: files.length });
@@ -553,7 +587,7 @@ app.get('/api/admin/chats/all', requireAdmin, async (req, res) => {
   }
 });
 
-app.delete('/api/admin/chats/all', requireAdmin, async (req, res) => {
+app.delete('/api/admin/chats/all', requireSuperAdmin, async (req, res) => {
   try {
     const files = await drive.listAllChatFiles();
     let ok = 0, fail = 0;

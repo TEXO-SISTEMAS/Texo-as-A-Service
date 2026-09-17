@@ -2854,6 +2854,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
     localStorage.setItem('_userAgencia', me.agencia || '');
     window._userAgencia = me.agencia || null;
     window._userEmail = me.email || null;
+    window._userEsAdmin = !!me.esAdmin;
     if (me.agencia) {
       const banner = document.createElement('div');
       banner.style.cssText = 'background:#1a1d2e;border-bottom:1px solid rgba(255,255,255,.1);padding:9px 44px;display:flex;align-items:center;gap:10px;font-size:12.5px;color:rgba(255,255,255,.65)';
@@ -3739,7 +3740,7 @@ function gnSetYear(year) {
   document.getElementById('gnYearTab2026')?.classList.toggle('active', year === '2026');
   const btnExcel = document.getElementById('btnGnUpload');
   const btnOdoo  = document.getElementById('btnGnOdooSync');
-  const isAdmin  = window._userEmail === 'danilo.sosa@texo.com.py';
+  const isAdmin  = !!window._userEsAdmin;
   if (btnExcel) btnExcel.style.display = (year === '2025' && !window._userAgencia) ? '' : 'none';
   if (btnOdoo)  btnOdoo.style.display  = (year === '2026' && isAdmin) ? '' : 'none';
   if (year === '2025') loadLatestGn(); else loadLatestGnOdoo();
