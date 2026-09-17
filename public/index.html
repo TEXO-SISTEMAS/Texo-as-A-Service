@@ -3927,8 +3927,11 @@ function renderGn(d) {
           <thead><tr>
             <th style="text-align:left">Agencia</th><th style="text-align:left">Cliente</th><th style="text-align:left">Pedido</th><th style="text-align:left">Medio</th>
             <th style="text-align:left">Tipo</th><th style="text-align:left">Grupo / Proveedor</th><th style="text-align:left">Canal</th>
-            <th>Mes</th><th>Año</th><th>Moneda</th><th>Importe</th><th>Comisión</th><th>Importe Gs.</th>
-            <th id="gnThUsd" style="display:none">Importe USD</th><th>Com. Gs.</th><th>% Com.</th>
+            <th>Mes</th><th>Año</th><th>Moneda</th>
+            <th title="Monto negociado en la moneda original">Importe</th><th title="Comisión en la moneda original">Comisión</th>
+            <th style="color:var(--muted2)">Importe Gs.</th><th style="color:var(--muted2)">Com. Gs.</th>
+            <th id="gnThUsd" style="display:none;color:var(--lupe)">Importe USD</th><th id="gnThComUsd" style="display:none;color:var(--lupe)">Com. USD</th>
+            <th>% Com.</th>
           </tr></thead>
           <tbody id="gnTbDetalle"></tbody>
         </table>
@@ -4277,7 +4280,9 @@ function renderGnDetalleTabla(rows) {
 
   const hasUsd = _gnRawRows.some(r=>r.invUsd>0);
   const thUsd = document.getElementById('gnThUsd');
+  const thComUsd = document.getElementById('gnThComUsd');
   if (thUsd) thUsd.style.display = hasUsd ? '' : 'none';
+  if (thComUsd) thComUsd.style.display = hasUsd ? '' : 'none';
 
   filtrarGnDetalle();
 }
@@ -4344,9 +4349,9 @@ function renderGnPaginaDetalle() {
       <td style="font-size:13px;color:var(--muted)">${r.moneda||'—'}</td>
       <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.importe)}</td>
       <td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtNum(r.comision)}</td>
-      <td style="font-variant-numeric:tabular-nums;font-size:13px">${gnFmtGsExacto(r.invGs)}</td>
-      ${hasUsd ? `<td style="font-variant-numeric:tabular-nums;font-size:13px">${fmtUsd(r.invUsd)}</td>` : ''}
-      <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--green)">${gnFmtGsExacto(r.comGs)}</td>
+      <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted2)">${gnFmtGsExacto(r.invGs)}</td>
+      <td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted2)">${gnFmtGsExacto(r.comGs)}</td>
+      ${hasUsd ? `<td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--lupe)">${fmtUsd(r.invUsd)}</td><td style="font-variant-numeric:tabular-nums;font-size:13px;color:var(--lupe)">${fmtUsd(r.comUsd)}</td>` : ''}
       <td style="font-size:13px;color:var(--muted)">${comPct}</td>
     </tr>`;
   }).join('');
