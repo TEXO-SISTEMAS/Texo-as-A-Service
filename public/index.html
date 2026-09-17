@@ -3724,7 +3724,7 @@ async function sincronizarOdooGn() {
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'Error del servidor');
     const m = data.meta || {};
-    showToast(`✓ ${m.filasUsadas} de ${m.totalEnOdoo} filas de Odoo (${m.descartadasPorCompania||0} de compañías fuera del mapa, ${m.descartadasPorFecha||0} sin fecha)`, 'success');
+    showToast(`✓ ${m.filasUsadas} de ${m.totalEnOdoo} filas de Odoo (${m.descartadasPorCompania||0} de compañías fuera del mapa, ${m.descartadasPorFecha||0} sin fecha) · campo Pedido: ${m.campoOrdenVenta || 'no encontrado'}`, 'success');
     if (m.companiasDescartadas) console.log('Odoo — compañías descartadas:', m.companiasDescartadas);
     console.log('Odoo — años detectados en fecha_desde/create_date:', m.aniosDetectados, '· filas que usaron create_date como fallback:', m.usoFallbackCreateDate);
     await loadLatestGnOdoo();
