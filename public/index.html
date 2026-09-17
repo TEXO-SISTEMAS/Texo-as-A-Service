@@ -3920,6 +3920,9 @@ function renderGn(d) {
         <select class="gn-detalle-select" id="gnFilterGrupo"   onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los grupos</option></select>
         <select class="gn-detalle-select" id="gnFilterMes"     onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los meses</option></select>
         <select class="gn-detalle-select" id="gnFilterMoneda"  onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todas las monedas</option></select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none">
+          <input type="checkbox" id="gnAgruparPedido" onchange="filtrarGnDetalle()"> Agrupar por pedido
+        </label>
         <span class="gn-detalle-count" id="gnDetalleCount" style="font-size:12px;color:var(--muted);white-space:nowrap;margin-left:auto"></span>
       </div>
       <div style="overflow-x:auto">
@@ -4312,8 +4315,49 @@ function filtrarGnDetalle() {
     return true;
   });
 
+  if (document.getElementById('gnAgruparPedido')?.checked) {
+    _gnFiltered = gnAgruparPorPedido(_gnFiltered);
+  }
+
   _gnPagPage = 1;
   renderGnPaginaDetalle();
+}
+
+// Suma todas las líneas de un mismo pedido (sale_order_id) en una sola fila,
+// para poder comparar directo contra el Total que muestra Odoo en la orden
+// completa — un pedido con varias líneas nunca va a coincidir línea por
+// línea con ese Total, pero sí agrupado. Filas sin pedido (ej. las del
+// Excel manual de 2025) quedan tal cual, sin agrupar entre sí.
+function gnAgruparPorPedido(rows) {
+  const grupos = new Map();
+  const sueltas = [];
+  for (const r of rows) {
+    if (!r.ordenVentaId) { sueltas.push(r); continue; }
+    let g = grupos.get(r.ordenVentaId);
+    if (!g) {
+      g = { ...r, _lineas: 1, _medios: new Set([r.medio]), _monedas: new Set([r.moneda || '—']) };
+      grupos.set(r.ordenVentaId, g);
+    } else {
+      g.importe  = (g.importe  || 0) + (r.importe  || 0);
+      g.comision = (g.comision || 0) + (r.comision || 0);
+      g.invGs    = (g.invGs    || 0) + (r.invGs    || 0);
+      g.comGs    = (g.comGs    || 0) + (r.comGs    || 0);
+      g.invUsd   = (g.invUsd   || 0) + (r.invUsd   || 0);
+      g.comUsd   = (g.comUsd   || 0) + (r.comUsd   || 0);
+      g._lineas++;
+      g._medios.add(r.medio);
+      g._monedas.add(r.moneda || '—');
+    }
+  }
+  const agrupadas = [...grupos.values()].map(g => ({
+    ...g,
+    medio: g._lineas > 1 ? `${g._lineas} líneas` : g.medio,
+    tipo: g._lineas > 1 ? '—' : g.tipo,
+    grupo: g._lineas > 1 ? '—' : g.grupo,
+    canal: g._lineas > 1 ? '—' : g.canal,
+    moneda: g._monedas.size > 1 ? 'Varias' : g.moneda,
+  }));
+  return [...agrupadas, ...sueltas];
 }
 
 function cambiarGnPagina(delta) {
