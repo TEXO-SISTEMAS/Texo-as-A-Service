@@ -1602,7 +1602,6 @@ function gnEstadoLabel(v){
 }
 function gnEstadoMiniSelect(){
   const estados = [...new Set((window._gnDataRaw?.rawRows || []).map(r => r.estado).filter(e => e && e !== '—'))].sort();
-  if (estados.length < 2) return '';
   const opts = estados.map(e => [e, gnEstadoLabel(e)]);
   return gnMultiSelectHtml('estadoGn', opts, 'Todos los estados', 'gn-ms-btn-dark');
 }
