@@ -4249,6 +4249,18 @@ function renderGnCharts(d) {
     scrollToChart('gnDetalleCard');
   };
 
+  // Clic en una fila de agencia DENTRO del modal de medio → filtra la tabla
+  // por los dos a la vez (ej. Radio + NASTA), no solo por uno.
+  window.gnFiltrarMedioYAgencia = function(medio, agencia) {
+    gnCerrarModalMedio();
+    const selMed = document.getElementById('gnFilterMedio');
+    const selAg  = document.getElementById('gnFilterAgencia');
+    if (selMed && [...selMed.options].some(o => o.value === medio)) selMed.value = medio;
+    if (selAg && [...selAg.options].some(o => o.value === agencia)) selAg.value = agencia;
+    filtrarGnDetalle();
+    scrollToChart('gnDetalleCard');
+  };
+
   // "Mix de medios" abre un modal en vez de filtrar la tabla — probando las
   // dos formas de mostrar el detalle en paralelo, para comparar cuál sirve más.
   window.gnAbrirModalMedio = function(medio) {
@@ -4258,12 +4270,12 @@ function renderGnCharts(d) {
     const totalCom = rows.reduce((s, r) => s + (r.comGs || 0), 0);
     const porAgencia = {};
     rows.forEach(r => { porAgencia[r.agencia] = (porAgencia[r.agencia] || 0) + (r.invGs || 0); });
+    const medioSafe = medio.replace(/'/g, "\\'");
     const filasAgencia = Object.entries(porAgencia).sort((a, b) => b[1] - a[1]).map(([ag, v]) => `
-      <div style="padding:9px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:13px">
+      <div onclick="gnFiltrarMedioYAgencia('${medioSafe}','${ag.replace(/'/g, "\\'")}')" style="padding:9px 4px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:13px;cursor:pointer;border-radius:6px;transition:background .12s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
         <span><span class="ag-dot" style="background:${agColor(ag)}"></span>${ag}</span>
         <span style="font-variant-numeric:tabular-nums;color:var(--muted)">${gnFmtGs(v)} · ${gnPct(v, totalInv)}</span>
       </div>`).join('');
-    const medioSafe = medio.replace(/'/g, "\\'");
     document.getElementById('gnModalMedioBody').innerHTML = `
       <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:700;margin-bottom:4px">Mix de medios</div>
       <div style="font-size:24px;font-weight:800;margin-bottom:4px">${medio}</div>
