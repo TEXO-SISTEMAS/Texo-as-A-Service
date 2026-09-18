@@ -4210,6 +4210,13 @@ function renderGnCharts(d) {
       data: { labels: agListM, datasets: medList.map((med, i) => ({ label: med, data: agListM.map(ag => pivot[ag][med] || 0), backgroundColor: MED_COLORS[i % MED_COLORS.length], borderWidth: 0, borderRadius: 0 })) },
       options: {
         ...COMMON, indexAxis: 'y',
+        onClick: (evt, els) => {
+          if (!els.length) return;
+          const medio = medList[els[0].datasetIndex];
+          const agencia = agListM[els[0].index];
+          gnAbrirModalDesdeStack(medio, agencia);
+        },
+        onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
         plugins: {
           legend: { labels: { color: GN_TICK, font: GN_FONT, boxWidth: 12, padding: 14 } },
           tooltip: { mode: 'index', intersect: false, callbacks: { label: ctx => {
@@ -4305,6 +4312,15 @@ function renderGnCharts(d) {
   };
   window.gnCerrarModalMedio = function() {
     document.getElementById('gnModalOverlay').style.display = 'none';
+  };
+
+  // Entrada directa al modal para "Mix de medios por agencia" (barras
+  // apiladas): ahí ya se clickea un segmento medio+agencia puntual, así que
+  // abre directo en la vista de tabla en vez de pasar primero por el resumen
+  // por agencia (que es lo que hace gnAbrirModalMedio).
+  window.gnAbrirModalDesdeStack = function(medio, agencia) {
+    document.getElementById('gnModalOverlay').style.display = 'flex';
+    gnMostrarTablaEnModal(medio, agencia);
   };
 
   gnDestroyChart('agencia');
