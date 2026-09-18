@@ -1080,6 +1080,7 @@ body.fullscreen .main { padding-top:64px; }
   .ingresos-ebitda-grid{grid-template-columns:repeat(2,1fr)}
   .ingresos-clientes-grid{grid-template-columns:1fr}
   .ingresos-kpi-grid[style*="repeat(5"]{grid-template-columns:repeat(2,1fr)!important}
+  .ingresos-kpi-grid[style*="repeat(6"]{grid-template-columns:repeat(2,1fr)!important}
 }
 /* ── Inversión de Medios (pestaña 09) ── */
 .gn-ptab{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;font-family:inherit}
@@ -3781,15 +3782,21 @@ function renderGn(d) {
 
   const t = d.totales || {};
   const tc = d.tipoCambio || 6000;
+  const invUsd = t.inversion ? Math.round(t.inversion / tc) : 0;
   const comUsd = t.comision ? Math.round(t.comision / tc) : 0;
   const hasRows = d.rawRows && d.rawRows.length;
 
   const kpiHtml = `
-    <div class="ingresos-kpi-grid" style="grid-template-columns:repeat(5,1fr)">
+    <div class="ingresos-kpi-grid" style="grid-template-columns:repeat(6,1fr)">
       <div class="kpi kpi-accent" style="--kpi-color:var(--accent)">
         <div class="kpi-label">Inversión Total</div>
         <div class="kpi-value" style="font-size:24px">${gnFmtGs(t.inversion)}</div>
         <div class="kpi-sub">${d.periodo || ''}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Inversión en USD</div>
+        <div class="kpi-value" style="font-size:24px">$ ${invUsd.toLocaleString('es-PY')}</div>
+        <div class="kpi-sub">TC: ${tc.toLocaleString('es-PY')} Gs/USD</div>
       </div>
       <div class="kpi kpi-accent" style="--kpi-color:var(--green)">
         <div class="kpi-label">Comisión Total</div>
