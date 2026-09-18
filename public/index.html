@@ -3521,12 +3521,21 @@ function gnOdooLink(id) {
 }
 // Lista de Cotizaciones de Odoo, acotada (cids) a una sola compañía — para
 // ver el TOTAL de cotizaciones de esa agencia en Odoo, no solo lo sincronizado.
-// Si además se pasa clienteId, precarga el filtro "Cliente" en la búsqueda
-// (search_default_<campo> es la convención de Odoo para eso vía URL).
-function gnOdooCotizacionesLink(companiaId, clienteId) {
-  if (!companiaId) return null;
-  let url = `${ODOO_BASE_URL}/web#action=533&model=sale.order&view_type=list&cids=${companiaId}&menu_id=306`;
-  if (clienteId) url += `&search_default_partner_id=${clienteId}`;
+// NOTA: se probó agregar un filtro de cliente acá vía search_default_partner_id
+// (convención vieja de Odoo) pero esta instancia lo ignora por completo — el
+// estado del buscador no vive en la URL en esta versión, se confirmó probando
+// en vivo. Por eso este link solo puede acotar por compañía.
+function gnOdooCotizacionesLink(companiaId) {
+  return companiaId ? `${ODOO_BASE_URL}/web#action=533&model=sale.order&view_type=list&cids=${companiaId}&menu_id=306` : null;
+}
+// Ficha del cliente en Odoo (res.partner) — a diferencia de la lista de
+// Cotizaciones, este SÍ es confiable por URL directa (id+model+view_type=form,
+// mismo patrón que gnOdooLink). Desde ahí el botón "Ventas" de la ficha
+// muestra sus cotizaciones (un clic más, pero funciona).
+function gnOdooClienteLink(clienteId, companiaId) {
+  if (!clienteId) return null;
+  let url = `${ODOO_BASE_URL}/web#id=${clienteId}&model=res.partner&view_type=form&menu_id=351&action=558`;
+  if (companiaId) url += `&cids=${companiaId}`;
   return url;
 }
 // companiaId de una agencia puntual (usado cuando el tooltip ya sabe la agencia).
@@ -3548,11 +3557,12 @@ function gnClienteIdUnico(rows) {
   return ids.length === 1 ? ids[0] : 0;
 }
 function gnLinkOdooHtml(companiaId, clienteId) {
-  const link = gnOdooCotizacionesLink(companiaId, clienteId);
-  const texto = clienteId ? 'Ver cotizaciones de este cliente en Odoo ↗' : 'Ver cotizaciones en Odoo ↗';
-  return link
-    ? `<a href="${link}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-top:6px">${texto}</a>`
-    : '';
+  let html = '';
+  const linkCot = gnOdooCotizacionesLink(companiaId);
+  if (linkCot) html += `<a href="${linkCot}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-top:6px">Ver cotizaciones en Odoo ↗</a>`;
+  const linkCli = gnOdooClienteLink(clienteId, companiaId);
+  if (linkCli) html += `<a href="${linkCli}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-top:6px">Ver ficha del cliente en Odoo ↗</a>`;
+  return html;
 }
 
 // Cifra completa, sin abreviar: puntos como separador de miles + "Gs" al final
