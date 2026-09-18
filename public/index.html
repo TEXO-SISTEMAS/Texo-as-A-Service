@@ -5098,6 +5098,10 @@ function renderChatChart(container, keyFull) {
     cfg = CHAT_CHARTS[key](data.agencias, agency);
   }
   if (!cfg) return;
+  gnMountChatChart(container, cfg);
+}
+
+function gnMountChatChart(container, cfg) {
   const wrap = document.createElement('div');
   wrap.className = 'chat-chart-wrap';
   const canvas = document.createElement('canvas');
@@ -5105,6 +5109,64 @@ function renderChatChart(container, keyFull) {
   wrap.appendChild(canvas);
   container.appendChild(wrap);
   requestAnimationFrame(() => new Chart(canvas, cfg));
+}
+
+const CHAT_DYNAMIC_COLORS = ['#f0f040','#9ca3af','#16a34a','#6c3fc5','#0ea5b0','#d42b4f'];
+
+// El asistente puede pedir CUALQUIER gráfico (no solo los de la lista fija de
+// CHAT_CHARTS) devolviendo un [[CHARTJSON:{...}]] con su propia especificación
+// — esta función la valida y la convierte en un config real de Chart.js.
+// Se valida todo a mano (nada de eval/Function) porque el JSON lo generó un
+// LLM: puede venir incompleto o con tipos raros, y no tiene que romper el chat.
+function gnBuildGenericChartConfig(spec) {
+  if (!spec || typeof spec !== 'object') return null;
+  if (!Array.isArray(spec.labels) || !spec.labels.length || spec.labels.length > 30) return null;
+  if (!Array.isArray(spec.series) || !spec.series.length || spec.series.length > 6) return null;
+  for (const s of spec.series) {
+    if (!s || !Array.isArray(s.datos) || s.datos.length !== spec.labels.length) return null;
+    if (!s.datos.every(v => typeof v === 'number' && isFinite(v))) return null;
+  }
+  const tipo = ['bar', 'line', 'doughnut', 'pie'].includes(spec.tipo) ? spec.tipo : 'bar';
+  const formato = ['gs', 'usd', 'pct', 'numero'].includes(spec.formato) ? spec.formato : 'numero';
+  const fmtVal = v => {
+    if (formato === 'gs') return gnFmtGs(v);
+    if (formato === 'usd') return '$ ' + Number(v).toLocaleString('es-PY');
+    if (formato === 'pct') return Number(v).toFixed(1) + '%';
+    return Number(v).toLocaleString('es-PY');
+  };
+  const labels = spec.labels.map(l => String(l).slice(0, 40));
+
+  if (tipo === 'doughnut' || tipo === 'pie') {
+    return { type: tipo,
+      data: { labels, datasets: [{ data: spec.series[0].datos, backgroundColor: CHAT_DYNAMIC_COLORS, borderWidth: 2, borderColor: '#fff' }] },
+      options: { responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+        plugins: { legend: { display: true, position: 'right', labels: { color: '#6b7280', font: { size: 10, family: 'Inter' }, boxWidth: 10, boxHeight: 10 } },
+          tooltip: { backgroundColor: '#0f1117', callbacks: { label: c => `${c.label}: ${fmtVal(c.raw)}` } } } } };
+  }
+  return { type: tipo,
+    data: { labels, datasets: spec.series.map((s, i) => ({
+      label: String(s.nombre || `Serie ${i + 1}`).slice(0, 40),
+      data: s.datos,
+      backgroundColor: tipo === 'line' ? 'transparent' : CHAT_DYNAMIC_COLORS[i % CHAT_DYNAMIC_COLORS.length],
+      borderColor: CHAT_DYNAMIC_COLORS[i % CHAT_DYNAMIC_COLORS.length],
+      borderRadius: tipo === 'bar' ? 4 : undefined,
+      borderSkipped: false,
+      tension: tipo === 'line' ? 0.3 : undefined,
+      fill: false,
+    })) },
+    options: { responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+      plugins: { legend: spec.series.length > 1 ? LEG : { display: false },
+        tooltip: { backgroundColor: '#0f1117', callbacks: { label: c => `${c.dataset.label}: ${fmtVal(c.raw)}` } } },
+      scales: { x: { grid: { color: CHAT_GRID }, border: { display: false }, ticks: CHAT_TICK },
+        y: { grid: { color: CHAT_GRID }, border: { display: false }, ticks: { ...CHAT_TICK, callback: v => fmtVal(v) } } } } };
+}
+
+function renderChatChartJSON(container, jsonText) {
+  let spec;
+  try { spec = JSON.parse(jsonText); } catch (e) { return; }
+  const cfg = gnBuildGenericChartConfig(spec);
+  if (!cfg) return;
+  gnMountChatChart(container, cfg);
 }
 
 function scrollToChart(id) {
@@ -5120,16 +5182,41 @@ function scrollToChart(id) {
   setTimeout(() => target.classList.remove('chart-highlight'), 7000);
 }
 
+// [[CHARTJSON:{...}]] no se puede extraer con una regex simple porque el JSON
+// de adentro tiene sus propios "]" (arrays) — se cuentan llaves a mano para
+// encontrar el cierre real del objeto en vez de cortar en el primer "]]".
+function extractChartJsonMarker(text) {
+  const startTag = '[[CHARTJSON:';
+  const idx = text.indexOf(startTag);
+  if (idx === -1) return null;
+  const braceStart = text.indexOf('{', idx);
+  if (braceStart === -1) return null;
+  let depth = 0, i = braceStart;
+  for (; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}') { depth--; if (depth === 0) { i++; break; } }
+  }
+  if (depth !== 0) return null;
+  const jsonStr = text.slice(braceStart, i);
+  const closeIdx = text.indexOf(']]', i);
+  if (closeIdx === -1) return null;
+  return { jsonStr, fullMatch: text.slice(idx, closeIdx + 2) };
+}
+
 function appendMsg(role, text) {
   const wrap = document.getElementById('chatMessages');
   const div = document.createElement('div');
   if (role === 'assistant') {
     const scrollMatch = text.match(/\[\[SCROLL:([^\]]+)\]\]/);
     const chartMatch = text.match(/\[\[CHART:([^\]]+)\]\]/);
-    const clean = text.replace(/\[\[SCROLL:[^\]]+\]\]/g, '').replace(/\[\[CHART:[^\]]+\]\]/g, '').trim();
+    const chartJsonMatch = extractChartJsonMarker(text);
+    let clean = text.replace(/\[\[SCROLL:[^\]]+\]\]/g, '').replace(/\[\[CHART:[^\]]+\]\]/g, '');
+    if (chartJsonMatch) clean = clean.replace(chartJsonMatch.fullMatch, '');
+    clean = clean.trim();
     div.className = 'chat-msg assistant rendered';
     div.innerHTML = marked.parse(clean);
     if (chartMatch) renderChatChart(div, chartMatch[1]);
+    else if (chartJsonMatch) renderChatChartJSON(div, chartJsonMatch.jsonStr);
     if (scrollMatch) setTimeout(() => scrollToChart(scrollMatch[1]), 400);
   } else {
     div.className = 'chat-msg ' + role;

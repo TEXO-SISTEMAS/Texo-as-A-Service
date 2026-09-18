@@ -1095,6 +1095,11 @@ Claves con agencia (agregá :NOMBRE, ej. [[CHART:margen:NASTA]]): margen, ebitda
 Nombres válidos: BRICK, NASTA, LUPE, OMD, ROGER.
 [[CHART:inversion_comparativo]] — barras 2025 vs 2026 de Inversión de Medios por agencia (solo si hay datos, ver COMPARATIVO INVERSIÓN DE MEDIOS más abajo).
 
+GRÁFICO LIBRE (instrucción técnica) — cuando pidan graficar algo que NO está en la lista de claves fijas de arriba (ej. "graficá los ingresos por mes", "compará las comisiones", "hacé un gráfico de torta con...":
+Agregá un [[CHARTJSON:{...}]] con ESTE formato exacto, usando solo números que consten en los datos de este mensaje (nunca inventes cifras):
+{"tipo":"bar"|"line"|"doughnut"|"pie","labels":["Ene","Feb",...],"series":[{"nombre":"2025","datos":[1200000,980000,...]},{"nombre":"2026","datos":[...]}],"formato":"gs"|"usd"|"pct"|"numero"}
+Reglas: "series" siempre es un array (aunque tenga un solo elemento, ej. para torta/dona); cada "datos" tiene EXACTAMENTE la misma cantidad de valores que "labels"; máximo 30 labels y 6 series; solo números (nada de texto ni "—" adentro de "datos", si falta un valor usá 0; "formato":"gs" para guaraníes, "usd" para dólares, "pct" para porcentajes ya calculados (ej. 35.2, no 0.352), "numero" para cantidades simples (clientes, personas). Si el dato que piden graficar no está disponible en este mensaje, decilo en texto y NO agregues ningún marcador de gráfico. Uno por respuesta, sin mencionar ni explicar el marcador. No uses [[CHART:key]] y [[CHARTJSON:...]] en la misma respuesta.
+
 NAVEGACIÓN (instrucción técnica):
 Cuando el usuario pregunte por un gráfico o sección específica, agregá al FINAL el marcador [[SCROLL:id]]. Uno por respuesta, sin mencionarlo.
 IDs: sec-1, cEbitdaDCCC, cMargen, sec-2, cEbitda, sec-3, cRendInv, cPC, cPers, sec-4, cInnov, sec-5, cFoco, sec-6, cConc, sec-comp, cFact, cRev, cEgr, cCC, cDC.`;
