@@ -1262,12 +1262,27 @@ ${medLinesGn ? `\nPor medio:\n${medLinesGn}` : ''}`;
       }).join('\n');
       const tot2025 = compAgencias.reduce((s,a)=>s+(a.inv2025||0),0);
       const tot2026 = compAgencias.reduce((s,a)=>s+(a.inv2026||0),0);
+
+      const MES_LABEL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      let mesesResumen = '';
+      if (gnComparativo.porMes2025 || gnComparativo.porMes2026) {
+        const m25 = gnComparativo.porMes2025 || [];
+        const m26 = gnComparativo.porMes2026 || [];
+        const lineasMes = MES_LABEL.map((label, i) => {
+          const v25 = m25[i]?.inversion || 0;
+          const v26 = m26[i]?.inversion || 0;
+          if (!v25 && !v26) return null;
+          return `  ${label}: 2025=${fmtGnGs(v25)}, 2026=${fmtGnGs(v26)}`;
+        }).filter(Boolean).join('\n');
+        if (lineasMes) mesesResumen = `\n\nPor mes (total todas las agencias, no por agencia individual):\n${lineasMes}`;
+      }
+
       gnComparativoResumen = `
 
 COMPARATIVO INVERSIÓN DE MEDIOS ${gnComparativo.periodo2025||'2025'} vs ${gnComparativo.periodo2026||'2026'} (ambos años disponibles a la vez):
 ${lineas || '  (sin datos para esta agencia)'}
-  TOTAL: 2025=${fmtGnGs(tot2025)}, 2026=${fmtGnGs(tot2026)}, variación=${fmtGnGs(tot2026-tot2025)}
-Si el usuario pide graficar esta comparación, usá [[CHART:inversion_comparativo]].`;
+  TOTAL: 2025=${fmtGnGs(tot2025)}, 2026=${fmtGnGs(tot2026)}, variación=${fmtGnGs(tot2026-tot2025)}${mesesResumen}
+Si el usuario pide graficar la comparación por agencia, usá [[CHART:inversion_comparativo]]. Si pide por mes (u otro corte que no sea por agencia), armá un [[CHARTJSON:...]] con estos datos.`;
     }
 
     const agenciaRestriccion = req.user?.agencia

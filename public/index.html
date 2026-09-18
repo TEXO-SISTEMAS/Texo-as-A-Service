@@ -3722,10 +3722,17 @@ async function gnObtenerComparativo() {
         porAgencia[a.nombre][campo === 'inv2025' ? 'com2025' : 'com2026'] = a.comision || 0;
       });
     };
+    // porMes ya viene calculado en el dataset (buildGnDataset/gnRecomputeFromRawRows)
+    // — no hace falta descomprimir rawRows de nuevo, ya está el total por mes.
+    const porMesDe = d => (!d || d.empty || d.error) ? null : (d.porMes || null);
     acumular(r25, 'inv2025');
     acumular(r26, 'inv2026');
     const agencias = Object.values(porAgencia).sort((a, b) => (b.inv2026 || 0) - (a.inv2026 || 0));
-    window._gnComparativo = { agencias, periodo2025: r25?.periodo || '2025', periodo2026: r26?.periodo || '2026' };
+    window._gnComparativo = {
+      agencias,
+      periodo2025: r25?.periodo || '2025', periodo2026: r26?.periodo || '2026',
+      porMes2025: porMesDe(r25), porMes2026: porMesDe(r26),
+    };
     return window._gnComparativo;
   } catch (e) { return null; }
 }
