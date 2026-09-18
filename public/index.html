@@ -3704,6 +3704,32 @@ async function loadLatestGn() {
   } catch(e) { console.error(e); }
 }
 
+// Trae 2025 (Excel manual) y 2026 (Odoo) en paralelo, sin importar qué pestaña
+// esté activa — para el comparativo del asistente de IA, que necesita los dos
+// años a la vez y no puede depender de cuál año se vio último en pantalla.
+async function gnObtenerComparativo() {
+  try {
+    const [r25, r26] = await Promise.all([
+      fetch('/api/latest-globalnum').then(r => r.json()).catch(() => null),
+      fetch('/api/latest-globalnum-odoo').then(r => r.json()).catch(() => null),
+    ]);
+    const porAgencia = {};
+    const acumular = (d, campo) => {
+      if (!d || d.empty || d.error) return;
+      (d.agencias || []).forEach(a => {
+        if (!porAgencia[a.nombre]) porAgencia[a.nombre] = { agencia: a.nombre, inv2025: 0, inv2026: 0, com2025: 0, com2026: 0 };
+        porAgencia[a.nombre][campo] = a.inversion || 0;
+        porAgencia[a.nombre][campo === 'inv2025' ? 'com2025' : 'com2026'] = a.comision || 0;
+      });
+    };
+    acumular(r25, 'inv2025');
+    acumular(r26, 'inv2026');
+    const agencias = Object.values(porAgencia).sort((a, b) => (b.inv2026 || 0) - (a.inv2026 || 0));
+    window._gnComparativo = { agencias, periodo2025: r25?.periodo || '2025', periodo2026: r26?.periodo || '2026' };
+    return window._gnComparativo;
+  } catch (e) { return null; }
+}
+
 async function loadLatestGnOdoo() {
   const titulo = document.getElementById('gnTitulo');
   const sub    = document.getElementById('gnSub');
@@ -5042,14 +5068,35 @@ const CHAT_CHARTS = {
       {label:'EBITDA',data:ag.map(a=>a.ebitda/1e6),backgroundColor:'#16a34a',borderRadius:4}]},
     options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>c.dataset.label+': '+fmtMM(c.datasetIndex===0?ag[c.dataIndex].revenue_total:ag[c.dataIndex].ebitda)}}},
       scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'M'}}}}}),
+
+  // ── Inversión de Medios: único gráfico que no sale de window._dashData
+  // (datos de Salud Financiera), sino de window._gnComparativo — ver
+  // gnObtenerComparativo() y el caso especial en renderChatChart().
+  inversion_comparativo: (ag) => ({type:'bar',
+    data:{labels:ag.map(a=>a.agencia),datasets:[
+      {label:'2025',data:ag.map(a=>(a.inv2025||0)/1e9),backgroundColor:'#9ca3af',borderRadius:4},
+      {label:'2026',data:ag.map(a=>(a.inv2026||0)/1e9),backgroundColor:'#f0f040',borderRadius:4}]},
+    options:{...CHAT_BASE_OPTS,plugins:{legend:LEG,tooltip:{backgroundColor:'#0f1117',callbacks:{label:c=>{
+      const k=c.datasetIndex===0?'inv2025':'inv2026';
+      return c.dataset.label+': '+gnFmtGs(ag[c.dataIndex][k]);
+    }}}},
+      scales:{...CHAT_BASE_OPTS.scales,y:{...CHAT_BASE_OPTS.scales.y,ticks:{...CHAT_TICK,callback:v=>v+'B'}}}}}),
 };
 
 let chatChartCount = 0;
 function renderChatChart(container, keyFull) {
   const [key, agency] = keyFull.split(':');
-  const data = window._dashData;
-  if (!data?.agencias?.length || !CHAT_CHARTS[key]) return;
-  const cfg = CHAT_CHARTS[key](data.agencias, agency);
+  if (!CHAT_CHARTS[key]) return;
+  let cfg;
+  if (key === 'inversion_comparativo') {
+    const comp = window._gnComparativo;
+    if (!comp?.agencias?.length) return;
+    cfg = CHAT_CHARTS[key](comp.agencias, agency);
+  } else {
+    const data = window._dashData;
+    if (!data?.agencias?.length) return;
+    cfg = CHAT_CHARTS[key](data.agencias, agency);
+  }
   if (!cfg) return;
   const wrap = document.createElement('div');
   wrap.className = 'chat-chart-wrap';
@@ -5151,10 +5198,11 @@ async function sendChat() {
   setChatStatus('Pensando...', true);
 
   try {
+    const gnComparativo = await gnObtenerComparativo();
     const resp = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: chatHistory, data: window._dashData || {}, ingresosData: window._ingresosData || null, gnData: window._gnData || null })
+      body: JSON.stringify({ messages: chatHistory, data: window._dashData || {}, ingresosData: window._ingresosData || null, gnData: window._gnData || null, gnComparativo })
     });
     const json = await resp.json();
     removeTyping();

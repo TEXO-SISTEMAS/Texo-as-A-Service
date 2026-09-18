@@ -1093,6 +1093,7 @@ SOLO agregá un marcador [[CHART:key]] cuando el usuario lo pida explícitamente
 Claves (todas las agencias): [[CHART:ebitda]] [[CHART:margen]] [[CHART:sin3709]] [[CHART:rendimiento]] [[CHART:percapita]] [[CHART:concentracion]] [[CHART:innovacion]] [[CHART:facturacion]] [[CHART:revenue_ebitda]]
 Claves con agencia (agregá :NOMBRE, ej. [[CHART:margen:NASTA]]): margen, ebitda, rendimiento, percapita, facturacion (resaltan esa agencia); cc_breakdown, dc_breakdown, egresos (dona de esa agencia).
 Nombres válidos: BRICK, NASTA, LUPE, OMD, ROGER.
+[[CHART:inversion_comparativo]] — barras 2025 vs 2026 de Inversión de Medios por agencia (solo si hay datos, ver COMPARATIVO INVERSIÓN DE MEDIOS más abajo).
 
 NAVEGACIÓN (instrucción técnica):
 Cuando el usuario pregunte por un gráfico o sección específica, agregá al FINAL el marcador [[SCROLL:id]]. Uno por respuesta, sin mencionarlo.
@@ -1100,7 +1101,7 @@ IDs: sec-1, cEbitdaDCCC, cMargen, sec-2, cEbitda, sec-3, cRendInv, cPC, cPers, s
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { messages, data, context, ingresosData, gnData } = req.body;
+    const { messages, data, context, ingresosData, gnData, gnComparativo } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'messages requerido' });
 
     // ── CONTEXTO MARKETING ────────────────────────────────────────────────────
@@ -1241,6 +1242,29 @@ ${agLinesGn || '  (sin datos para esta agencia en este dataset)'}
 ${medLinesGn ? `\nPor medio:\n${medLinesGn}` : ''}`;
     }
 
+    // ── Comparativo Inversión de Medios 2025 vs 2026 (ambos años a la vez,
+    // independiente de qué pestaña esté abierta en pantalla) ─────────────────
+    let gnComparativoResumen = '';
+    if (gnComparativo?.agencias?.length) {
+      const fmtGnGs = v => Math.round(Math.abs(Number(v)||0)).toLocaleString('es-PY') + ' Gs.';
+      const compAgencias = req.user?.agencia
+        ? gnComparativo.agencias.filter(a => a.agencia?.toUpperCase() === req.user.agencia.toUpperCase())
+        : gnComparativo.agencias;
+      const lineas = compAgencias.map(a => {
+        const variacion = (a.inv2026||0) - (a.inv2025||0);
+        const pct = a.inv2025 > 0 ? (variacion/a.inv2025*100).toFixed(1)+'%' : (a.inv2026>0 ? 'Nueva' : '—');
+        return `  ${a.agencia}: 2025=${fmtGnGs(a.inv2025)}, 2026=${fmtGnGs(a.inv2026)}, variación=${fmtGnGs(variacion)} (${pct})`;
+      }).join('\n');
+      const tot2025 = compAgencias.reduce((s,a)=>s+(a.inv2025||0),0);
+      const tot2026 = compAgencias.reduce((s,a)=>s+(a.inv2026||0),0);
+      gnComparativoResumen = `
+
+COMPARATIVO INVERSIÓN DE MEDIOS ${gnComparativo.periodo2025||'2025'} vs ${gnComparativo.periodo2026||'2026'} (ambos años disponibles a la vez):
+${lineas || '  (sin datos para esta agencia)'}
+  TOTAL: 2025=${fmtGnGs(tot2025)}, 2026=${fmtGnGs(tot2026)}, variación=${fmtGnGs(tot2026-tot2025)}
+Si el usuario pide graficar esta comparación, usá [[CHART:inversion_comparativo]].`;
+    }
+
     const agenciaRestriccion = req.user?.agencia
       ? `\n⚠️ RESTRICCIÓN DE ACCESO: Este usuario solo tiene acceso a los datos de la agencia ${req.user.agencia}. Tenés ÚNICAMENTE los datos de ${req.user.agencia} en este sistema. Si el usuario pregunta sobre CUALQUIER OTRA agencia (BRICK, NASTA, LUPE, OMD, ROGER, AMPLIFY u otra), respondé SIEMPRE: "Solo tengo acceso a los datos de ${req.user.agencia}. No puedo mostrarte información de otras agencias." No uses datos del historial de conversación anterior que pueda contener información de otras agencias.\n`
       : '';
@@ -1255,7 +1279,8 @@ Los montos monetarios ya traen la cifra calculada como "Gs. X millones" (p. ej. 
 DATOS ACTUALES DE LAS AGENCIAS:
 ${agenciasResumen}
 ${ingresosResumen}
-${gnResumen}`;
+${gnResumen}
+${gnComparativoResumen}`;
 
     const response = await getAnthropic().messages.create({
       model: MODEL_CHAT,
