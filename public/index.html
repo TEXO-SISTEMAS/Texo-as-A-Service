@@ -4180,6 +4180,40 @@ function gnRenderPeriodTrimestral(wrap, d) {
 // ── CHARTS ────────────────────────────────────────────────────────────────────
 function gnDestroyChart(key) { if (_gnCharts[key]) { try { _gnCharts[key].destroy(); } catch(e){} delete _gnCharts[key]; } }
 
+// Helper genérico de tooltip HTML (no el nativo de Chart.js, que es canvas y
+// no puede tener links clickeables) — usado por todos los gráficos
+// interactivos de Inversión de Medios. Aparece al pasar el mouse, con los
+// links de drill-down ya visibles adentro, sin necesidad de clic. Patrón
+// "external tooltip" de Chart.js: nosotros dibujamos el div, Chart.js solo
+// nos avisa cuándo/dónde mostrarlo. `buildHtml(tooltip)` arma el contenido
+// específico de cada gráfico y devuelve null si no hay nada que mostrar.
+function gnExternalTooltip(context, tooltipId, buildHtml) {
+  const { chart, tooltip } = context;
+  let el = chart.canvas.parentNode.querySelector('#' + tooltipId);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = tooltipId;
+    el.style.cssText = 'position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:20;background:#0f1117;color:#fff;border-radius:10px;padding:12px 14px;font-size:12.5px;box-shadow:0 10px 28px rgba(0,0,0,.3);min-width:200px;transform:translate(-50%,-100%);top:0;left:0';
+    chart.canvas.parentNode.style.position = 'relative';
+    chart.canvas.parentNode.appendChild(el);
+    el.addEventListener('mouseenter', () => { clearTimeout(el._hideTimer); });
+    el.addEventListener('mouseleave', () => { el.style.opacity = 0; el.style.pointerEvents = 'none'; });
+  }
+  if (!tooltip || tooltip.opacity === 0) {
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => { el.style.opacity = 0; el.style.pointerEvents = 'none'; }, 200);
+    return;
+  }
+  clearTimeout(el._hideTimer);
+  const html = buildHtml(tooltip);
+  if (!html) return;
+  el.innerHTML = html;
+  el.style.left = tooltip.caretX + 'px';
+  el.style.top = (tooltip.caretY - 10) + 'px';
+  el.style.opacity = 1;
+  el.style.pointerEvents = 'auto';
+}
+
 function renderGnCharts(d) {
   const COMMON = { responsive:true, maintainAspectRatio:false };
 
@@ -4189,14 +4223,31 @@ function renderGnCharts(d) {
     const porAgMes = {};
     agList.forEach(ag => { porAgMes[ag] = Array(12).fill(0); });
     d.rawRows.forEach(r => { if (porAgMes[r.agencia] && r.nMes >= 1 && r.nMes <= 12) porAgMes[r.agencia][r.nMes-1] += r.invGs; });
+    window.gnTooltipAgMesHTML = function(context) {
+      gnExternalTooltip(context, 'gnTooltipAgMes', (tooltip) => {
+        const dp = tooltip.dataPoints?.[0];
+        if (!dp || !dp.parsed.y) return null;
+        const agencia = dp.dataset.label;
+        const nMes = dp.dataIndex + 1;
+        const val = dp.parsed.y;
+        const agenciaSafe = agencia.replace(/'/g, "\\'");
+        return `
+          <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia} · ${GN_MES_LABEL[nMes-1]}</div>
+          <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGsExacto(val)}</div>
+          <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','','${nMes}','');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+        `;
+      });
+    };
     _gnCharts.agMes = new Chart(document.getElementById('gnCAgMes'), {
       type: 'bar',
       data: { labels: GN_MES_LABEL, datasets: agList.map(ag => ({ label: ag, data: porAgMes[ag], backgroundColor: agColor(ag), borderRadius: 4, borderWidth: 0 })) },
       options: {
         ...COMMON,
+        onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+        interaction: { mode: 'nearest', intersect: true },
         plugins: {
           legend: { labels: { color: GN_TICK, font: GN_FONT, boxWidth: 12, padding: 16 } },
-          tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + gnFmtGsExacto(ctx.parsed.y) } }
+          tooltip: { enabled: false, external: (context) => gnTooltipAgMesHTML(context) }
         },
         scales: {
           x: { ticks: { color: GN_TICK, font: GN_FONT }, grid: { color: 'transparent' } },
@@ -4225,7 +4276,7 @@ function renderGnCharts(d) {
         return `
           <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia} · ${medio}</div>
           <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGsExacto(val)} · ${gnPct(val, tot)}</div>
-          <a href="#" onclick="gnFiltrarDesdeGraficoDoble('${agenciaSafe}','${medioSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+          <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','${medioSafe}','','');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
         `;
       });
     };
@@ -4258,62 +4309,19 @@ function renderGnCharts(d) {
     }
   }
 
-  // Filtra la tabla de Detalle de abajo por un solo campo (agencia o medio) y
-  // hace scroll hasta ahí — usado por los links dentro de los tooltips.
-  window.gnFiltrarDesdeGrafico = function(campo, valor) {
-    const selId = campo === 'agencia' ? 'gnFilterAgencia' : 'gnFilterMedio';
-    const sel = document.getElementById(selId);
-    if (!sel || ![...sel.options].some(o => o.value === valor)) return;
-    sel.value = valor;
+  // Filtra la tabla de Detalle de abajo por cualquier combinación de campos
+  // (agencia/medio/mes/cliente, pasar '' para omitir uno) y hace scroll hasta
+  // ahí — usado por los links dentro de todos los tooltips de los gráficos.
+  window.gnFiltrarDesdeGraficoMulti = function(agencia, medio, mes, cliente) {
+    const campos = [['gnFilterAgencia', agencia], ['gnFilterMedio', medio], ['gnFilterMes', mes], ['gnFilterCliente', cliente]];
+    campos.forEach(([selId, valor]) => {
+      if (!valor) return;
+      const sel = document.getElementById(selId);
+      if (sel && [...sel.options].some(o => o.value === String(valor))) sel.value = valor;
+    });
     filtrarGnDetalle();
     scrollToChart('gnDetalleCard');
   };
-
-  // Igual que arriba pero filtrando agencia + medio a la vez (para el link
-  // del gráfico de barras apiladas, donde cada segmento ya es una combinación
-  // puntual de las dos cosas).
-  window.gnFiltrarDesdeGraficoDoble = function(agencia, medio) {
-    const selAg = document.getElementById('gnFilterAgencia');
-    const selMed = document.getElementById('gnFilterMedio');
-    if (selAg && [...selAg.options].some(o => o.value === agencia)) selAg.value = agencia;
-    if (selMed && [...selMed.options].some(o => o.value === medio)) selMed.value = medio;
-    filtrarGnDetalle();
-    scrollToChart('gnDetalleCard');
-  };
-
-  // Helper genérico de tooltip HTML (no el nativo de Chart.js, que es canvas
-  // y no puede tener links clickeables) — usado por los 3 gráficos
-  // interactivos de Inversión de Medios. Aparece al pasar el mouse, con los
-  // links de drill-down ya visibles adentro, sin necesidad de clic. Patrón
-  // "external tooltip" de Chart.js: nosotros dibujamos el div, Chart.js solo
-  // nos avisa cuándo/dónde mostrarlo. `buildHtml(tooltip)` arma el contenido
-  // específico de cada gráfico y devuelve null si no hay nada que mostrar.
-  function gnExternalTooltip(context, tooltipId, buildHtml) {
-    const { chart, tooltip } = context;
-    let el = chart.canvas.parentNode.querySelector('#' + tooltipId);
-    if (!el) {
-      el = document.createElement('div');
-      el.id = tooltipId;
-      el.style.cssText = 'position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:20;background:#0f1117;color:#fff;border-radius:10px;padding:12px 14px;font-size:12.5px;box-shadow:0 10px 28px rgba(0,0,0,.3);min-width:200px;transform:translate(-50%,-100%);top:0;left:0';
-      chart.canvas.parentNode.style.position = 'relative';
-      chart.canvas.parentNode.appendChild(el);
-      el.addEventListener('mouseenter', () => { clearTimeout(el._hideTimer); });
-      el.addEventListener('mouseleave', () => { el.style.opacity = 0; el.style.pointerEvents = 'none'; });
-    }
-    if (!tooltip || tooltip.opacity === 0) {
-      clearTimeout(el._hideTimer);
-      el._hideTimer = setTimeout(() => { el.style.opacity = 0; el.style.pointerEvents = 'none'; }, 200);
-      return;
-    }
-    clearTimeout(el._hideTimer);
-    const html = buildHtml(tooltip);
-    if (!html) return;
-    el.innerHTML = html;
-    el.style.left = tooltip.caretX + 'px';
-    el.style.top = (tooltip.caretY - 10) + 'px';
-    el.style.opacity = 1;
-    el.style.pointerEvents = 'auto';
-  }
 
   window.gnTooltipAgenciaHTML = function(context, totalInversion) {
     gnExternalTooltip(context, 'gnTooltipAgencia', (tooltip) => {
@@ -4328,7 +4336,7 @@ function renderGnCharts(d) {
       return `
         <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia}</div>
         <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(inv)} · ${gnPct(inv, totalInversion)}</div>
-        <a href="#" onclick="gnFiltrarDesdeGrafico('agencia','${agenciaSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-bottom:6px">Ver tabla filtrada ↓</a>
+        <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','','','');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-bottom:6px">Ver tabla filtrada ↓</a>
         ${linkOdoo
           ? `<a href="${linkOdoo}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver cotizaciones en Odoo ↗</a>`
           : `<div style="color:rgba(255,255,255,.4);font-size:11px">Sin ID de Odoo — resincronizá</div>`}
@@ -4346,7 +4354,7 @@ function renderGnCharts(d) {
       return `
         <div style="font-weight:800;font-size:14px;margin-bottom:2px">${medio}</div>
         <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(inv)} · ${gnPct(inv, totalInversion)}</div>
-        <a href="#" onclick="gnFiltrarDesdeGrafico('medio','${medioSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+        <a href="#" onclick="gnFiltrarDesdeGraficoMulti('','${medioSafe}','','');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
       `;
     });
   };
@@ -4390,12 +4398,27 @@ function renderGnCharts(d) {
   const cliNombres = d.topClientes.map(c => c.nombre.length > 30 ? c.nombre.slice(0,28)+'…' : c.nombre);
   const cliPalette = ['#6c3fc5','#e85d26','#0ea5b0','#d4900a','#d42b4f','#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316','#a855f7','#06b6d4','#84cc16'];
   const cliColors  = d.topClientes.map((_, i) => cliPalette[i % cliPalette.length]);
+  window.gnTooltipClienteHTML = function(context) {
+    gnExternalTooltip(context, 'gnTooltipCliente', (tooltip) => {
+      const dp = tooltip.dataPoints?.[0];
+      if (!dp) return null;
+      const cli = d.topClientes[dp.dataIndex];
+      if (!cli) return null;
+      const cliSafe = cli.nombre.replace(/'/g, "\\'");
+      return `
+        <div style="font-weight:800;font-size:14px;margin-bottom:2px">${cli.nombre}</div>
+        <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(cli.inversion)} · ${gnPct(cli.inversion, d.totales.inversion)}</div>
+        <a href="#" onclick="gnFiltrarDesdeGraficoMulti('','','','${cliSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+      `;
+    });
+  };
   _gnCharts.clientes = new Chart(document.getElementById('gnCClientes'), {
     type: 'bar',
     data: { labels: cliNombres, datasets: [{ data: d.topClientes.map(c => c.inversion), backgroundColor: cliColors.map(c => c + 'cc'), borderColor: cliColors, borderWidth: 1, borderRadius: 4 }] },
     options: {
       indexAxis: 'y', ...COMMON,
-      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => ' ' + gnFmtGs(ctx.parsed.x) + ' · ' + gnPct(ctx.parsed.x, d.totales.inversion) }}},
+      onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+      plugins:{ legend:{ display:false }, tooltip:{ enabled: false, external: (context) => gnTooltipClienteHTML(context) }},
       scales:{
         x:{ ticks:{ color:GN_TICK, font:GN_FONT, callback: v => gnFmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid:{ color:GN_GRID }},
         y:{ ticks:{ color:GN_TICK, font:{...GN_FONT,size:11} }, grid:{ color:'transparent' }}
@@ -4477,14 +4500,33 @@ function renderGnCliMesH() {
 
   const COMMON = { responsive:true, maintainAspectRatio:false };
   gnDestroyChart('cliMesH');
+  window.gnTooltipCliMesHTML = function(context) {
+    gnExternalTooltip(context, 'gnTooltipCliMes', (tooltip) => {
+      const dp = tooltip.dataPoints?.[0];
+      if (!dp || !dp.parsed.x) return null;
+      const agencia = dp.dataset.label;
+      const cli = topCli[dp.dataIndex];
+      if (!cli) return null;
+      const cliSafe = cli.replace(/'/g, "\\'");
+      const agenciaSafe = agencia.replace(/'/g, "\\'");
+      return `
+        <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia}</div>
+        <div style="font-size:12.5px;margin-bottom:2px">${cli}</div>
+        <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGsExacto(dp.parsed.x)}</div>
+        <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','','','${cliSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+      `;
+    });
+  };
   _gnCharts.cliMesH = new Chart(document.getElementById('gnCCliMesH'), {
     type: 'bar',
     data: { labels: topCli.map(c=>c.length>35?c.slice(0,33)+'…':c), datasets },
     options: {
       indexAxis: 'y', ...COMMON,
+      onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+      interaction: { mode: 'nearest', intersect: true },
       plugins: {
         legend: { position:'bottom', labels:{ color:GN_TICK, font:GN_FONT, boxWidth:12, padding:14 } },
-        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + gnFmtGsExacto(ctx.parsed.x) } }
+        tooltip: { enabled: false, external: (context) => gnTooltipCliMesHTML(context) }
       },
       scales: {
         x: { stacked:true, ticks:{ color:GN_TICK, font:GN_FONT, callback:v=>gnFmtGsShort(v), maxTicksLimit:4, maxRotation:0 }, grid:{ color:GN_GRID } },
