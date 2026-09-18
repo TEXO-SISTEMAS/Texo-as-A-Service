@@ -1174,7 +1174,8 @@ body.fullscreen .main { padding-top:64px; }
           <div class="ingresos-header-title" id="ingresosTitulo">Cargando...</div>
           <div class="ingresos-header-sub" id="ingresosSub">—</div>
         </div>
-        <div class="ingresos-header-right">
+        <div class="ingresos-header-right" style="display:flex;align-items:center;gap:10px">
+          <div id="ingresosAgenciaFiltroMini"></div>
           <input type="file" id="ingresosFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleIngresosFileSelect(event)">
           <button class="ingresos-upload-btn" id="btnIngresosUpload" onclick="document.getElementById('ingresosFileInput').click()">↑ Subir Excel</button>
         </div>
@@ -1196,6 +1197,8 @@ body.fullscreen .main { padding-top:64px; }
           <div class="ingresos-header-sub" id="gnSub">—</div>
         </div>
         <div class="ingresos-header-right" style="display:flex;align-items:center;gap:10px">
+          <div id="gnAgenciaFiltroMini"></div>
+          <div id="gnMesFiltroMini"></div>
           <div class="gn-year-tabs" style="display:flex;gap:6px">
             <button class="gn-ptab active" id="gnYearTab2025" onclick="gnSetYear('2025')">2025</button>
             <button class="gn-ptab" id="gnYearTab2026" onclick="gnSetYear('2026')">2026</button>
@@ -1387,6 +1390,7 @@ async function deleteUpload(id){
 // Simula, en el navegador, lo que el servidor le filtra a un usuario restringido
 // a una sola agencia — para que un admin pueda "verse como" esa agencia.
 window._agenciaFiltro = null;
+window._mesFiltroGn = null; // filtro de mes, solo aplica a Inversión de Medios (única sección con datos mensuales)
 
 function filtrarAgenciasClient(agencias, agencia){
   if(!agencia || !Array.isArray(agencias)) return agencias;
@@ -1409,6 +1413,53 @@ function aplicarFiltroIngresos(data, agencia){
   return result;
 }
 
+// Select de agencia "mini", duplicado al inicio de cada sección (además del
+// que ya está en el topbar) — misma opción, mismo handler, para no tener que
+// scrollear hasta arriba para cambiar de agencia. Como cada sección se
+// re-renderiza entera en cada cambio (onFiltroAgenciaChange llama a
+// renderDashboard/renderIngresos/renderGn), no hace falta sincronizar nada a
+// mano: el "selected" ya sale correcto en cada render porque lee
+// window._agenciaFiltro en el momento de armar el HTML.
+function gnAgenciaMiniSelect(){
+  if (window._userAgencia) return ''; // usuario restringido a una sola agencia: nada que elegir
+  const cur = window._agenciaFiltro || '';
+  const opts = [['', '👁 Todas las agencias'], ['NASTA','NASTA'], ['BRICK','BRICK'], ['LUPE','LUPE'], ['OMD','OMD'], ['ROGER','ROGER']];
+  return `<select class="agencia-filtro-mini" onchange="onFiltroAgenciaChange(this.value)" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--white);color:var(--text);cursor:pointer">
+    ${opts.map(([v,l]) => `<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}
+  </select>`;
+}
+
+// Select de mes — solo tiene sentido en Inversión de Medios (única sección
+// con datos mensuales; Salud Financiera e Ingresos son cortes de período, sin
+// desglose por mes). Mismo patrón que gnAgenciaMiniSelect.
+function gnMesMiniSelect(){
+  const cur = window._mesFiltroGn || '';
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const opts = [['', 'Todos los meses'], ...meses.map((m,i) => [String(i+1), m])];
+  return `<select class="mes-filtro-mini" onchange="onFiltroMesGnChange(this.value)" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--white);color:var(--text);cursor:pointer">
+    ${opts.map(([v,l]) => `<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}
+  </select>`;
+}
+
+function onFiltroMesGnChange(val){
+  window._mesFiltroGn = val || null;
+  if (!window._gnDataRaw) return;
+  const filtro = agenciaActiva();
+  const filtered = aplicarFiltroGn(window._gnDataRaw, filtro, window._mesFiltroGn);
+  if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, window._gnDataRaw.periodo); return; }
+  _gnD = filtered;
+  renderGn(filtered);
+}
+
+function gnSyncFiltrosMini(){
+  const ing = document.getElementById('ingresosAgenciaFiltroMini');
+  if (ing) ing.innerHTML = gnAgenciaMiniSelect();
+  const gnAg = document.getElementById('gnAgenciaFiltroMini');
+  if (gnAg) gnAg.innerHTML = gnAgenciaMiniSelect();
+  const gnMes = document.getElementById('gnMesFiltroMini');
+  if (gnMes) gnMes.innerHTML = gnMesMiniSelect();
+}
+
 function onFiltroAgenciaChange(val){
   window._agenciaFiltro = val || null;
   try { localStorage.setItem('_agenciaFiltroAdmin', window._agenciaFiltro || ''); } catch(e){}
@@ -1429,7 +1480,7 @@ function onFiltroAgenciaChange(val){
     }
   }
   if(window._gnDataRaw){
-    const filteredGn = aplicarFiltroGn(window._gnDataRaw, window._agenciaFiltro);
+    const filteredGn = aplicarFiltroGn(window._gnDataRaw, window._agenciaFiltro, window._mesFiltroGn);
     if (window._agenciaFiltro && !filteredGn.rawRows?.length) {
       mostrarGnSinAgencia(window._agenciaFiltro, window._gnDataRaw.periodo);
     } else {
@@ -1438,6 +1489,7 @@ function onFiltroAgenciaChange(val){
     }
   }
   renderComparacion();
+  gnSyncFiltrosMini();
 }
 
 async function loadLatest(){
@@ -1892,7 +1944,7 @@ function renderDashboard(data){
   <div id="detailsPanel">
     <!-- ══ 01 · RENTABILIDAD ══ -->
     <div id="sec-1" class="sec-block">
-      <div class="sec-label">01 · Rentabilidad</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div class="sec-label">01 · Rentabilidad</div>${gnAgenciaMiniSelect()}</div>
       <div class="sec-heading">¿Quién gana y quién pierde?</div>
       <div class="sec-bar"></div>
     </div>
@@ -2057,7 +2109,7 @@ function renderDashboard(data){
 
     <!-- ══ 02 · SIN 3709 ══ -->
     <div id="sec-2" class="sec-block">
-      <div class="sec-label">02 · Sin 3709</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div class="sec-label">02 · Sin 3709</div>${gnAgenciaMiniSelect()}</div>
       <div class="sec-heading">¿La rentabilidad es real?</div>
       <div class="sec-bar"></div>
     </div>
@@ -2108,7 +2160,7 @@ function renderDashboard(data){
 
     <!-- ══ 03 · EFICIENCIA ══ -->
     <div id="sec-3" class="sec-block">
-      <div class="sec-label">03 · Eficiencia</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div class="sec-label">03 · Eficiencia</div>${gnAgenciaMiniSelect()}</div>
       <div class="sec-heading">¿Quién hace más con menos?</div>
       <div class="sec-bar"></div>
     </div>
@@ -2180,7 +2232,7 @@ function renderDashboard(data){
 
     <!-- ══ 04 · INNOVACIÓN ══ -->
     <div id="sec-4" class="sec-block">
-      <div class="sec-label">04 · Aporte de Innovación</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div class="sec-label">04 · Aporte de Innovación</div>${gnAgenciaMiniSelect()}</div>
       <div class="sec-heading">¿Quién construye el negocio del futuro?</div>
       <div class="sec-bar"></div>
     </div>
@@ -2232,7 +2284,7 @@ function renderDashboard(data){
 
     <!-- ══ 05 · EXPERTISE FOCO ══ -->
     <div id="sec-5" class="sec-block">
-      <div class="sec-label">05 · Expertise Foco</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div class="sec-label">05 · Expertise Foco</div>${gnAgenciaMiniSelect()}</div>
       <div class="sec-heading">¿En qué se especializa cada agencia?</div>
       <div class="sec-bar"></div>
     </div>
@@ -2284,7 +2336,7 @@ function renderDashboard(data){
 
     <!-- ══ 06 · CONCENTRACIÓN DE FEE ══ -->
     <div id="sec-6" class="sec-block">
-      <div class="sec-label">06 · Concentración de Fee</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div class="sec-label">06 · Concentración de Fee</div>${gnAgenciaMiniSelect()}</div>
       <div class="sec-heading">¿Cuán vulnerables somos?</div>
       <div class="sec-bar"></div>
     </div>
@@ -2858,6 +2910,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
     window._userAgencia = me.agencia || null;
     window._userEmail = me.email || null;
     window._userEsAdmin = !!me.esAdmin;
+    gnSyncFiltrosMini();
     if (me.agencia) {
       const banner = document.createElement('div');
       banner.style.cssText = 'background:#1a1d2e;border-bottom:1px solid rgba(255,255,255,.1);padding:9px 44px;display:flex;align-items:center;gap:10px;font-size:12.5px;color:rgba(255,255,255,.65)';
@@ -3620,7 +3673,7 @@ async function handleGnFile(e) {
     showToast('✓ Inversión de Medios cargada · ' + data.periodo, 'success');
     window._gnDataRaw = data;
     const filtro = agenciaActiva();
-    const filtered = aplicarFiltroGn(data, filtro);
+    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn);
     if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo); }
     else { _gnD = filtered; renderGn(filtered); }
   } catch(err) {
@@ -3666,11 +3719,15 @@ function gnRecomputeFromRawRows(rawRows) {
   };
 }
 
-// Filtro client-side por agencia (mismo patrón que aplicarFiltroSF/aplicarFiltroIngresos):
-// nunca muta el dataset crudo, así "Todas las agencias" no necesita re-fetch.
-function aplicarFiltroGn(data, agencia) {
-  if (!agencia || !data) return data;
-  const rawRows = (data.rawRows||[]).filter(r => (r.agencia||'').toUpperCase() === agencia.toUpperCase());
+// Filtro client-side por agencia y/o mes (mismo patrón que aplicarFiltroSF/
+// aplicarFiltroIngresos): nunca muta el dataset crudo, así "Todas las
+// agencias"/"Todos los meses" no necesitan re-fetch. mes es opcional — se
+// suma para el filtro nuevo al inicio de la sección, combinable con agencia.
+function aplicarFiltroGn(data, agencia, mes) {
+  if ((!agencia && !mes) || !data) return data;
+  let rawRows = data.rawRows || [];
+  if (agencia) rawRows = rawRows.filter(r => (r.agencia||'').toUpperCase() === agencia.toUpperCase());
+  if (mes) rawRows = rawRows.filter(r => r.nMes === +mes);
   return { ...data, rawRows, ...gnRecomputeFromRawRows(rawRows) };
 }
 
@@ -3697,7 +3754,7 @@ async function loadLatestGn() {
     if (data.detalle) data.rawRows = gnDecompressRows(data.detalle);
     window._gnDataRaw = data;
     const filtro = agenciaActiva();
-    const filtered = aplicarFiltroGn(data, filtro);
+    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn);
     if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo); return; }
     _gnD = filtered;
     renderGn(filtered);
@@ -3753,7 +3810,7 @@ async function loadLatestGnOdoo() {
     if (data.detalle) data.rawRows = gnDecompressRows(data.detalle);
     window._gnDataRaw = data;
     const filtro = agenciaActiva();
-    const filtered = aplicarFiltroGn(data, filtro);
+    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn);
     if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo || '2026'); return; }
     _gnD = filtered;
     renderGn(filtered);
