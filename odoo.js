@@ -293,7 +293,7 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
   } catch (e) { /* si falla, seguimos sin este campo */ }
 
   const fields = [
-    'company_id', 'partner_id', 'tipo_medio_id', 'grupo_id', 'canal_id',
+    'company_id', 'partner_id', 'tipo_medio_id', 'grupo_id', 'canal_id', 'state',
     'fecha_desde', 'create_date', 'currency_id', 'es_moneda_extranjera',
     'monto_negociado', 'valor_comision',
     'total_monto_negociado_pyg', 'valor_comision_pyg',
@@ -361,6 +361,10 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
         // ID interno del cliente (partner_id) en Odoo — para armar un link
         // directo a "Cotizaciones" filtrado por ese cliente puntual.
         clienteId: Array.isArray(r.partner_id) ? r.partner_id[0] : 0,
+        // Estado real en Odoo (ej. "confirmado", "a_confirmar") — "cancelado"
+        // ya está excluido por el domain, pero entre los que quedan el
+        // usuario quiere poder filtrar por estado igual.
+        estado: r.state || '—',
       });
     }
     offset += page.length;
@@ -469,7 +473,7 @@ async function odooSyncInversionMedios(opts) {
 function gnCompressRowsServer(rows) {
   if (!rows || !rows.length) return null;
   const dict = (arr, val) => { let i = arr.indexOf(val); if (i < 0) { i = arr.length; arr.push(val); } return i; };
-  const ags = [], cls = [], mds = [], tis = [], grs = [], cas = [], mos = [], ovs = [];
+  const ags = [], cls = [], mds = [], tis = [], grs = [], cas = [], mos = [], ovs = [], sts = [];
   const data = rows.map(r => [
     dict(ags, r.agencia), dict(cls, r.cliente), dict(mds, r.medio),
     dict(tis, r.tipo), dict(grs, r.grupo), dict(cas, r.canal),
@@ -483,8 +487,9 @@ function gnCompressRowsServer(rows) {
     r.ordenVentaId || 0,
     r.companiaId || 0,
     r.clienteId || 0,
+    dict(sts, r.estado || '—'),
   ]);
-  return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
+  return { ags, cls, mds, tis, grs, cas, mos, ovs, sts, data };
 }
 
 // Archivo propio en Drive — separado de globalnum-latest.json (el Excel 2025)

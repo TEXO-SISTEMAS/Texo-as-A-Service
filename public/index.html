@@ -1226,6 +1226,8 @@ body.fullscreen .main { padding-top:64px; }
         <div class="ingresos-header-right" style="display:flex;align-items:center;gap:10px">
           <div id="gnAgenciaFiltroMini"></div>
           <div id="gnMesFiltroMini"></div>
+          <div id="gnTrimestreFiltroMini"></div>
+          <div id="gnEstadoFiltroMini"></div>
           <div class="gn-year-tabs" style="display:flex;gap:6px">
             <button class="gn-year-tab active" id="gnYearTab2025" onclick="gnSetYear('2025')">2025</button>
             <button class="gn-year-tab" id="gnYearTab2026" onclick="gnSetYear('2026')">2026</button>
@@ -1418,6 +1420,8 @@ async function deleteUpload(id){
 // a una sola agencia — para que un admin pueda "verse como" esa agencia.
 window._agenciaFiltro = null;
 window._mesFiltroGn = null; // filtro de mes, solo aplica a Inversión de Medios (única sección con datos mensuales)
+window._trimestreFiltroGn = null; // filtro de trimestre — mutuamente excluyente con el de mes (ver onFiltroMesGnChange/onFiltroTrimestreGnChange)
+window._estadoFiltroGn = null; // filtro de estado (confirmado / a_confirmar / etc.)
 
 function filtrarAgenciasClient(agencias, agencia){
   if(!agencia || !Array.isArray(agencias)) return agencias;
@@ -1471,12 +1475,62 @@ function gnMesMiniSelect(){
 
 function onFiltroMesGnChange(val){
   window._mesFiltroGn = val || null;
+  if (window._mesFiltroGn) window._trimestreFiltroGn = null; // mutuamente excluyentes
+  gnRefiltrarGn();
+}
+
+// Select de trimestre — mismo alcance que el de mes (solo Inversión de
+// Medios), pero agrupando de a 3 meses. Elegir un trimestre limpia el filtro
+// de mes y viceversa (onFiltroMesGnChange), para no tener dos filtros de
+// tiempo activos y contradictorios a la vez.
+function gnTrimestreMiniSelect(){
+  const cur = window._trimestreFiltroGn || '';
+  const opts = [['', 'Todos los trimestres'], ['1','Q1 · Ene-Mar'], ['2','Q2 · Abr-Jun'], ['3','Q3 · Jul-Sep'], ['4','Q4 · Oct-Dic']];
+  return `<select class="gn-mini-select" onchange="onFiltroTrimestreGnChange(this.value)">
+    ${opts.map(([v,l]) => `<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}
+  </select>`;
+}
+
+function onFiltroTrimestreGnChange(val){
+  window._trimestreFiltroGn = val || null;
+  if (window._trimestreFiltroGn) window._mesFiltroGn = null; // mutuamente excluyentes
+  gnRefiltrarGn();
+}
+
+// Select de estado (confirmado / a_confirmar / etc. — "cancelado" ya está
+// excluido desde el sync con Odoo). Las opciones salen de los valores reales
+// presentes en los datos cargados, no de una lista fija, porque no sabemos de
+// antemano qué estados va a tener cada sync. Si solo hay un estado presente
+// (ej. datos 2025 del Excel, que no traen este campo), no tiene sentido
+// mostrar el filtro, así que el select ni se renderiza.
+function gnEstadoLabel(v){
+  const map = { confirmado: 'Confirmado', a_confirmar: 'A confirmar', borrador: 'Borrador', cancelado: 'Cancelado' };
+  return map[v] || v;
+}
+function gnEstadoMiniSelect(){
+  const estados = [...new Set((window._gnDataRaw?.rawRows || []).map(r => r.estado).filter(e => e && e !== '—'))].sort();
+  if (estados.length < 2) return '';
+  const cur = window._estadoFiltroGn || '';
+  const opts = [['', 'Todos los estados'], ...estados.map(e => [e, gnEstadoLabel(e)])];
+  return `<select class="gn-mini-select" onchange="onFiltroEstadoGnChange(this.value)">
+    ${opts.map(([v,l]) => `<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}
+  </select>`;
+}
+function onFiltroEstadoGnChange(val){
+  window._estadoFiltroGn = val || null;
+  gnRefiltrarGn();
+}
+
+// Re-aplica agencia+mes/trimestre+estado sobre los datos ya cargados y
+// re-renderiza — compartido por los 3 handlers de filtro de esta sección.
+function gnRefiltrarGn(){
   if (!window._gnDataRaw) return;
   const filtro = agenciaActiva();
-  const filtered = aplicarFiltroGn(window._gnDataRaw, filtro, window._mesFiltroGn);
+  const filtered = aplicarFiltroGn(window._gnDataRaw, filtro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
   if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, window._gnDataRaw.periodo); return; }
   _gnD = filtered;
   renderGn(filtered);
+  gnSyncFiltrosMini();
 }
 
 function gnSyncFiltrosMini(){
@@ -1486,6 +1540,10 @@ function gnSyncFiltrosMini(){
   if (gnAg) gnAg.innerHTML = gnAgenciaMiniSelect('dark');
   const gnMes = document.getElementById('gnMesFiltroMini');
   if (gnMes) gnMes.innerHTML = gnMesMiniSelect();
+  const gnTri = document.getElementById('gnTrimestreFiltroMini');
+  if (gnTri) gnTri.innerHTML = gnTrimestreMiniSelect();
+  const gnEst = document.getElementById('gnEstadoFiltroMini');
+  if (gnEst) gnEst.innerHTML = gnEstadoMiniSelect();
 }
 
 function onFiltroAgenciaChange(val){
@@ -1508,7 +1566,7 @@ function onFiltroAgenciaChange(val){
     }
   }
   if(window._gnDataRaw){
-    const filteredGn = aplicarFiltroGn(window._gnDataRaw, window._agenciaFiltro, window._mesFiltroGn);
+    const filteredGn = aplicarFiltroGn(window._gnDataRaw, window._agenciaFiltro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
     if (window._agenciaFiltro && !filteredGn.rawRows?.length) {
       mostrarGnSinAgencia(window._agenciaFiltro, window._gnDataRaw.periodo);
     } else {
@@ -3675,7 +3733,7 @@ function gnParsearEnBrowser(wb) {
 function gnCompressRows(rows) {
   if (!rows || !rows.length) return null;
   const dict = (arr, val) => { let i = arr.indexOf(val); if (i < 0) { i = arr.length; arr.push(val); } return i; };
-  const ags=[], cls=[], mds=[], tis=[], grs=[], cas=[], mos=[], ovs=[];
+  const ags=[], cls=[], mds=[], tis=[], grs=[], cas=[], mos=[], ovs=[], sts=[];
   const data = rows.map(r => [
     dict(ags, r.agencia), dict(cls, r.cliente), dict(mds, r.medio),
     dict(tis, r.tipo),    dict(grs, r.grupo),   dict(cas, r.canal),
@@ -3688,9 +3746,10 @@ function gnCompressRows(rows) {
     dict(ovs, r.ordenVenta || '—'),
     r.ordenVentaId || 0,
     r.companiaId || 0,
-    r.clienteId || 0
+    r.clienteId || 0,
+    dict(sts, r.estado || '—')
   ]);
-  return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
+  return { ags, cls, mds, tis, grs, cas, mos, ovs, sts, data };
 }
 
 function gnDecompressRows(c) {
@@ -3704,7 +3763,8 @@ function gnDecompressRows(c) {
     ordenVenta: (c.ovs && r[15] != null) ? c.ovs[r[15]] : '—',
     ordenVentaId: r[16] || 0,
     companiaId: r[17] || 0,
-    clienteId: r[18] || 0
+    clienteId: r[18] || 0,
+    estado: (c.sts && r[19] != null) ? c.sts[r[19]] : '—'
   }));
 }
 
@@ -3732,9 +3792,10 @@ async function handleGnFile(e) {
     showToast('✓ Inversión de Medios cargada · ' + data.periodo, 'success');
     window._gnDataRaw = data;
     const filtro = agenciaActiva();
-    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn);
+    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
     if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo); }
     else { _gnD = filtered; renderGn(filtered); }
+    gnSyncFiltrosMini();
   } catch(err) {
     showToast('Error: ' + err.message, 'error');
   } finally {
@@ -3782,11 +3843,17 @@ function gnRecomputeFromRawRows(rawRows) {
 // aplicarFiltroIngresos): nunca muta el dataset crudo, así "Todas las
 // agencias"/"Todos los meses" no necesitan re-fetch. mes es opcional — se
 // suma para el filtro nuevo al inicio de la sección, combinable con agencia.
-function aplicarFiltroGn(data, agencia, mes) {
-  if ((!agencia && !mes) || !data) return data;
+function aplicarFiltroGn(data, agencia, mes, trimestre, estado) {
+  if ((!agencia && !mes && !trimestre && !estado) || !data) return data;
   let rawRows = data.rawRows || [];
   if (agencia) rawRows = rawRows.filter(r => (r.agencia||'').toUpperCase() === agencia.toUpperCase());
-  if (mes) rawRows = rawRows.filter(r => r.nMes === +mes);
+  if (mes) {
+    rawRows = rawRows.filter(r => r.nMes === +mes);
+  } else if (trimestre) {
+    const q = +trimestre, desde = (q - 1) * 3 + 1, hasta = q * 3;
+    rawRows = rawRows.filter(r => r.nMes >= desde && r.nMes <= hasta);
+  }
+  if (estado) rawRows = rawRows.filter(r => r.estado === estado);
   return { ...data, rawRows, ...gnRecomputeFromRawRows(rawRows) };
 }
 
@@ -3813,10 +3880,11 @@ async function loadLatestGn() {
     if (data.detalle) data.rawRows = gnDecompressRows(data.detalle);
     window._gnDataRaw = data;
     const filtro = agenciaActiva();
-    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn);
+    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
     if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo); return; }
     _gnD = filtered;
     renderGn(filtered);
+    gnSyncFiltrosMini();
   } catch(e) { console.error(e); }
 }
 
@@ -3869,10 +3937,11 @@ async function loadLatestGnOdoo() {
     if (data.detalle) data.rawRows = gnDecompressRows(data.detalle);
     window._gnDataRaw = data;
     const filtro = agenciaActiva();
-    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn);
+    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
     if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo || '2026'); return; }
     _gnD = filtered;
     renderGn(filtered);
+    gnSyncFiltrosMini();
   } catch(e) { console.error(e); }
 }
 
