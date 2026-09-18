@@ -3519,6 +3519,11 @@ const ODOO_BASE_URL = 'https://texo.odoo.com';
 function gnOdooLink(id) {
   return id ? `${ODOO_BASE_URL}/web#id=${id}&model=sale.order&view_type=form` : null;
 }
+// Lista de Cotizaciones de Odoo, acotada (cids) a una sola compañía — para
+// ver el TOTAL de cotizaciones de esa agencia en Odoo, no solo lo sincronizado.
+function gnOdooCotizacionesLink(companiaId) {
+  return companiaId ? `${ODOO_BASE_URL}/web#action=533&model=sale.order&view_type=list&cids=${companiaId}&menu_id=306` : null;
+}
 
 // Cifra completa, sin abreviar: puntos como separador de miles + "Gs" al final
 // (regla explícita del módulo — no confundir con el fmtGs() de Salud Financiera,
@@ -3654,7 +3659,8 @@ function gnCompressRows(rows) {
     Math.round((r.importe   || 0) * 10000) / 10000,
     Math.round((r.comision  || 0) * 10000) / 10000,
     dict(ovs, r.ordenVenta || '—'),
-    r.ordenVentaId || 0
+    r.ordenVentaId || 0,
+    r.companiaId || 0
   ]);
   return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
 }
@@ -3668,7 +3674,8 @@ function gnDecompressRows(c) {
     moneda: c.mos[r[8]],
     invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12], importe: r[13]||0, comision: r[14]||0,
     ordenVenta: (c.ovs && r[15] != null) ? c.ovs[r[15]] : '—',
-    ordenVentaId: r[16] || 0
+    ordenVentaId: r[16] || 0,
+    companiaId: r[17] || 0
   }));
 }
 
@@ -4285,6 +4292,25 @@ function renderGnCharts(d) {
     `;
   };
 
+  // Clic en una barra de "Inversión por agencia" → modal con 2 links: la
+  // tabla filtrada acá adentro, y el total real de cotizaciones de esa
+  // agencia en Odoo (no solo lo sincronizado a Texo as a Service).
+  window.gnAbrirModalAgencia = function(agencia) {
+    const fila = (_gnD?.rawRows || []).find(r => r.agencia === agencia);
+    const companiaId = fila?.companiaId || 0;
+    const agenciaSafe = agencia.replace(/'/g, "\\'");
+    const linkOdoo = gnOdooCotizacionesLink(companiaId);
+    document.getElementById('gnModalMedioBody').innerHTML = `
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:700;margin-bottom:4px">Inversión por agencia</div>
+      <div style="font-size:24px;font-weight:800;margin-bottom:22px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia}</div>
+      <button class="btn btn-primary" style="width:100%;padding:10px;margin-bottom:10px" onclick="gnCerrarModalMedio();gnFiltrarDesdeGrafico('agencia','${agenciaSafe}')">Ver tabla filtrada acá ↓</button>
+      ${linkOdoo
+        ? `<a href="${linkOdoo}" target="_blank" rel="noopener" style="width:100%;padding:10px;display:block;text-align:center;text-decoration:none;box-sizing:border-box;border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-weight:600;font-size:14px;transition:background .12s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">Ver total de cotizaciones en Odoo ↗</a>`
+        : `<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">No se encontró el ID de compañía en Odoo para esta agencia — sincronizá de nuevo si esto persiste.</div>`}
+    `;
+    document.getElementById('gnModalOverlay').style.display = 'flex';
+  };
+
   // "Mix de medios" abre un modal en vez de filtrar la tabla — probando las
   // dos formas de mostrar el detalle en paralelo, para comparar cuál sirve más.
   window.gnAbrirModalMedio = function(medio) {
@@ -4331,7 +4357,7 @@ function renderGnCharts(d) {
     data: { labels: agNames, datasets: [{ data: d.agencias.map(a => a.inversion), backgroundColor: agColors, borderColor: agColors, borderWidth: 0, borderRadius: 6 }] },
     options: {
       ...COMMON,
-      onClick: (evt, els) => { if (els.length) gnFiltrarDesdeGrafico('agencia', agNames[els[0].index]); },
+      onClick: (evt, els) => { if (els.length) gnAbrirModalAgencia(agNames[els[0].index]); },
       onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
       plugins:{ legend:{ display:false }, tooltip:{ callbacks:{
         title: ctx => ctx[0].label,
