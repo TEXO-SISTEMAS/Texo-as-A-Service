@@ -1087,6 +1087,28 @@ body.fullscreen .main { padding-top:64px; }
 /* ── Inversión de Medios (pestaña 09) ── */
 .gn-ptab{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;font-family:inherit}
 .gn-ptab.active{background:var(--accent);color:#fff;border-color:transparent}
+/* Selects "mini" de agencia/mes duplicados al inicio de cada sección —
+   appearance:none + flecha propia para que no dependan del <select> nativo
+   del navegador (que en Chrome/Windows se renderiza con bordes muy
+   redondeados, inconsistente con el resto de los controles del header). */
+.gn-mini-select{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  padding:6px 30px 6px 12px;border:1.5px solid rgba(255,255,255,.18);border-radius:7px;
+  font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;
+  background-color:rgba(255,255,255,.06);color:rgba(255,255,255,.85);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23ffffff' stroke-opacity='0.55' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;background-size:16px;
+  transition:all .15s;
+}
+.gn-mini-select:hover{border-color:rgba(255,255,255,.35);background-color:rgba(255,255,255,.1)}
+.gn-mini-select:focus{outline:none;border-color:var(--yellow)}
+.gn-mini-select option{color:#111;background:#fff;font-weight:500}
+/* Sobre fondo claro (fuera del header oscuro de Inversión de Medios) */
+.gn-mini-select.light{
+  border-color:var(--border);background-color:var(--white);color:var(--text);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.gn-mini-select.light:hover{border-color:var(--muted2)}
 </style>
 </head>
 <body>
@@ -1420,11 +1442,12 @@ function aplicarFiltroIngresos(data, agencia){
 // renderDashboard/renderIngresos/renderGn), no hace falta sincronizar nada a
 // mano: el "selected" ya sale correcto en cada render porque lee
 // window._agenciaFiltro en el momento de armar el HTML.
-function gnAgenciaMiniSelect(){
+function gnAgenciaMiniSelect(theme){
   if (window._userAgencia) return ''; // usuario restringido a una sola agencia: nada que elegir
   const cur = window._agenciaFiltro || '';
+  const cls = 'gn-mini-select' + (theme === 'dark' ? '' : ' light');
   const opts = [['', '👁 Todas las agencias'], ['NASTA','NASTA'], ['BRICK','BRICK'], ['LUPE','LUPE'], ['OMD','OMD'], ['ROGER','ROGER']];
-  return `<select class="agencia-filtro-mini" onchange="onFiltroAgenciaChange(this.value)" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--white);color:var(--text);cursor:pointer">
+  return `<select class="${cls}" onchange="onFiltroAgenciaChange(this.value)">
     ${opts.map(([v,l]) => `<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}
   </select>`;
 }
@@ -1436,7 +1459,7 @@ function gnMesMiniSelect(){
   const cur = window._mesFiltroGn || '';
   const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   const opts = [['', 'Todos los meses'], ...meses.map((m,i) => [String(i+1), m])];
-  return `<select class="mes-filtro-mini" onchange="onFiltroMesGnChange(this.value)" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--white);color:var(--text);cursor:pointer">
+  return `<select class="gn-mini-select" onchange="onFiltroMesGnChange(this.value)">
     ${opts.map(([v,l]) => `<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}
   </select>`;
 }
@@ -1453,9 +1476,9 @@ function onFiltroMesGnChange(val){
 
 function gnSyncFiltrosMini(){
   const ing = document.getElementById('ingresosAgenciaFiltroMini');
-  if (ing) ing.innerHTML = gnAgenciaMiniSelect();
+  if (ing) ing.innerHTML = gnAgenciaMiniSelect('dark');
   const gnAg = document.getElementById('gnAgenciaFiltroMini');
-  if (gnAg) gnAg.innerHTML = gnAgenciaMiniSelect();
+  if (gnAg) gnAg.innerHTML = gnAgenciaMiniSelect('dark');
   const gnMes = document.getElementById('gnMesFiltroMini');
   if (gnMes) gnMes.innerHTML = gnMesMiniSelect();
 }
