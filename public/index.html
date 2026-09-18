@@ -4292,23 +4292,49 @@ function renderGnCharts(d) {
     `;
   };
 
-  // Clic en una barra de "Inversión por agencia" → modal con 2 links: la
-  // tabla filtrada acá adentro, y el total real de cotizaciones de esa
-  // agencia en Odoo (no solo lo sincronizado a Texo as a Service).
-  window.gnAbrirModalAgencia = function(agencia) {
+  // Tooltip HTML (no el nativo de Chart.js, que es canvas y no puede tener
+  // links clickeables) para "Inversión por agencia" — aparece al pasar el
+  // mouse, con los 2 links adentro directo, sin necesidad de clic. Patrón
+  // "external tooltip" de Chart.js: nosotros dibujamos el div, Chart.js solo
+  // nos avisa cuándo/dónde mostrarlo.
+  window.gnTooltipAgenciaHTML = function(context, totalInversion) {
+    const { chart, tooltip } = context;
+    let el = chart.canvas.parentNode.querySelector('#gnTooltipAgencia');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'gnTooltipAgencia';
+      el.style.cssText = 'position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:20;background:#0f1117;color:#fff;border-radius:10px;padding:12px 14px;font-size:12.5px;box-shadow:0 10px 28px rgba(0,0,0,.3);min-width:200px;transform:translate(-50%,-100%);top:0;left:0';
+      chart.canvas.parentNode.style.position = 'relative';
+      chart.canvas.parentNode.appendChild(el);
+      el.addEventListener('mouseenter', () => { clearTimeout(el._hideTimer); });
+      el.addEventListener('mouseleave', () => { el.style.opacity = 0; el.style.pointerEvents = 'none'; });
+    }
+    if (!tooltip || tooltip.opacity === 0) {
+      clearTimeout(el._hideTimer);
+      el._hideTimer = setTimeout(() => { el.style.opacity = 0; el.style.pointerEvents = 'none'; }, 200);
+      return;
+    }
+    clearTimeout(el._hideTimer);
+    const dp = tooltip.dataPoints?.[0];
+    if (!dp) return;
+    const agencia = dp.label;
+    const inv = dp.parsed.y;
     const fila = (_gnD?.rawRows || []).find(r => r.agencia === agencia);
     const companiaId = fila?.companiaId || 0;
     const agenciaSafe = agencia.replace(/'/g, "\\'");
     const linkOdoo = gnOdooCotizacionesLink(companiaId);
-    document.getElementById('gnModalMedioBody').innerHTML = `
-      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:700;margin-bottom:4px">Inversión por agencia</div>
-      <div style="font-size:24px;font-weight:800;margin-bottom:22px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia}</div>
-      <button class="btn btn-primary" style="width:100%;padding:10px;margin-bottom:10px" onclick="gnCerrarModalMedio();gnFiltrarDesdeGrafico('agencia','${agenciaSafe}')">Ver tabla filtrada acá ↓</button>
+    el.innerHTML = `
+      <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia}</div>
+      <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(inv)} · ${gnPct(inv, totalInversion)}</div>
+      <a href="#" onclick="gnFiltrarDesdeGrafico('agencia','${agenciaSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-bottom:6px">Ver tabla filtrada ↓</a>
       ${linkOdoo
-        ? `<a href="${linkOdoo}" target="_blank" rel="noopener" style="width:100%;padding:10px;display:block;text-align:center;text-decoration:none;box-sizing:border-box;border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-weight:600;font-size:14px;transition:background .12s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">Ver total de cotizaciones en Odoo ↗</a>`
-        : `<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px">No se encontró el ID de compañía en Odoo para esta agencia — sincronizá de nuevo si esto persiste.</div>`}
+        ? `<a href="${linkOdoo}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver cotizaciones en Odoo ↗</a>`
+        : `<div style="color:rgba(255,255,255,.4);font-size:11px">Sin ID de Odoo — resincronizá</div>`}
     `;
-    document.getElementById('gnModalOverlay').style.display = 'flex';
+    el.style.left = tooltip.caretX + 'px';
+    el.style.top = (tooltip.caretY - 10) + 'px';
+    el.style.opacity = 1;
+    el.style.pointerEvents = 'auto';
   };
 
   // "Mix de medios" abre un modal en vez de filtrar la tabla — probando las
@@ -4357,13 +4383,11 @@ function renderGnCharts(d) {
     data: { labels: agNames, datasets: [{ data: d.agencias.map(a => a.inversion), backgroundColor: agColors, borderColor: agColors, borderWidth: 0, borderRadius: 6 }] },
     options: {
       ...COMMON,
-      onClick: (evt, els) => { if (els.length) gnAbrirModalAgencia(agNames[els[0].index]); },
       onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
-      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{
-        title: ctx => ctx[0].label,
-        label: ctx => ' Inversión: ' + gnFmtGs(ctx.parsed.y),
-        afterLabel: ctx => ' Participación: ' + gnPct(ctx.parsed.y, d.totales.inversion),
-      }}},
+      plugins:{ legend:{ display:false }, tooltip:{
+        enabled: false,
+        external: (context) => gnTooltipAgenciaHTML(context, d.totales.inversion),
+      }},
       scales:{
         x:{ ticks:{ color:GN_TICK, font:{...GN_FONT,weight:'600'} }, grid:{ color:'transparent' }},
         y:{ ticks:{ color:GN_TICK, font:GN_FONT, callback: v => gnFmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid:{ color:GN_GRID }}
