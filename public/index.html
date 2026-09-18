@@ -4212,26 +4212,33 @@ function renderGnCharts(d) {
     const totAg   = {}; agListM.forEach(ag=>{ totAg[ag]=medList.reduce((s,m)=>s+(pivot[ag][m]||0),0); });
     const MED_COLORS = ['#6c3fc5','#e85d26','#0ea5b0','#d4900a','#d42b4f','#059669','#2563eb','#7c3aed'];
     gnDestroyChart('mixMedAg');
+    window.gnTooltipMixMedAgHTML = function(context) {
+      gnExternalTooltip(context, 'gnTooltipMixMedAg', (tooltip) => {
+        const dp = tooltip.dataPoints?.[0];
+        if (!dp || !dp.parsed.x) return null;
+        const medio = dp.dataset.label;
+        const agencia = dp.label;
+        const val = dp.parsed.x;
+        const tot = totAg[agencia] || 1;
+        const medioSafe = medio.replace(/'/g, "\\'");
+        const agenciaSafe = agencia.replace(/'/g, "\\'");
+        return `
+          <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia} · ${medio}</div>
+          <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGsExacto(val)} · ${gnPct(val, tot)}</div>
+          <a href="#" onclick="gnFiltrarDesdeGraficoDoble('${agenciaSafe}','${medioSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+        `;
+      });
+    };
     _gnCharts.mixMedAg = new Chart(document.getElementById('gnCMixMedAg'), {
       type: 'bar',
       data: { labels: agListM, datasets: medList.map((med, i) => ({ label: med, data: agListM.map(ag => pivot[ag][med] || 0), backgroundColor: MED_COLORS[i % MED_COLORS.length], borderWidth: 0, borderRadius: 0 })) },
       options: {
         ...COMMON, indexAxis: 'y',
-        onClick: (evt, els) => {
-          if (!els.length) return;
-          const medio = medList[els[0].datasetIndex];
-          const agencia = agListM[els[0].index];
-          gnAbrirModalDesdeStack(medio, agencia);
-        },
         onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+        interaction: { mode: 'nearest', intersect: true },
         plugins: {
           legend: { labels: { color: GN_TICK, font: GN_FONT, boxWidth: 12, padding: 14 } },
-          tooltip: { mode: 'index', intersect: false, callbacks: { label: ctx => {
-            const ag  = ctx.chart.data.labels[ctx.dataIndex];
-            const tot = totAg[ag] || 1;
-            const pc = (ctx.parsed.x / tot * 100).toFixed(1);
-            return ` ${ctx.dataset.label}: ${gnFmtGsExacto(ctx.parsed.x)} (${pc}%)`;
-          } } }
+          tooltip: { enabled: false, external: (context) => gnTooltipMixMedAgHTML(context) }
         },
         scales: {
           x: { stacked: true, ticks: { color: GN_TICK, font: GN_FONT, callback: v => gnFmtGsShort(v), maxTicksLimit: 4, maxRotation: 0 }, grid: { color: GN_GRID } },
@@ -4251,9 +4258,8 @@ function renderGnCharts(d) {
     }
   }
 
-  // Clic en una barra/porción de "Inversión por agencia" o "Mix de medios" →
-  // filtra la tabla de Detalle de abajo y hace scroll hasta ahí, en vez de
-  // abrir una ventana nueva — reusa los filtros que la tabla ya tiene.
+  // Filtra la tabla de Detalle de abajo por un solo campo (agencia o medio) y
+  // hace scroll hasta ahí — usado por los links dentro de los tooltips.
   window.gnFiltrarDesdeGrafico = function(campo, valor) {
     const selId = campo === 'agencia' ? 'gnFilterAgencia' : 'gnFilterMedio';
     const sel = document.getElementById(selId);
@@ -4263,46 +4269,31 @@ function renderGnCharts(d) {
     scrollToChart('gnDetalleCard');
   };
 
-  // Clic en una fila de agencia DENTRO del modal de medio → en vez de cerrar
-  // el modal y filtrar la tabla de abajo, muestra la tabla de filas (medio +
-  // agencia a la vez, ej. Radio + NASTA) ahí mismo, sin salir del modal.
-  window.gnMostrarTablaEnModal = function(medio, agencia) {
-    const rows = (_gnD?.rawRows || []).filter(r => r.medio === medio && r.agencia === agencia);
-    const totalInv = rows.reduce((s, r) => s + (r.invGs || 0), 0);
-    const totalCom = rows.reduce((s, r) => s + (r.comGs || 0), 0);
-    const medioSafe = medio.replace(/'/g, "\\'");
-    const filasTabla = rows.map(r => `
-      <tr>
-        <td style="text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.cliente || '—'}</td>
-        <td style="text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);color:var(--muted)">${r.mes || '—'}</td>
-        <td style="text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums">${gnFmtGs(r.invGs)}</td>
-        <td style="text-align:right;padding:7px 8px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;color:var(--muted)">${gnFmtGs(r.comGs)}</td>
-      </tr>`).join('');
-    document.getElementById('gnModalMedioBody').innerHTML = `
-      <button onclick="gnAbrirModalMedio('${medioSafe}')" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0;margin-bottom:10px;display:flex;align-items:center;gap:4px">← ${medio}</button>
-      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:700;margin-bottom:4px">Mix de medios</div>
-      <div style="font-size:24px;font-weight:800;margin-bottom:4px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${medio} · ${agencia}</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:18px">${rows.length.toLocaleString('es-PY')} registros · ${gnFmtGs(totalInv)} invertidos · ${gnFmtGs(totalCom)} de comisión</div>
-      <div style="max-height:44vh;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
-        <table style="width:100%;border-collapse:collapse;font-size:12.5px">
-          <thead><tr style="background:var(--bg)"><th style="text-align:left;padding:7px 8px">Cliente</th><th style="text-align:left;padding:7px 8px">Mes</th><th style="text-align:right;padding:7px 8px">Importe Gs.</th><th style="text-align:right;padding:7px 8px">Com. Gs.</th></tr></thead>
-          <tbody>${filasTabla || '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--muted)">Sin filas</td></tr>'}</tbody>
-        </table>
-      </div>
-    `;
+  // Igual que arriba pero filtrando agencia + medio a la vez (para el link
+  // del gráfico de barras apiladas, donde cada segmento ya es una combinación
+  // puntual de las dos cosas).
+  window.gnFiltrarDesdeGraficoDoble = function(agencia, medio) {
+    const selAg = document.getElementById('gnFilterAgencia');
+    const selMed = document.getElementById('gnFilterMedio');
+    if (selAg && [...selAg.options].some(o => o.value === agencia)) selAg.value = agencia;
+    if (selMed && [...selMed.options].some(o => o.value === medio)) selMed.value = medio;
+    filtrarGnDetalle();
+    scrollToChart('gnDetalleCard');
   };
 
-  // Tooltip HTML (no el nativo de Chart.js, que es canvas y no puede tener
-  // links clickeables) para "Inversión por agencia" — aparece al pasar el
-  // mouse, con los 2 links adentro directo, sin necesidad de clic. Patrón
+  // Helper genérico de tooltip HTML (no el nativo de Chart.js, que es canvas
+  // y no puede tener links clickeables) — usado por los 3 gráficos
+  // interactivos de Inversión de Medios. Aparece al pasar el mouse, con los
+  // links de drill-down ya visibles adentro, sin necesidad de clic. Patrón
   // "external tooltip" de Chart.js: nosotros dibujamos el div, Chart.js solo
-  // nos avisa cuándo/dónde mostrarlo.
-  window.gnTooltipAgenciaHTML = function(context, totalInversion) {
+  // nos avisa cuándo/dónde mostrarlo. `buildHtml(tooltip)` arma el contenido
+  // específico de cada gráfico y devuelve null si no hay nada que mostrar.
+  function gnExternalTooltip(context, tooltipId, buildHtml) {
     const { chart, tooltip } = context;
-    let el = chart.canvas.parentNode.querySelector('#gnTooltipAgencia');
+    let el = chart.canvas.parentNode.querySelector('#' + tooltipId);
     if (!el) {
       el = document.createElement('div');
-      el.id = 'gnTooltipAgencia';
+      el.id = tooltipId;
       el.style.cssText = 'position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;z-index:20;background:#0f1117;color:#fff;border-radius:10px;padding:12px 14px;font-size:12.5px;box-shadow:0 10px 28px rgba(0,0,0,.3);min-width:200px;transform:translate(-50%,-100%);top:0;left:0';
       chart.canvas.parentNode.style.position = 'relative';
       chart.canvas.parentNode.appendChild(el);
@@ -4315,64 +4306,49 @@ function renderGnCharts(d) {
       return;
     }
     clearTimeout(el._hideTimer);
-    const dp = tooltip.dataPoints?.[0];
-    if (!dp) return;
-    const agencia = dp.label;
-    const inv = dp.parsed.y;
-    const fila = (_gnD?.rawRows || []).find(r => r.agencia === agencia);
-    const companiaId = fila?.companiaId || 0;
-    const agenciaSafe = agencia.replace(/'/g, "\\'");
-    const linkOdoo = gnOdooCotizacionesLink(companiaId);
-    el.innerHTML = `
-      <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia}</div>
-      <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(inv)} · ${gnPct(inv, totalInversion)}</div>
-      <a href="#" onclick="gnFiltrarDesdeGrafico('agencia','${agenciaSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-bottom:6px">Ver tabla filtrada ↓</a>
-      ${linkOdoo
-        ? `<a href="${linkOdoo}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver cotizaciones en Odoo ↗</a>`
-        : `<div style="color:rgba(255,255,255,.4);font-size:11px">Sin ID de Odoo — resincronizá</div>`}
-    `;
+    const html = buildHtml(tooltip);
+    if (!html) return;
+    el.innerHTML = html;
     el.style.left = tooltip.caretX + 'px';
     el.style.top = (tooltip.caretY - 10) + 'px';
     el.style.opacity = 1;
     el.style.pointerEvents = 'auto';
+  }
+
+  window.gnTooltipAgenciaHTML = function(context, totalInversion) {
+    gnExternalTooltip(context, 'gnTooltipAgencia', (tooltip) => {
+      const dp = tooltip.dataPoints?.[0];
+      if (!dp) return null;
+      const agencia = dp.label;
+      const inv = dp.parsed.y;
+      const fila = (_gnD?.rawRows || []).find(r => r.agencia === agencia);
+      const companiaId = fila?.companiaId || 0;
+      const agenciaSafe = agencia.replace(/'/g, "\\'");
+      const linkOdoo = gnOdooCotizacionesLink(companiaId);
+      return `
+        <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia}</div>
+        <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(inv)} · ${gnPct(inv, totalInversion)}</div>
+        <a href="#" onclick="gnFiltrarDesdeGrafico('agencia','${agenciaSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-bottom:6px">Ver tabla filtrada ↓</a>
+        ${linkOdoo
+          ? `<a href="${linkOdoo}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver cotizaciones en Odoo ↗</a>`
+          : `<div style="color:rgba(255,255,255,.4);font-size:11px">Sin ID de Odoo — resincronizá</div>`}
+      `;
+    });
   };
 
-  // "Mix de medios" abre un modal en vez de filtrar la tabla — probando las
-  // dos formas de mostrar el detalle en paralelo, para comparar cuál sirve más.
-  window.gnAbrirModalMedio = function(medio) {
-    const rows = (_gnD?.rawRows || []).filter(r => r.medio === medio);
-    if (!rows.length) return;
-    const totalInv = rows.reduce((s, r) => s + (r.invGs || 0), 0);
-    const totalCom = rows.reduce((s, r) => s + (r.comGs || 0), 0);
-    const porAgencia = {};
-    rows.forEach(r => { porAgencia[r.agencia] = (porAgencia[r.agencia] || 0) + (r.invGs || 0); });
-    const medioSafe = medio.replace(/'/g, "\\'");
-    const filasAgencia = Object.entries(porAgencia).sort((a, b) => b[1] - a[1]).map(([ag, v]) => `
-      <div onclick="gnMostrarTablaEnModal('${medioSafe}','${ag.replace(/'/g, "\\'")}')" style="padding:9px 4px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:13px;cursor:pointer;border-radius:6px;transition:background .12s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
-        <span><span class="ag-dot" style="background:${agColor(ag)}"></span>${ag}</span>
-        <span style="font-variant-numeric:tabular-nums;color:var(--muted)">${gnFmtGs(v)} · ${gnPct(v, totalInv)}</span>
-      </div>`).join('');
-    document.getElementById('gnModalMedioBody').innerHTML = `
-      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:700;margin-bottom:4px">Mix de medios</div>
-      <div style="font-size:24px;font-weight:800;margin-bottom:4px">${medio}</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:22px">${rows.length.toLocaleString('es-PY')} registros · ${gnFmtGs(totalInv)} invertidos · ${gnFmtGs(totalCom)} de comisión</div>
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted2);margin-bottom:6px">Por agencia</div>
-      ${filasAgencia}
-      <button class="btn btn-primary" style="margin-top:22px;width:100%;padding:10px" onclick="gnCerrarModalMedio();gnFiltrarDesdeGrafico('medio','${medioSafe}')">Ver detalle completo en la tabla ↓</button>
-    `;
-    document.getElementById('gnModalOverlay').style.display = 'flex';
-  };
-  window.gnCerrarModalMedio = function() {
-    document.getElementById('gnModalOverlay').style.display = 'none';
-  };
-
-  // Entrada directa al modal para "Mix de medios por agencia" (barras
-  // apiladas): ahí ya se clickea un segmento medio+agencia puntual, así que
-  // abre directo en la vista de tabla en vez de pasar primero por el resumen
-  // por agencia (que es lo que hace gnAbrirModalMedio).
-  window.gnAbrirModalDesdeStack = function(medio, agencia) {
-    document.getElementById('gnModalOverlay').style.display = 'flex';
-    gnMostrarTablaEnModal(medio, agencia);
+  window.gnTooltipMedioHTML = function(context, totalInversion) {
+    gnExternalTooltip(context, 'gnTooltipMedio', (tooltip) => {
+      const dp = tooltip.dataPoints?.[0];
+      if (!dp) return null;
+      const medio = dp.label;
+      const inv = dp.parsed;
+      const medioSafe = medio.replace(/'/g, "\\'");
+      return `
+        <div style="font-weight:800;font-size:14px;margin-bottom:2px">${medio}</div>
+        <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(inv)} · ${gnPct(inv, totalInversion)}</div>
+        <a href="#" onclick="gnFiltrarDesdeGrafico('medio','${medioSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+      `;
+    });
   };
 
   gnDestroyChart('agencia');
@@ -4403,10 +4379,9 @@ function renderGnCharts(d) {
     data: { labels: mdNames, datasets: [{ data: d.medios.map(m => m.inversion), backgroundColor: mdColors, borderColor: '#fff', borderWidth: 3 }] },
     options: {
       ...COMMON, cutout:'62%',
-      onClick: (evt, els) => { if (els.length) gnAbrirModalMedio(mdNames[els[0].index]); },
       onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
       plugins:{ legend:{ position:'bottom', labels:{ color:GN_TICK, font:GN_FONT, padding:12, boxWidth:12 }},
-        tooltip:{ callbacks:{ label: ctx => ' ' + ctx.label + ': ' + gnPct(ctx.parsed, d.totales.inversion) }}
+        tooltip:{ enabled: false, external: (context) => gnTooltipMedioHTML(context, d.totales.inversion) }
       }
     }
   });
@@ -5736,16 +5711,6 @@ async function saveCurrentChat() {
   }
 }
 </script>
-
-<!-- Modal de drill-down para "Mix de medios" — clic en una porción de la
-     dona muestra el desglose de ese medio sin salir del gráfico (a diferencia
-     de "Inversión por agencia", que filtra la tabla de Detalle de abajo). -->
-<div id="gnModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,17,23,.6);z-index:1000;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this) gnCerrarModalMedio()">
-  <div style="background:var(--white);border-radius:14px;max-width:560px;width:100%;max-height:82vh;overflow-y:auto;padding:28px 32px;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.35)">
-    <button onclick="gnCerrarModalMedio()" aria-label="Cerrar" style="position:absolute;top:18px;right:18px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);line-height:1">✕</button>
-    <div id="gnModalMedioBody"></div>
-  </div>
-</div>
 
 <script src="/auth-bar.js"></script>
 </body>
