@@ -3932,7 +3932,10 @@ function renderGn(d) {
         </label>
         <span class="gn-detalle-count" id="gnDetalleCount" style="font-size:12px;color:var(--muted);white-space:nowrap;margin-left:auto"></span>
       </div>
-      <div style="overflow-x:auto">
+      <div id="gnDetalleScrollTop" style="overflow-x:auto;overflow-y:hidden;height:16px;margin-bottom:2px">
+        <div id="gnDetalleScrollTopInner" style="height:1px"></div>
+      </div>
+      <div id="gnDetalleScrollBottom" style="overflow-x:auto">
         <table id="gnTDetalle">
           <thead><tr>
             <th style="text-align:left">Agencia</th><th style="text-align:left">Cliente</th><th style="text-align:left">Pedido</th><th style="text-align:left">Medio</th>
@@ -4270,9 +4273,27 @@ let _gnFiltered = [];
 let _gnPagPage  = 1;
 const _gnPagSize = 15;
 
+let _gnScrollSyncWired = false;
+function gnWireScrollSync() {
+  if (_gnScrollSyncWired) return;
+  const top = document.getElementById('gnDetalleScrollTop');
+  const bottom = document.getElementById('gnDetalleScrollBottom');
+  if (!top || !bottom) return;
+  let syncing = false;
+  top.addEventListener('scroll', () => { if (syncing) return; syncing = true; bottom.scrollLeft = top.scrollLeft; syncing = false; });
+  bottom.addEventListener('scroll', () => { if (syncing) return; syncing = true; top.scrollLeft = bottom.scrollLeft; syncing = false; });
+  _gnScrollSyncWired = true;
+}
+function gnSyncScrollWidth() {
+  const inner = document.getElementById('gnDetalleScrollTopInner');
+  const table = document.getElementById('gnTDetalle');
+  if (inner && table) inner.style.width = table.scrollWidth + 'px';
+}
+
 function renderGnDetalleTabla(rows) {
   _gnRawRows = rows || [];
   if (!_gnRawRows.length || !document.getElementById('gnFilterAgencia')) return;
+  gnWireScrollSync();
 
   const agencias = [...new Set(_gnRawRows.map(r=>r.agencia))].sort();
   const clientes = [...new Set(_gnRawRows.map(r=>r.cliente))].sort();
@@ -4413,6 +4434,7 @@ function renderGnPaginaDetalle() {
   document.getElementById('gnPagInfo').textContent = `Pág. ${_gnPagPage} de ${total}`;
   document.getElementById('gnPagPrev').disabled = _gnPagPage <= 1;
   document.getElementById('gnPagNext').disabled = _gnPagPage >= total;
+  gnSyncScrollWidth();
 }
 
 function renderGnTablaCanales(canales, totalInv) {
