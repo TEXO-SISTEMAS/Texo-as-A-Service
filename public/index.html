@@ -3524,6 +3524,24 @@ function gnOdooLink(id) {
 function gnOdooCotizacionesLink(companiaId) {
   return companiaId ? `${ODOO_BASE_URL}/web#action=533&model=sale.order&view_type=list&cids=${companiaId}&menu_id=306` : null;
 }
+// companiaId de una agencia puntual (usado cuando el tooltip ya sabe la agencia).
+function gnCompaniaIdDeAgencia(agencia) {
+  const fila = (_gnD?.rawRows || []).find(r => r.agencia === agencia);
+  return fila?.companiaId || 0;
+}
+// companiaId común a un conjunto de filas (medio o cliente, que pueden
+// repartirse entre varias agencias) — solo hay link de Odoo si TODAS esas
+// filas son de la misma compañía, porque el link solo puede acotar a una.
+function gnCompaniaIdUnica(rows) {
+  const ids = [...new Set(rows.map(r => r.companiaId).filter(Boolean))];
+  return ids.length === 1 ? ids[0] : 0;
+}
+function gnLinkOdooHtml(companiaId) {
+  const link = gnOdooCotizacionesLink(companiaId);
+  return link
+    ? `<a href="${link}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-top:6px">Ver cotizaciones en Odoo ↗</a>`
+    : '';
+}
 
 // Cifra completa, sin abreviar: puntos como separador de miles + "Gs" al final
 // (regla explícita del módulo — no confundir con el fmtGs() de Salud Financiera,
@@ -4235,6 +4253,7 @@ function renderGnCharts(d) {
           <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia} · ${GN_MES_LABEL[nMes-1]}</div>
           <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGsExacto(val)}</div>
           <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','','${nMes}','');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+          ${gnLinkOdooHtml(gnCompaniaIdDeAgencia(agencia))}
         `;
       });
     };
@@ -4277,6 +4296,7 @@ function renderGnCharts(d) {
           <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia} · ${medio}</div>
           <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGsExacto(val)} · ${gnPct(val, tot)}</div>
           <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','${medioSafe}','','');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+          ${gnLinkOdooHtml(gnCompaniaIdDeAgencia(agencia))}
         `;
       });
     };
@@ -4329,17 +4349,12 @@ function renderGnCharts(d) {
       if (!dp) return null;
       const agencia = dp.label;
       const inv = dp.parsed.y;
-      const fila = (_gnD?.rawRows || []).find(r => r.agencia === agencia);
-      const companiaId = fila?.companiaId || 0;
       const agenciaSafe = agencia.replace(/'/g, "\\'");
-      const linkOdoo = gnOdooCotizacionesLink(companiaId);
       return `
         <div style="font-weight:800;font-size:14px;margin-bottom:2px"><span class="ag-dot" style="background:${agColor(agencia)}"></span>${agencia}</div>
         <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(inv)} · ${gnPct(inv, totalInversion)}</div>
-        <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','','','');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-bottom:6px">Ver tabla filtrada ↓</a>
-        ${linkOdoo
-          ? `<a href="${linkOdoo}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver cotizaciones en Odoo ↗</a>`
-          : `<div style="color:rgba(255,255,255,.4);font-size:11px">Sin ID de Odoo — resincronizá</div>`}
+        <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','','','');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+        ${gnLinkOdooHtml(gnCompaniaIdDeAgencia(agencia))}
       `;
     });
   };
@@ -4351,10 +4366,12 @@ function renderGnCharts(d) {
       const medio = dp.label;
       const inv = dp.parsed;
       const medioSafe = medio.replace(/'/g, "\\'");
+      const filasMedio = (_gnD?.rawRows || []).filter(r => r.medio === medio);
       return `
         <div style="font-weight:800;font-size:14px;margin-bottom:2px">${medio}</div>
         <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(inv)} · ${gnPct(inv, totalInversion)}</div>
         <a href="#" onclick="gnFiltrarDesdeGraficoMulti('','${medioSafe}','','');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+        ${gnLinkOdooHtml(gnCompaniaIdUnica(filasMedio))}
       `;
     });
   };
@@ -4405,10 +4422,12 @@ function renderGnCharts(d) {
       const cli = d.topClientes[dp.dataIndex];
       if (!cli) return null;
       const cliSafe = cli.nombre.replace(/'/g, "\\'");
+      const filasCli = (_gnD?.rawRows || []).filter(r => r.cliente === cli.nombre);
       return `
         <div style="font-weight:800;font-size:14px;margin-bottom:2px">${cli.nombre}</div>
         <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(cli.inversion)} · ${gnPct(cli.inversion, d.totales.inversion)}</div>
         <a href="#" onclick="gnFiltrarDesdeGraficoMulti('','','','${cliSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+        ${gnLinkOdooHtml(gnCompaniaIdUnica(filasCli))}
       `;
     });
   };
@@ -4514,6 +4533,7 @@ function renderGnCliMesH() {
         <div style="font-size:12.5px;margin-bottom:2px">${cli}</div>
         <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGsExacto(dp.parsed.x)}</div>
         <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','','','${cliSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
+        ${gnLinkOdooHtml(gnCompaniaIdDeAgencia(agencia))}
       `;
     });
   };
