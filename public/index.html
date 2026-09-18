@@ -3521,8 +3521,13 @@ function gnOdooLink(id) {
 }
 // Lista de Cotizaciones de Odoo, acotada (cids) a una sola compañía — para
 // ver el TOTAL de cotizaciones de esa agencia en Odoo, no solo lo sincronizado.
-function gnOdooCotizacionesLink(companiaId) {
-  return companiaId ? `${ODOO_BASE_URL}/web#action=533&model=sale.order&view_type=list&cids=${companiaId}&menu_id=306` : null;
+// Si además se pasa clienteId, precarga el filtro "Cliente" en la búsqueda
+// (search_default_<campo> es la convención de Odoo para eso vía URL).
+function gnOdooCotizacionesLink(companiaId, clienteId) {
+  if (!companiaId) return null;
+  let url = `${ODOO_BASE_URL}/web#action=533&model=sale.order&view_type=list&cids=${companiaId}&menu_id=306`;
+  if (clienteId) url += `&search_default_partner_id=${clienteId}`;
+  return url;
 }
 // companiaId de una agencia puntual (usado cuando el tooltip ya sabe la agencia).
 function gnCompaniaIdDeAgencia(agencia) {
@@ -3536,10 +3541,17 @@ function gnCompaniaIdUnica(rows) {
   const ids = [...new Set(rows.map(r => r.companiaId).filter(Boolean))];
   return ids.length === 1 ? ids[0] : 0;
 }
-function gnLinkOdooHtml(companiaId) {
-  const link = gnOdooCotizacionesLink(companiaId);
+// clienteId (partner_id de Odoo) común a un conjunto de filas — igual que
+// gnCompaniaIdUnica, pero para el cliente.
+function gnClienteIdUnico(rows) {
+  const ids = [...new Set(rows.map(r => r.clienteId).filter(Boolean))];
+  return ids.length === 1 ? ids[0] : 0;
+}
+function gnLinkOdooHtml(companiaId, clienteId) {
+  const link = gnOdooCotizacionesLink(companiaId, clienteId);
+  const texto = clienteId ? 'Ver cotizaciones de este cliente en Odoo ↗' : 'Ver cotizaciones en Odoo ↗';
   return link
-    ? `<a href="${link}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-top:6px">Ver cotizaciones en Odoo ↗</a>`
+    ? `<a href="${link}" target="_blank" rel="noopener" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px;margin-top:6px">${texto}</a>`
     : '';
 }
 
@@ -3678,7 +3690,8 @@ function gnCompressRows(rows) {
     Math.round((r.comision  || 0) * 10000) / 10000,
     dict(ovs, r.ordenVenta || '—'),
     r.ordenVentaId || 0,
-    r.companiaId || 0
+    r.companiaId || 0,
+    r.clienteId || 0
   ]);
   return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
 }
@@ -3693,7 +3706,8 @@ function gnDecompressRows(c) {
     invGs: r[9], comGs: r[10], invUsd: r[11], comUsd: r[12], importe: r[13]||0, comision: r[14]||0,
     ordenVenta: (c.ovs && r[15] != null) ? c.ovs[r[15]] : '—',
     ordenVentaId: r[16] || 0,
-    companiaId: r[17] || 0
+    companiaId: r[17] || 0,
+    clienteId: r[18] || 0
   }));
 }
 
@@ -4427,7 +4441,7 @@ function renderGnCharts(d) {
         <div style="font-weight:800;font-size:14px;margin-bottom:2px">${cli.nombre}</div>
         <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGs(cli.inversion)} · ${gnPct(cli.inversion, d.totales.inversion)}</div>
         <a href="#" onclick="gnFiltrarDesdeGraficoMulti('','','','${cliSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
-        ${gnLinkOdooHtml(gnCompaniaIdUnica(filasCli))}
+        ${gnLinkOdooHtml(gnCompaniaIdUnica(filasCli), gnClienteIdUnico(filasCli))}
       `;
     });
   };
@@ -4533,7 +4547,7 @@ function renderGnCliMesH() {
         <div style="font-size:12.5px;margin-bottom:2px">${cli}</div>
         <div style="color:rgba(255,255,255,.6);margin-bottom:10px">${gnFmtGsExacto(dp.parsed.x)}</div>
         <a href="#" onclick="gnFiltrarDesdeGraficoMulti('${agenciaSafe}','','','${cliSafe}');return false;" style="display:block;color:var(--yellow);text-decoration:none;font-weight:700;font-size:12.5px">Ver tabla filtrada ↓</a>
-        ${gnLinkOdooHtml(gnCompaniaIdDeAgencia(agencia))}
+        ${gnLinkOdooHtml(gnCompaniaIdDeAgencia(agencia), gnClienteIdUnico((_gnD?.rawRows || []).filter(r => r.agencia === agencia && r.cliente === cli)))}
       `;
     });
   };

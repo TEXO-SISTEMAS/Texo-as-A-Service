@@ -358,6 +358,9 @@ async function odooFetchInversionMedios({ pageSize = 2000, onProgress } = {}) {
         // ID interno de la compañía en Odoo (no el nombre) — para armar un
         // link directo a "Cotizaciones" filtrado por esa agencia en Odoo.
         companiaId: Array.isArray(r.company_id) ? r.company_id[0] : 0,
+        // ID interno del cliente (partner_id) en Odoo — para armar un link
+        // directo a "Cotizaciones" filtrado por ese cliente puntual.
+        clienteId: Array.isArray(r.partner_id) ? r.partner_id[0] : 0,
       });
     }
     offset += page.length;
@@ -479,6 +482,7 @@ function gnCompressRowsServer(rows) {
     dict(ovs, r.ordenVenta || '—'),
     r.ordenVentaId || 0,
     r.companiaId || 0,
+    r.clienteId || 0,
   ]);
   return { ags, cls, mds, tis, grs, cas, mos, ovs, data };
 }
