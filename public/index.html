@@ -1114,6 +1114,38 @@ body.fullscreen .main { padding-top:64px; }
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 8l4 4 4-4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 .gn-mini-select.light:hover{border-color:var(--muted2)}
+/* Multi-select genérico (botón + panel de checkboxes) — reemplaza los
+   <select> nativos de mes/trimestre/estado (header) y de los 6 filtros de
+   la tabla de Detalle, todos los cuales necesitan poder elegir más de una
+   opción a la vez. Dos variantes de botón: oscura (header de Inversión de
+   Medios) y clara (tabla de Detalle, sobre fondo blanco). */
+.gn-ms{position:relative;display:inline-block}
+.gn-ms-btn{display:inline-flex;align-items:center;gap:5px;font-family:inherit;cursor:pointer}
+.gn-ms-btn>span:first-child{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gn-ms-caret{font-size:9px;opacity:.7;flex-shrink:0}
+.gn-ms-btn-dark{
+  padding:6px 12px;border:1.5px solid rgba(255,255,255,.18);border-radius:7px;
+  font-size:12.5px;font-weight:600;background-color:rgba(255,255,255,.06);color:rgba(255,255,255,.85);
+  transition:all .15s;
+}
+.gn-ms-btn-dark:hover{border-color:rgba(255,255,255,.35);background-color:rgba(255,255,255,.1)}
+.gn-ms-btn-light{
+  padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:13px;font-weight:500;background:var(--bg);color:var(--text);
+  transition:all .15s;
+}
+.gn-ms-btn-light:hover{border-color:var(--muted2)}
+.gn-ms-panel{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:60;
+  background:#fff;color:#111;border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 14px 32px rgba(0,0,0,.22);padding:6px;min-width:210px;max-height:260px;overflow-y:auto;
+}
+.gn-ms-actions{display:flex;gap:12px;padding:2px 6px 6px;margin-bottom:4px;border-bottom:1px solid var(--border)}
+.gn-ms-actions button{background:none;border:none;color:var(--accent);font-size:11.5px;font-weight:700;cursor:pointer;padding:2px 0}
+.gn-ms-opt{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;font-size:13px;cursor:pointer;white-space:nowrap;color:#111}
+.gn-ms-opt:hover{background:#f2f3f5}
+.gn-ms-opt input{margin:0;cursor:pointer}
+.gn-ms-empty{padding:8px 6px;font-size:12.5px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -1219,7 +1251,7 @@ body.fullscreen .main { padding-top:64px; }
     <div class="ingresos-section" id="invMediosSection">
       <div class="ingresos-header">
         <div class="ingresos-header-left">
-          <div class="ingresos-header-eyebrow">Capa 04 · Inversión de Medios · Holding</div>
+          <div class="ingresos-header-eyebrow">Inversión de Medios · Holding</div>
           <div class="ingresos-header-title" id="gnTitulo">Inversión de Medios</div>
           <div class="ingresos-header-sub" id="gnSub">—</div>
         </div>
@@ -1419,9 +1451,88 @@ async function deleteUpload(id){
 // Simula, en el navegador, lo que el servidor le filtra a un usuario restringido
 // a una sola agencia — para que un admin pueda "verse como" esa agencia.
 window._agenciaFiltro = null;
-window._mesFiltroGn = null; // filtro de mes, solo aplica a Inversión de Medios (única sección con datos mensuales)
-window._trimestreFiltroGn = null; // filtro de trimestre — mutuamente excluyente con el de mes (ver onFiltroMesGnChange/onFiltroTrimestreGnChange)
-window._estadoFiltroGn = null; // filtro de estado (confirmado / a_confirmar / etc.)
+
+// ── MULTI-SELECT GENÉRICO ─────────────────────────────────────────────────
+// Dropdown de checkboxes (botón + panel) para poder elegir más de una opción
+// a la vez. Usado por mes/trimestre/estado del header de Inversión de Medios
+// (ids "mesGn"/"trimestreGn"/"estadoGn") y por los 6 filtros de la tabla de
+// Detalle (ids "detAgencia"/"detCliente"/"detMedio"/"detGrupo"/"detMes"/
+// "detMoneda"). El de agencia del header/topbar/Ingresos sigue siendo un
+// <select> normal de una sola opción: es una única variable global
+// (window._agenciaFiltro) compartida con Salud Financiera e Ingresos, así
+// que convertirla a múltiple cambiaría el comportamiento de esas otras
+// secciones también — fuera de lo pedido acá.
+window._gnMS = {};       // { [fid]: string[] } — valores elegidos por filtro
+window._gnMSOpts = {};   // { [fid]: [[valor,label], ...] } — últimas opciones armadas
+window._gnMSCfg = {};    // { [fid]: {allLabel, cls} }
+window._gnMSOpenId = null; // fid del panel actualmente abierto (uno solo a la vez)
+
+function gnMultiSelectHtml(fid, options, allLabel, cls) {
+  window._gnMSOpts[fid] = options;
+  window._gnMSCfg[fid] = { allLabel, cls };
+  const sel = window._gnMS[fid] || [];
+  const label = !sel.length ? allLabel
+    : sel.length === 1 ? (options.find(o => String(o[0]) === String(sel[0]))?.[1] || sel[0])
+    : `${sel.length} seleccionados`;
+  const open = window._gnMSOpenId === fid;
+  const optsHtml = options.map(([v, l]) => {
+    const vs = String(v).replace(/'/g, "\\'");
+    const checked = sel.includes(String(v)) ? 'checked' : '';
+    return `<label class="gn-ms-opt"><input type="checkbox" ${checked} onchange="gnMSToggle('${fid}','${vs}')"> <span>${l}</span></label>`;
+  }).join('');
+  return `<div class="gn-ms" id="gnMS_${fid}">
+    <button type="button" class="${cls} gn-ms-btn" onclick="gnMSTogglePanel('${fid}')"><span>${label}</span><span class="gn-ms-caret">▾</span></button>
+    <div class="gn-ms-panel" style="display:${open ? 'block' : 'none'}">
+      <div class="gn-ms-actions">
+        <button type="button" onclick="gnMSSelectAll('${fid}')">Todos</button>
+        <button type="button" onclick="gnMSClear('${fid}')">Ninguno</button>
+      </div>
+      ${optsHtml || '<div class="gn-ms-empty">Sin opciones</div>'}
+    </div>
+  </div>`;
+}
+function gnMSRerender(fid) {
+  const el = document.getElementById('gnMS_' + fid);
+  if (!el) return;
+  const opts = window._gnMSOpts[fid] || [];
+  const cfg = window._gnMSCfg[fid] || {};
+  el.outerHTML = gnMultiSelectHtml(fid, opts, cfg.allLabel, cfg.cls);
+}
+function gnMSRerenderAll() { Object.keys(window._gnMSCfg).forEach(gnMSRerender); }
+function gnMSTogglePanel(fid) {
+  window._gnMSOpenId = (window._gnMSOpenId === fid) ? null : fid;
+  gnMSRerenderAll();
+}
+function gnMSToggle(fid, value) {
+  const set = new Set((window._gnMS[fid] || []).map(String));
+  if (set.has(value)) set.delete(value); else set.add(value);
+  window._gnMS[fid] = [...set];
+  gnMSAfterChange(fid);
+}
+function gnMSSelectAll(fid) {
+  window._gnMS[fid] = (window._gnMSOpts[fid] || []).map(([v]) => String(v));
+  gnMSAfterChange(fid);
+}
+function gnMSClear(fid) {
+  window._gnMS[fid] = [];
+  gnMSAfterChange(fid);
+}
+function gnMSVal(fid) { return window._gnMS[fid] || []; }
+function gnMSAfterChange(fid) {
+  // Mes y trimestre son mutuamente excluyentes: elegir uno limpia el otro,
+  // para no tener dos filtros de tiempo contradictorios a la vez.
+  if (fid === 'mesGn' && gnMSVal('mesGn').length) window._gnMS.trimestreGn = [];
+  if (fid === 'trimestreGn' && gnMSVal('trimestreGn').length) window._gnMS.mesGn = [];
+  gnMSRerenderAll();
+  if (fid.startsWith('det')) filtrarGnDetalle();
+  else gnRefiltrarGn();
+}
+document.addEventListener('click', (e) => {
+  if (!window._gnMSOpenId) return;
+  if (e.target.closest && e.target.closest('.gn-ms')) return;
+  window._gnMSOpenId = null;
+  gnMSRerenderAll();
+});
 
 function filtrarAgenciasClient(agencias, agencia){
   if(!agencia || !Array.isArray(agencias)) return agencias;
@@ -1463,38 +1574,20 @@ function gnAgenciaMiniSelect(theme){
 
 // Select de mes — solo tiene sentido en Inversión de Medios (única sección
 // con datos mensuales; Salud Financiera e Ingresos son cortes de período, sin
-// desglose por mes). Mismo patrón que gnAgenciaMiniSelect.
+// desglose por mes). Multi-select: se puede elegir más de un mes a la vez.
 function gnMesMiniSelect(){
-  const cur = window._mesFiltroGn || '';
   const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const opts = [['', 'Todos los meses'], ...meses.map((m,i) => [String(i+1), m])];
-  return `<select class="gn-mini-select" onchange="onFiltroMesGnChange(this.value)">
-    ${opts.map(([v,l]) => `<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}
-  </select>`;
-}
-
-function onFiltroMesGnChange(val){
-  window._mesFiltroGn = val || null;
-  if (window._mesFiltroGn) window._trimestreFiltroGn = null; // mutuamente excluyentes
-  gnRefiltrarGn();
+  const opts = meses.map((m,i) => [String(i+1), m]);
+  return gnMultiSelectHtml('mesGn', opts, 'Todos los meses', 'gn-ms-btn-dark');
 }
 
 // Select de trimestre — mismo alcance que el de mes (solo Inversión de
-// Medios), pero agrupando de a 3 meses. Elegir un trimestre limpia el filtro
-// de mes y viceversa (onFiltroMesGnChange), para no tener dos filtros de
-// tiempo activos y contradictorios a la vez.
+// Medios), pero agrupando de a 3 meses. Elegir un mes limpia los trimestres
+// elegidos y viceversa (gnMSAfterChange), para no tener dos filtros de
+// tiempo activos y contradictorios a la vez. También multi-select.
 function gnTrimestreMiniSelect(){
-  const cur = window._trimestreFiltroGn || '';
-  const opts = [['', 'Todos los trimestres'], ['1','Q1 · Ene-Mar'], ['2','Q2 · Abr-Jun'], ['3','Q3 · Jul-Sep'], ['4','Q4 · Oct-Dic']];
-  return `<select class="gn-mini-select" onchange="onFiltroTrimestreGnChange(this.value)">
-    ${opts.map(([v,l]) => `<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}
-  </select>`;
-}
-
-function onFiltroTrimestreGnChange(val){
-  window._trimestreFiltroGn = val || null;
-  if (window._trimestreFiltroGn) window._mesFiltroGn = null; // mutuamente excluyentes
-  gnRefiltrarGn();
+  const opts = [['1','Q1 · Ene-Mar'], ['2','Q2 · Abr-Jun'], ['3','Q3 · Jul-Sep'], ['4','Q4 · Oct-Dic']];
+  return gnMultiSelectHtml('trimestreGn', opts, 'Todos los trimestres', 'gn-ms-btn-dark');
 }
 
 // Select de estado (confirmado / a_confirmar / etc. — "cancelado" ya está
@@ -1502,7 +1595,7 @@ function onFiltroTrimestreGnChange(val){
 // presentes en los datos cargados, no de una lista fija, porque no sabemos de
 // antemano qué estados va a tener cada sync. Si solo hay un estado presente
 // (ej. datos 2025 del Excel, que no traen este campo), no tiene sentido
-// mostrar el filtro, así que el select ni se renderiza.
+// mostrar el filtro, así que el select ni se renderiza. También multi-select.
 function gnEstadoLabel(v){
   const map = { confirmado: 'Confirmado', a_confirmar: 'A confirmar', borrador: 'Borrador', cancelado: 'Cancelado' };
   return map[v] || v;
@@ -1510,23 +1603,17 @@ function gnEstadoLabel(v){
 function gnEstadoMiniSelect(){
   const estados = [...new Set((window._gnDataRaw?.rawRows || []).map(r => r.estado).filter(e => e && e !== '—'))].sort();
   if (estados.length < 2) return '';
-  const cur = window._estadoFiltroGn || '';
-  const opts = [['', 'Todos los estados'], ...estados.map(e => [e, gnEstadoLabel(e)])];
-  return `<select class="gn-mini-select" onchange="onFiltroEstadoGnChange(this.value)">
-    ${opts.map(([v,l]) => `<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}
-  </select>`;
-}
-function onFiltroEstadoGnChange(val){
-  window._estadoFiltroGn = val || null;
-  gnRefiltrarGn();
+  const opts = estados.map(e => [e, gnEstadoLabel(e)]);
+  return gnMultiSelectHtml('estadoGn', opts, 'Todos los estados', 'gn-ms-btn-dark');
 }
 
 // Re-aplica agencia+mes/trimestre+estado sobre los datos ya cargados y
-// re-renderiza — compartido por los 3 handlers de filtro de esta sección.
+// re-renderiza — compartido por los 3 filtros multi-select del header de
+// esta sección (mesGn/trimestreGn/estadoGn, ver gnMSAfterChange).
 function gnRefiltrarGn(){
   if (!window._gnDataRaw) return;
   const filtro = agenciaActiva();
-  const filtered = aplicarFiltroGn(window._gnDataRaw, filtro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
+  const filtered = aplicarFiltroGn(window._gnDataRaw, filtro, gnMSVal('mesGn'), gnMSVal('trimestreGn'), gnMSVal('estadoGn'));
   if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, window._gnDataRaw.periodo); return; }
   _gnD = filtered;
   renderGn(filtered);
@@ -1566,7 +1653,7 @@ function onFiltroAgenciaChange(val){
     }
   }
   if(window._gnDataRaw){
-    const filteredGn = aplicarFiltroGn(window._gnDataRaw, window._agenciaFiltro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
+    const filteredGn = aplicarFiltroGn(window._gnDataRaw, window._agenciaFiltro, gnMSVal('mesGn'), gnMSVal('trimestreGn'), gnMSVal('estadoGn'));
     if (window._agenciaFiltro && !filteredGn.rawRows?.length) {
       mostrarGnSinAgencia(window._agenciaFiltro, window._gnDataRaw.periodo);
     } else {
@@ -3792,7 +3879,7 @@ async function handleGnFile(e) {
     showToast('✓ Inversión de Medios cargada · ' + data.periodo, 'success');
     window._gnDataRaw = data;
     const filtro = agenciaActiva();
-    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
+    const filtered = aplicarFiltroGn(data, filtro, gnMSVal('mesGn'), gnMSVal('trimestreGn'), gnMSVal('estadoGn'));
     if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo); }
     else { _gnD = filtered; renderGn(filtered); }
     gnSyncFiltrosMini();
@@ -3839,21 +3926,23 @@ function gnRecomputeFromRawRows(rawRows) {
   };
 }
 
-// Filtro client-side por agencia y/o mes (mismo patrón que aplicarFiltroSF/
-// aplicarFiltroIngresos): nunca muta el dataset crudo, así "Todas las
-// agencias"/"Todos los meses" no necesitan re-fetch. mes es opcional — se
-// suma para el filtro nuevo al inicio de la sección, combinable con agencia.
-function aplicarFiltroGn(data, agencia, mes, trimestre, estado) {
-  if ((!agencia && !mes && !trimestre && !estado) || !data) return data;
+// Filtro client-side por agencia (única, viene de agenciaActiva()) y/o
+// mes/trimestre/estado (arrays — multi-select, ver gnMultiSelectHtml):
+// nunca muta el dataset crudo, así "Todas las agencias"/"Todos los meses"
+// no necesitan re-fetch.
+function aplicarFiltroGn(data, agencia, meses, trimestres, estados) {
+  meses = meses || []; trimestres = trimestres || []; estados = estados || [];
+  if ((!agencia && !meses.length && !trimestres.length && !estados.length) || !data) return data;
   let rawRows = data.rawRows || [];
   if (agencia) rawRows = rawRows.filter(r => (r.agencia||'').toUpperCase() === agencia.toUpperCase());
-  if (mes) {
-    rawRows = rawRows.filter(r => r.nMes === +mes);
-  } else if (trimestre) {
-    const q = +trimestre, desde = (q - 1) * 3 + 1, hasta = q * 3;
-    rawRows = rawRows.filter(r => r.nMes >= desde && r.nMes <= hasta);
+  if (meses.length) {
+    const set = new Set(meses.map(Number));
+    rawRows = rawRows.filter(r => set.has(r.nMes));
+  } else if (trimestres.length) {
+    const rangos = trimestres.map(q => { const n = +q; return [(n - 1) * 3 + 1, n * 3]; });
+    rawRows = rawRows.filter(r => rangos.some(([desde, hasta]) => r.nMes >= desde && r.nMes <= hasta));
   }
-  if (estado) rawRows = rawRows.filter(r => r.estado === estado);
+  if (estados.length) rawRows = rawRows.filter(r => estados.includes(r.estado));
   return { ...data, rawRows, ...gnRecomputeFromRawRows(rawRows) };
 }
 
@@ -3880,7 +3969,7 @@ async function loadLatestGn() {
     if (data.detalle) data.rawRows = gnDecompressRows(data.detalle);
     window._gnDataRaw = data;
     const filtro = agenciaActiva();
-    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
+    const filtered = aplicarFiltroGn(data, filtro, gnMSVal('mesGn'), gnMSVal('trimestreGn'), gnMSVal('estadoGn'));
     if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo); return; }
     _gnD = filtered;
     renderGn(filtered);
@@ -3937,7 +4026,7 @@ async function loadLatestGnOdoo() {
     if (data.detalle) data.rawRows = gnDecompressRows(data.detalle);
     window._gnDataRaw = data;
     const filtro = agenciaActiva();
-    const filtered = aplicarFiltroGn(data, filtro, window._mesFiltroGn, window._trimestreFiltroGn, window._estadoFiltroGn);
+    const filtered = aplicarFiltroGn(data, filtro, gnMSVal('mesGn'), gnMSVal('trimestreGn'), gnMSVal('estadoGn'));
     if (filtro && !filtered.rawRows?.length) { mostrarGnSinAgencia(filtro, data.periodo || '2026'); return; }
     _gnD = filtered;
     renderGn(filtered);
@@ -4141,12 +4230,12 @@ function renderGn(d) {
       ${hasRows ? `
       <div class="gn-detalle-search-row" style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
         <input class="gn-detalle-search" type="text" id="gnDetalleSearch" placeholder="Buscar por cliente, agencia, medio, tipo, grupo..." oninput="filtrarGnDetalle()" style="flex:1;min-width:220px;padding:8px 13px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--text)">
-        <select class="gn-detalle-select" id="gnFilterAgencia" onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todas las agencias</option></select>
-        <select class="gn-detalle-select" id="gnFilterCliente" onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los clientes</option></select>
-        <select class="gn-detalle-select" id="gnFilterMedio"   onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los medios</option></select>
-        <select class="gn-detalle-select" id="gnFilterGrupo"   onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los grupos</option></select>
-        <select class="gn-detalle-select" id="gnFilterMes"     onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todos los meses</option></select>
-        <select class="gn-detalle-select" id="gnFilterMoneda"  onchange="filtrarGnDetalle()" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)"><option value="">Todas las monedas</option></select>
+        <div id="gnFilterAgenciaWrap"></div>
+        <div id="gnFilterClienteWrap"></div>
+        <div id="gnFilterMedioWrap"></div>
+        <div id="gnFilterGrupoWrap"></div>
+        <div id="gnFilterMesWrap"></div>
+        <div id="gnFilterMonedaWrap"></div>
         <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none">
           <input type="checkbox" id="gnAgruparPedido" onchange="filtrarGnDetalle()"> Agrupar por pedido
         </label>
@@ -4413,11 +4502,14 @@ function renderGnCharts(d) {
   // (agencia/medio/mes/cliente, pasar '' para omitir uno) y hace scroll hasta
   // ahí — usado por los links dentro de todos los tooltips de los gráficos.
   window.gnFiltrarDesdeGraficoMulti = function(agencia, medio, mes, cliente) {
-    const campos = [['gnFilterAgencia', agencia], ['gnFilterMedio', medio], ['gnFilterMes', mes], ['gnFilterCliente', cliente]];
-    campos.forEach(([selId, valor]) => {
+    const campos = [['detAgencia', agencia], ['detMedio', medio], ['detMes', mes], ['detCliente', cliente]];
+    campos.forEach(([fid, valor]) => {
       if (!valor) return;
-      const sel = document.getElementById(selId);
-      if (sel && [...sel.options].some(o => o.value === String(valor))) sel.value = valor;
+      const opts = window._gnMSOpts[fid] || [];
+      if (opts.some(([v]) => String(v) === String(valor))) {
+        window._gnMS[fid] = [String(valor)];
+        gnMSRerender(fid);
+      }
     });
     filtrarGnDetalle();
     scrollToChart('gnDetalleCard');
@@ -4644,7 +4736,7 @@ const _gnPagSize = 15;
 
 function renderGnDetalleTabla(rows) {
   _gnRawRows = rows || [];
-  if (!_gnRawRows.length || !document.getElementById('gnFilterAgencia')) return;
+  if (!_gnRawRows.length || !document.getElementById('gnFilterAgenciaWrap')) return;
 
   const agencias = [...new Set(_gnRawRows.map(r=>r.agencia))].sort();
   const clientes = [...new Set(_gnRawRows.map(r=>r.cliente))].sort();
@@ -4653,12 +4745,12 @@ function renderGnDetalleTabla(rows) {
   const meses    = [...new Set(_gnRawRows.map(r=>r.nMes))].sort((a,b)=>a-b);
   const monedas  = [...new Set(_gnRawRows.map(r=>r.moneda||'—').filter(m=>m&&m!=='—'))].sort();
 
-  document.getElementById('gnFilterAgencia').innerHTML = '<option value="">Todas las agencias</option>' + agencias.map(a=>`<option>${a}</option>`).join('');
-  document.getElementById('gnFilterCliente').innerHTML = '<option value="">Todos los clientes</option>' + clientes.map(c=>`<option>${c}</option>`).join('');
-  document.getElementById('gnFilterMedio').innerHTML   = '<option value="">Todos los medios</option>'   + medios.map(m=>`<option>${m}</option>`).join('');
-  document.getElementById('gnFilterGrupo').innerHTML   = '<option value="">Todos los grupos</option>'   + grupos.map(g=>`<option>${g}</option>`).join('');
-  document.getElementById('gnFilterMes').innerHTML     = '<option value="">Todos los meses</option>'    + meses.map(n=>`<option value="${n}">${GN_MES_LABEL[n-1]}</option>`).join('');
-  document.getElementById('gnFilterMoneda').innerHTML  = '<option value="">Todas las monedas</option>'  + monedas.map(m=>`<option>${m}</option>`).join('');
+  document.getElementById('gnFilterAgenciaWrap').innerHTML = gnMultiSelectHtml('detAgencia', agencias.map(a=>[a,a]), 'Todas las agencias', 'gn-ms-btn-light');
+  document.getElementById('gnFilterClienteWrap').innerHTML = gnMultiSelectHtml('detCliente', clientes.map(c=>[c,c]), 'Todos los clientes', 'gn-ms-btn-light');
+  document.getElementById('gnFilterMedioWrap').innerHTML   = gnMultiSelectHtml('detMedio', medios.map(m=>[m,m]), 'Todos los medios', 'gn-ms-btn-light');
+  document.getElementById('gnFilterGrupoWrap').innerHTML   = gnMultiSelectHtml('detGrupo', grupos.map(g=>[g,g]), 'Todos los grupos', 'gn-ms-btn-light');
+  document.getElementById('gnFilterMesWrap').innerHTML     = gnMultiSelectHtml('detMes', meses.map(n=>[String(n), GN_MES_LABEL[n-1]]), 'Todos los meses', 'gn-ms-btn-light');
+  document.getElementById('gnFilterMonedaWrap').innerHTML  = gnMultiSelectHtml('detMoneda', monedas.map(m=>[m,m]), 'Todas las monedas', 'gn-ms-btn-light');
 
   const hasUsd = _gnRawRows.some(r=>r.invUsd>0);
   const thUsd = document.getElementById('gnThUsd');
@@ -4673,20 +4765,20 @@ function filtrarGnDetalle() {
   const searchEl = document.getElementById('gnDetalleSearch');
   if (!searchEl) return;
   const q   = (searchEl.value||'').toLowerCase().trim();
-  const ag  = document.getElementById('gnFilterAgencia').value;
-  const cl  = document.getElementById('gnFilterCliente').value;
-  const med = document.getElementById('gnFilterMedio').value;
-  const gr  = document.getElementById('gnFilterGrupo').value;
-  const mes = document.getElementById('gnFilterMes').value;
-  const mon = document.getElementById('gnFilterMoneda').value;
+  const ag  = gnMSVal('detAgencia');
+  const cl  = gnMSVal('detCliente');
+  const med = gnMSVal('detMedio');
+  const gr  = gnMSVal('detGrupo');
+  const mes = gnMSVal('detMes');
+  const mon = gnMSVal('detMoneda');
 
   _gnFiltered = _gnRawRows.filter(r => {
-    if (ag  && r.agencia !== ag)        return false;
-    if (cl  && r.cliente !== cl)        return false;
-    if (med && r.medio   !== med)       return false;
-    if (gr  && r.grupo   !== gr)        return false;
-    if (mes && r.nMes    !== +mes)      return false;
-    if (mon && (r.moneda||'—') !== mon) return false;
+    if (ag.length  && !ag.includes(r.agencia))            return false;
+    if (cl.length  && !cl.includes(r.cliente))             return false;
+    if (med.length && !med.includes(r.medio))              return false;
+    if (gr.length  && !gr.includes(r.grupo))               return false;
+    if (mes.length && !mes.includes(String(r.nMes)))       return false;
+    if (mon.length && !mon.includes(r.moneda||'—'))        return false;
     if (q) {
       const txt = [r.agencia,r.cliente,r.ordenVenta||'',r.medio,r.tipo,r.grupo,r.canal,r.mes,r.moneda||''].join(' ').toLowerCase();
       if (!txt.includes(q)) return false;
